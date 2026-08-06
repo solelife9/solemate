@@ -1,8 +1,6 @@
 import {
   buildForegroundServiceConfig,
-  needsBackgroundLocationPermission,
   FG_SERVICE_CHANNEL_ID,
-  ANDROID_Q,
 } from '../../lib/foregroundService';
 
 describe('buildForegroundServiceConfig', () => {
@@ -27,17 +25,8 @@ describe('buildForegroundServiceConfig', () => {
   });
 });
 
-describe('needsBackgroundLocationPermission', () => {
-  test('true on Android 10 (API 29) and above — background location is split out', () => {
-    expect(needsBackgroundLocationPermission('android', ANDROID_Q)).toBe(true);
-    expect(needsBackgroundLocationPermission('android', 33)).toBe(true);
-  });
-
-  test('false on older Android where fine location already covers background', () => {
-    expect(needsBackgroundLocationPermission('android', 28)).toBe(false);
-  });
-
-  test('false on iOS regardless of version (no Android runtime split)', () => {
-    expect(needsBackgroundLocationPermission('ios', 33)).toBe(false);
-  });
-});
+// needsBackgroundLocationPermission / ANDROID_Q 의 테스트는 2026-08-07 에 함수와 함께
+// 삭제했다. 그 함수는 호출부가 한 곳도 없는 죽은 코드였고, 존재 자체가 "배경 위치 권한이
+// 필요하다"는 잘못된 전제를 문서화하고 있었다. 실제로는 location 타입 포그라운드 서비스가
+// 그 권한 없이 동작한다 — 근거는 AndroidManifest 주석, 회귀 가드는
+// __tests__/nativePermissions.test.ts 에 있다.

@@ -120,23 +120,23 @@ test('the background task ignores error batches (no distance from a failed updat
   expect(runTracker.getDistanceKm()).toBe(0);
 });
 
-test('requestRunPermissions: a denied foreground permission short-circuits (background not requested)', async () => {
+test('requestRunPermissions: 거부된 포그라운드 권한은 그대로 false 로 돌아온다', async () => {
   (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValueOnce({
     granted: false,
     status: 'denied',
   });
   const r = await requestRunPermissions();
-  expect(r).toEqual({foreground: false, background: false});
-  expect(Location.requestBackgroundPermissionsAsync).not.toHaveBeenCalled();
+  expect(r).toEqual({foreground: false});
 });
 
-test('requestRunPermissions: foreground granted + background denied is graceful', async () => {
-  (Location.requestBackgroundPermissionsAsync as jest.Mock).mockResolvedValueOnce({
-    granted: false,
-    status: 'denied',
-  });
+// 2026-08-07: 백그라운드('항상 허용') 위치는 **아예 묻지 않는다.**
+// 화면off 기록은 location 타입 포그라운드 서비스가 담당하고 expo-location 은 그 경로에서
+// 이 권한을 요구하지 않는다(근거는 AndroidManifest 주석). 예전엔 물어 놓고 결과를 아무도
+// 읽지 않았으며, Play 의 배경 위치 선언(양식 + 시연 영상)만 자초하고 있었다.
+test('requestRunPermissions: 백그라운드 위치는 묻지 않는다', async () => {
   const r = await requestRunPermissions();
-  expect(r).toEqual({foreground: true, background: false});
+  expect(r).toEqual({foreground: true});
+  expect(Location.requestBackgroundPermissionsAsync).not.toHaveBeenCalled();
 });
 
 test('stopTracking removes the foreground subscription and stops a started background task', async () => {

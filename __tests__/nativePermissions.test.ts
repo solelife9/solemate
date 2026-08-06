@@ -104,12 +104,29 @@ describe('AndroidManifest 권한 선언', () => {
     const m = read(ANDROID_MANIFEST);
     for (const p of [
       'android.permission.ACCESS_FINE_LOCATION',
-      'android.permission.ACCESS_BACKGROUND_LOCATION',
       'android.permission.FOREGROUND_SERVICE_LOCATION',
       'android.permission.RECEIVE_BOOT_COMPLETED',
     ]) {
       expect(m).toContain(p);
     }
+  });
+
+  // 이 가드는 **방향이 반대다**. 예전 판은 ACCESS_BACKGROUND_LOCATION 을 "유지해야
+  // 한다"고 못 박고 있었고, 그 바람에 필요 없는 권한이 고착돼 Play 의 가장 무거운
+  // 심사 항목(선언 양식 + 시연 영상)을 계속 자초했다.
+  //
+  // 이 앱은 location 타입 **포그라운드 서비스**로 화면off 기록을 하고, expo-location 은
+  // 그 경로에서 백그라운드 위치 권한을 요구하지 않는다(근거는 매니페스트 주석의
+  // LocationModule.kt 인용). 그러니 다시 들어오면 안 된다.
+  it('배경 위치 권한은 선언하지 않는다 — 포그라운드 서비스로 충분하다', () => {
+    expect(read(ANDROID_MANIFEST)).not.toContain('android.permission.ACCESS_BACKGROUND_LOCATION');
+  });
+
+  // 매니페스트에서 뺐어도 런타임에서 계속 물으면 OS 가 거부하고 계측만 더럽힌다.
+  // 요청 코드까지 함께 사라졌는지 본다.
+  it('백그라운드 위치를 런타임에서 요청하지 않는다', () => {
+    expect(read(join(ROOT, 'lib', 'locationService.ts')))
+      .not.toContain('requestBackgroundPermissionsAsync');
   });
 });
 

@@ -21,20 +21,28 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- 백그라운드 런 트래킹(화면off) 권한 — expo-location 교체로 실제 동작한다.
-         expo-location 의 location 타입 포그라운드 서비스가
-         Location.startLocationUpdatesAsync(+foregroundService) 로 기동되므로,
-         아래 권한이 실제 기능에 대응한다("화면을 꺼도 거리/시간이 계속 기록됨").
-         - FOREGROUND_SERVICE / FOREGROUND_SERVICE_LOCATION: Android 14+ 에서 location
-           타입 포그라운드 서비스 기동에 필수.
-         - ACCESS_BACKGROUND_LOCATION: Android 10(API 29)+ 에서 화면off/백그라운드
-           위치 수집에 필요(런타임 요청은 requestBackgroundPermissionsAsync 가 담당하며,
-           거부돼도 포그라운드 트래킹은 graceful 하게 동작).
+    <!-- 백그라운드 런 트래킹(화면off) 권한 — expo-location 의 location 타입 포그라운드
+         서비스가 Location.startLocationUpdatesAsync(+foregroundService) 로 기동되므로
+         "화면을 꺼도 거리/시간이 계속 기록됨"이 이 두 권한만으로 성립한다.
+         Android 14+ 에서 location 타입 포그라운드 서비스 기동에 필수.
          location 타입 <service> 선언은 expo-location 모듈의 매니페스트가 머지하므로
-         여기서 중복 선언하지 않는다(중복 선언 시 머지 충돌/크래시 위험). -->
+         여기서 중복 선언하지 않는다(중복 선언 시 머지 충돌/크래시 위험).
+
+         ⚠️ ACCESS_BACKGROUND_LOCATION 을 여기 되살리지 마라(2026-08-07 제거).
+         이 앱에는 **필요 없다.** expo-location 원본이 명시한다 —
+         node_modules/expo-location/.../LocationModule.kt 의 startLocationUpdatesAsync:
+           "There are two ways of starting this service.
+            1. As a background location service, this requires the background location permission.
+            2. As a user-initiated foreground service with notification, this does NOT require
+               the background location permission."
+         그리고 lib/locationService.ts 는 **항상** foregroundService 를 넘긴다(분기 없음).
+         플랫폼 규칙도 같다 — foregroundServiceType="location" 서비스가 도는 동안 앱은
+         'in-use' 로 취급되어 while-in-use 권한만으로 위치를 받는다.
+         되살리면 Play 의 백그라운드 위치 선언 양식 + **시연 영상 제출**이 다시 붙고,
+         온보딩에 수락률이 매우 낮은 '항상 허용' 2단계 다이얼로그가 되돌아온다.
+         회귀 가드: __tests__/nativePermissions.test.ts -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <!-- expo-task-manager 필수: 백그라운드 위치 전달을 위해 persisted JobScheduler
          작업(setPersisted(true))을 예약하는데, Android 는 persisted job 예약에

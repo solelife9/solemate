@@ -261,7 +261,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   };
   // 요청한 위치 권한 결과(포그라운드/백그라운드). '계속 달리기'(거리 짧음 재시작) 시
   // 동일 권한으로 다시 트래킹을 시작하기 위해 보관한다.
-  const permRef=useRef<RunPermissions>({foreground:true,background:false});
+  const permRef=useRef<RunPermissions>({foreground:true});
   // 이어 달리기 시드를 마운트당 1회만 적용하기 위한 가드(짧은 런 '계속 달리기' 재시작과 분리).
   const seededRef=useRef(false);
   /**

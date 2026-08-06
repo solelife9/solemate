@@ -35,12 +35,17 @@ const WATCH_OPTIONS: Location.LocationOptions = {
   distanceInterval: 0,
 };
 
-/** Result of requesting the run's location permissions. `foreground` gates
- *  whether tracking may start at all; `background` is optional — its denial is
- *  non-fatal (foreground-only tracking still records while the screen is on). */
+/** Result of requesting the run's location permissions.
+ *
+ *  `foreground` is the **only** gate: it decides whether tracking may start at all.
+ *
+ *  There is deliberately no `background` field (removed 2026-08-07). Screen-off
+ *  tracking here runs through a location-typed **foreground service**, which
+ *  expo-location starts without ACCESS_BACKGROUND_LOCATION — see the manifest
+ *  comment for the upstream source that says so. The old field was never read by
+ *  any caller; keeping it invited re-adding a permission the app does not need. */
 export interface RunPermissions {
   foreground: boolean;
-  background: boolean;
 }
 
 /** Normalize an expo LocationObject to the engine's RawFix (shared shape). */
@@ -84,7 +89,6 @@ TaskManager.defineTask(
  */
 export async function requestRunPermissions(): Promise<RunPermissions> {
   let foreground = false;
-  let background = false;
   try {
     const fg = await Location.requestForegroundPermissionsAsync();
     foreground = !!fg.granted;
@@ -96,15 +100,12 @@ export async function requestRunPermissions(): Promise<RunPermissions> {
   // 위치 권한이 거부되면 이 앱은 존재 이유가 통째로 죽으므로, 프라이밍 문구·요청 시점을
   // 고칠 근거가 되는 유일한 숫자다. trackPermissionResult 는 no-throw 다.
   trackPermissionResult('location', foreground);
-  if (!foreground) return {foreground, background};
-  try {
-    const bg = await Location.requestBackgroundPermissionsAsync();
-    background = !!bg.granted;
-  } catch {
-    background = false;
-  }
-  trackPermissionResult('location_background', background);
-  return {foreground, background};
+  // 백그라운드 위치는 **묻지 않는다**(2026-08-07). 화면off 기록은 location 타입
+  // 포그라운드 서비스가 담당하고, expo-location 은 그 경로에서 이 권한을 요구하지
+  // 않는다(근거는 AndroidManifest 주석). 묻던 시절에도 결과를 읽는 코드가 없었고,
+  // Android 11+ 의 '항상 허용'은 설정 앱으로 보내는 2단계라 수락률이 매우 낮아
+  // 온보딩만 깎아먹었다.
+  return {foreground};
 }
 
 /** 현재 *포그라운드* 위치 권한이 허용 상태인지 묻는다(요청하지 않고 조회만). 주행 중 권한
