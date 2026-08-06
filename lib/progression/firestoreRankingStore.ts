@@ -132,6 +132,44 @@ export function yearMonthOf(nowMs: number): string {
   return `${y}-${m}`;
 }
 
+/**
+ * 소급해서 내릴 개월 수. 랭킹 발행 배선 시점이 2026-06 이라 실제 엔트리는 그 이후에만
+ * 있고, 규칙이 leaderboards 읽기를 막아 "어느 달에 내 엔트리가 있나"를 조회할 수 없다.
+ * 그래서 목록을 읽는 대신 최근 N개월 경로를 만들어 지운다(없는 문서 delete 는 no-op).
+ * lib/firebaseCloudPort 의 탈퇴 파기와 같은 규약·같은 개월 수다.
+ */
+export const RANKING_RETRACT_MONTHS = 24;
+
+/**
+ * **공개 동의를 철회했을 때 내 엔트리를 실제로 내린다.**
+ *
+ * 왜 필요한가(2026-08-07 감사): 철회하면 App 의 발행 가드가 일찍 return 해서 **발행만
+ * 멈췄고, 이미 올라간 엔트리는 그대로 남았다.** unpublish 함수는 있었지만 유일한 호출부가
+ * publishMyRanking 안(그 가드 뒤)이라 **도달할 수 없는 코드**였다. 결과적으로 닉네임·이번
+ * 달 거리·신발·랭크가 로그인한 전원에게 계속 보였고 **앱에서 내릴 방법이 없었다.**
+ * 공개 프로필은 null 을 넘겨 제대로 내려간다 — 리더보드만 짝이 빠져 있었다.
+ * 처리방침 "공개용 프로필·순위 정보 — 공개 중단 시 또는 회원 탈퇴 시까지"와 어긋났다.
+ *
+ * 개별 월 실패는 삼킨다(나머지 달을 막지 않는다). 전부 실패해도 throw 하지 않는다 —
+ * 호출부는 동기 흐름이고, 여기서 던지면 러닝 데이터 동기가 멎는다.
+ */
+export async function unpublishMyRanking(
+  uid: string,
+  nowMs: number,
+  months: number = RANKING_RETRACT_MONTHS,
+): Promise<void> {
+  if (!uid) return;
+  const d = new Date(nowMs);
+  for (let i = 0; i < months; i += 1) {
+    const ym = yearMonthOf(new Date(d.getFullYear(), d.getMonth() - i, 1).getTime());
+    try {
+      await firestoreRankingStore.unpublish(ym, uid);
+    } catch {
+      /* 개별 월 실패 무시 */
+    }
+  }
+}
+
 export interface PublishRankingArgs {
   /** 그달 주력 신발 요약 — 「1,2,3위는 뭘 신나」. 없으면 엔트리에 필드가 안 생긴다. */
   shoes_summary?: readonly EntryShoe[];

@@ -217,3 +217,93 @@ describe('reconcileAccountStorage — 부팅 시 정합', () => {
     expect(await AsyncStorage.getItem('splits_r1')).toBe('[1,2,3]');
   });
 });
+
+// ============================================================================
+// 저장소 키 전수 대조 (2026-08-07 감사)
+//
+// 왜 이게 필요한가: 기존 테스트는 **USER_KEYS 에 적힌 키가 user key 로 판정되는지**만
+// 봤다. 즉 목록에 적힌 것만 검사하므로, **빠뜨린 키는 구조적으로 잡히지 않는다.**
+// 실제로 5개가 조용히 빠져 있었고 그중 둘은 결과가 무거웠다:
+//   · social_visibility_v1  → A 의 공개 동의를 B 가 상속(동의 없는 개인정보 공개)
+//   · recordSync_cursor_v1  → B 의 델타 조회가 0건("내 기록이 다 사라졌다")
+//
+// 그래서 방향을 뒤집는다: **소스에 실제로 존재하는 저장소 키를 긁어와** 목록과 대조하고,
+// 어느 쪽에도 없는 키가 생기면 사람이 의도적으로 분류하게 만든다.
+//
+// 이 테스트가 빨개졌다면 새 키를 하나 만들었다는 뜻이다. 자문할 것 하나 —
+// **이 값이 남의 계정에 그대로 보이면 무슨 일이 나는가.** 답이 '아무 일 없음'일 때만
+// UNSCOPED_OK 에 넣는다. 그 외에는 USER_KEYS 로 간다.
+// ============================================================================
+describe('저장소 키 전수 대조 — 빠뜨린 계정 키가 없다', () => {
+  const fs = require('fs') as typeof import('fs');
+  const path = require('path') as typeof import('path');
+  const repoRoot = path.join(__dirname, '..', '..');
+
+  /**
+   * 계정에 딸리지 **않는** 것이 확실한 키. DEVICE_KEYS 와 다른 점: 저쪽은 "옮기면 안 되는"
+   * 안전핀이고, 이쪽은 "옮길 필요 없다"는 판단 기록이다. 근거를 한 줄씩 남긴다.
+   */
+  const UNSCOPED_OK = new Set<string>([
+    'keego.shoeCatalogRemote.v1',  // 전역 신발 카탈로그 캐시 — 옮기면 매번 다시 받는다
+    'keego.raceCatalogRemote.v1',  // 전역 대회 카탈로그 캐시 — 〃
+    'clock_offset_ms_v1',          // 이 기기의 시계가 서버보다 얼마나 틀어졌나(기기 특성)
+    'loc_perm_primed',             // 위치 권한 사전 안내를 봤는지 — OS 권한 자체가 기기 단위다
+    'hr_curve_open_v1',            // 기록 화면 심박 그래프 펼침 상태(표시 취향, 무해)
+    'sharecard_prefs_v3',          // 공유 카드 스타일 취향(표시 기본값, 무해)
+  ]);
+
+  /** 소스에서 문자열 리터럴로 등장하는 AsyncStorage 키 후보를 긁는다. */
+  const collectKeys = (): Set<string> => {
+    const found = new Set<string>();
+    const skip = new Set(['node_modules', '__tests__', 'android', 'ios', 'docs', '.git', 'coverage']);
+    const walk = (dir: string) => {
+      for (const e of fs.readdirSync(dir, {withFileTypes: true})) {
+        if (skip.has(e.name)) continue;
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(e.name)) continue;
+        const src = fs.readFileSync(p, 'utf8');
+        // AsyncStorage.<op>('키'…) 와 = '키' 형태의 상수 선언 양쪽을 본다.
+        const re = /AsyncStorage\.\w+\(\s*'([^']+)'|(?:KEY|key)\s*=\s*'([^']+)'/g;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(src))) {
+          const k = m[1] || m[2];
+          if (!k || k.includes('/') || k.includes(' ')) continue;
+          // `…KEY = '…'` 패턴은 저장소 키가 아닌 것도 잡는다 — 예: KAKAO_NATIVE_APP_KEY.
+          // 긴 16진 문자열은 자격증명이지 저장소 키가 아니다(저장소 키는 사람이 읽는 이름).
+          if (/^[0-9a-f]{24,}$/i.test(k)) continue;
+          found.add(k);
+        }
+      }
+    };
+    walk(repoRoot);
+    return found;
+  };
+
+  test('소스의 모든 저장소 키가 분류돼 있다', () => {
+    const classified = (k: string) =>
+      USER_KEYS.includes(k) ||
+      DEVICE_KEYS.includes(k) ||
+      UNSCOPED_OK.has(k) ||
+      USER_KEY_PREFIXES.some(p => k.startsWith(p)) ||
+      k.startsWith(ARCHIVE_PREFIX);
+
+    const unclassified = [...collectKeys()].filter(k => !classified(k)).sort();
+    expect(unclassified).toEqual([]);
+  });
+
+  // 값이 무거운 키는 이름으로 한 번 더 못 박는다 — 위 수집 정규식이 놓쳐도 여기서 잡힌다.
+  test('동의·동기 커서는 반드시 계정 키다', () => {
+    for (const k of [
+      'social_visibility_v1',
+      'social_published_sig_v1',
+      'leaderboard_published_v1',
+      'recordSync_cursor_v1',
+      'recordSync_pushed_v1',
+      'watch_runs_seen_v1',
+      'detail_delete_pending_v1',
+    ]) {
+      expect(isUserKey(k)).toBe(true);
+    }
+  });
+});

@@ -27,7 +27,27 @@ describe('리더보드 발행 플래그', () => {
     if (!LEADERBOARD_PUBLISH_ENABLED) return; // 꺼져 있으면 애초에 발행되지 않는다
     // 플래그를 통과해도 **동의하지 않은 사용자는 발행되지 않는다** — AUDIT 1 사고가
     // 정확히 '동의 없이 공개'였다. 플래그와 동의는 별개의 두 겹이다.
-    expect(read('App.tsx')).toContain("if(socialVisibility!=='public') return;");
+    expect(read('App.tsx')).toContain("if(socialVisibility!=='public'){");
+  });
+
+  // 2026-08-07 감사: 위 가드는 **멈추기만 하고 내리지는 않았다.**
+  // unpublish 함수는 있었지만 유일한 호출부가 publishMyRanking 안(가드 뒤)이라
+  // 도달할 수 없는 코드였다. 그래서 동의를 철회해도 닉네임·이번 달 거리·신발·랭크가
+  // 로그인한 전원에게 계속 보였고 **앱에서 내릴 방법이 없었다.**
+  // 처리방침 "공개 중단 시 또는 회원 탈퇴 시까지"와 정면으로 어긋난 상태였다.
+  // 공개 프로필은 null 을 넘겨 제대로 내려간다 — 리더보드만 짝이 빠져 있었다.
+  test('동의를 철회하면 발행을 멈추는 게 아니라 내린다', () => {
+    if (!LEADERBOARD_PUBLISH_ENABLED) return;
+    const app = read('App.tsx');
+    // 비공개 분기가 회수를 실제로 부른다.
+    const guardIdx = app.indexOf("if(socialVisibility!=='public'){");
+    const retractIdx = app.indexOf('await unpublishMyRanking(');
+    expect(guardIdx).toBeGreaterThan(-1);
+    expect(retractIdx).toBeGreaterThan(guardIdx);
+    // 회수 구현이 남아 있고, 소급 삭제(월 순회)를 한다.
+    expect(read('lib/progression/firestoreRankingStore.ts')).toMatch(
+      /export async function unpublishMyRanking/,
+    );
   });
 
   test('App 의 랭킹 발행이 플래그로 early-return 한다', () => {

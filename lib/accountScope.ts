@@ -37,6 +37,19 @@ const SEP = '__';
  * 목록에 없는 키는 그냥 지금처럼 공용으로 남는다(= 지금과 동일, 퇴행 아님).
  * 반대로 기기 단위 키를 실수로 넣으면 전환할 때마다 기기 설정이 사라진다.
  * 그래서 **모르면 넣지 않는다** — 빠뜨리는 실수는 안전하고, 잘못 넣는 실수는 위험하다.
+ *
+ * ⚠️ **그 원칙에 예외가 있다(2026-08-07).** '빠뜨리는 실수는 안전하다'는 그 키가 단순
+ * 캐시일 때만 참이다. **동의·공개 범위처럼 누락이 곧 유출인 키**가 있다 —
+ * `social_visibility_v1` 이 목록에 없어서, A 가 공개에 동의한 폰에 B 가 로그인하면
+ * 동의가 그대로 상속됐다(동의 화면은 값이 'unset' 일 때만 뜬다). B 는 한 번도 동의한 적
+ * 없이 닉네임·거리·신발이 전원 읽기 가능한 컬렉션에 발행됐다. 카카오→구글로 바꿔
+ * 로그인만 해도 uid 가 달라지므로 특수 상황이 아니었다.
+ *
+ * 그리고 **델타 동기 커서**도 누락이 안전하지 않다 — A 의 커서가 남으면 B 의 문서는 전부
+ * 그 시각 이전이라 델타 조회가 0건을 돌려주고, B 는 "내 기록이 다 사라졌다"를 본다.
+ *
+ * 새 키를 만들 때 자문할 것: **이 값이 남의 계정에 그대로 보이면 무슨 일이 나는가.**
+ * 답이 '아무 일 없음'일 때만 빼도 된다.
  */
 export const USER_KEYS: readonly string[] = [
   // 핵심 데이터 — 이게 새던 것이 S-1 이다
@@ -80,6 +93,28 @@ export const USER_KEYS: readonly string[] = [
   'onboarded',
   // 상세 동기 스윕 시각(그 계정의 런을 훑은 기록이라 계정에 딸린다)
   'detail_sync_sweep_at_v1',
+  // ── 소셜 공개 동의 (2026-08-07) ──────────────────────────────────────────
+  // 누락 = **동의 상속**. 위 주석의 예외 항목이다. 발행 시그니처도 같이 옮긴다 —
+  // 안 옮기면 B 의 첫 발행이 A 의 시그니처와 같다는 이유로 건너뛰어질 수 있다.
+  'social_visibility_v1',      // lib/publicProfile.ts VISIBILITY_KEY
+  'social_published_sig_v1',   // lib/publicProfile.ts PUBLISHED_SIG_KEY
+  'leaderboard_published_v1',  // App.tsx — 회수 대상이 있는지 표시
+  // ── 클라우드 델타 동기 상태 (2026-08-07) ─────────────────────────────────
+  // 커서는 '어디까지 받았나'라 계정에 딸린다. 누락되면 A 의 커서가 남아 B 의 델타
+  // 조회가 0건을 돌려주고 **B 는 빈 앱을 본다**(재설치 전엔 복구 안 됨).
+  // 마커는 '어디까지 올렸나' — 누락되면 재업로드라 자가 치유되지만 같이 옮기는 게 맞다.
+  'recordSync_cursor_v1',      // lib/recordSync.ts CURSORS_KEY
+  'recordSync_pushed_v1',      // lib/recordSync.ts MARKERS_KEY
+  // 워치 런 중복 방어 표식 — 기기를 공유하면 B 의 워치 런이 "A 가 이미 봤다"는
+  // 이유로 조용히 버려질 수 있다.
+  'watch_runs_seen_v1',        // App.tsx
+  // 상세 삭제 재시도 큐 — A 의 삭제 요청이 B 의 경로에서 no-op 으로 소진된다.
+  'detail_delete_pending_v1',  // lib/runDetailSync.ts DETAIL_DELETE_QUEUE_KEY
+  // 심박 스윕·보수 표식 — 둘 다 '그 계정의 런을 훑었다'는 기록이다
+  // (detail_sync_sweep_at_v1 과 같은 성격). B 가 A 의 '완료' 표식을 물려받으면
+  // **B 의 기록은 영영 보수되지 않는다.**
+  'hr_recover_sweep_at_v2',    // App.tsx
+  'hr_repair_done_v1',         // lib/hrRepair.ts HR_REPAIR_DONE_KEY
 ];
 
 /**

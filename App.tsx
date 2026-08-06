@@ -147,7 +147,7 @@ import {syncRemoteCatalog} from './lib/shoeCatalogRemote';
 import {setRemoteShoeDocs} from './lib/shoeCatalogStore';
 import {LoginScreen} from './LoginScreen.rn';
 import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones, stripSyncedRoutes, shouldSkipCloudSync, compactTombstones, SHOE_TOMBSTONE_KEEP} from './lib/cloudSync';
-import {publishMyRanking} from './lib/progression/firestoreRankingStore';
+import {publishMyRanking,unpublishMyRanking} from './lib/progression/firestoreRankingStore';
 import {LEADERBOARD_PUBLISH_ENABLED, SOCIAL_PROFILE_PUBLISH_ENABLED, MERGE_PHONE_WATCH_RUNS} from './lib/featureFlags';
 import {genRunId, genShoeId} from './lib/genId';
 import {showToast} from './lib/toast';
@@ -167,6 +167,10 @@ const K_CHALLENGES = 'challenges_v1';
 // 프로필 이름/사진(로컬 전용 — 개인 식별, 서버 불필요). 신규 키라 기존 데이터와 격리.
 const K_PROFILE_NAME = 'profile_name';
 const K_PROFILE_PHOTO = 'profile_photo';
+// 월간 랭킹을 한 번이라도 올렸다는 표식(계정별 — lib/accountScope USER_KEYS).
+// 동의를 철회했을 때 "지울 게 있나"를 알기 위한 것이다. 이게 없으면 비공개 사용자의
+// 모든 동기가 24개월치 삭제를 헛돌게 된다.
+const LEADERBOARD_PUBLISHED_KEY = 'leaderboard_published_v1';
 const DEFAULT_PROFILE_NAME = '러너';
 // 포그라운드에서 이미 표시한 푸시 알림 key 집합(당일 1회 표시, A8-4). 키는 날짜 스탬프를
 // 포함하므로(예: 'run_reminder:2026-06-09') 다음 날엔 자연히 새 키가 되어 다시 표시된다.
@@ -541,6 +545,8 @@ function Main(){
       // bootState 를 함께 'loading' 으로 내리는 게 중요하다 — 캐시 쓰기 디바운스가
       // 'ready' 일 때만 돌기 때문에, 이 빈 상태가 멀쩡한 캐시를 덮어쓰지 않는다.
       setShoes([]);setRuns([]);setBootState('loading');
+      // 공개 동의도 메모리에서 즉시 내린다 — 아래 재로드와 짝이다(2026-08-07).
+      setSocialVisibility('unset');
       return;
     }
     // 정합·재로드가 끝날 때까지 스켈레톤 — 이전 계정 화면이 한 프레임도 비치지 않게.
@@ -554,6 +560,15 @@ function Main(){
         // (2026-08-03 실기기). 쓰는 곳을 여기 하나로 모은 게 이 수정의 핵심이다.
         const prov=pendingProviderRef.current;
         if(prov){pendingProviderRef.current=null;await saveCloudAccount(prov,{uid});}
+        // **공개 동의를 이 계정 것으로 다시 읽는다**(2026-08-07).
+        // 저장소는 위 reconcileAccountStorage 가 이미 갈아끼웠지만, 그것만으로는
+        // 부족하다 — socialVisibility 는 마운트 때 한 번만 읽는 state 라 **메모리에
+        // 이전 계정 값이 그대로 남는다.** A 가 공개에 동의한 폰에 B 가 로그인하면
+        // 동의 화면은 값이 'unset' 일 때만 뜨므로 뜨지 않고, B 는 한 번도 동의한 적
+        // 없이 닉네임·거리·신발이 전원 읽기 가능한 컬렉션에 발행됐다.
+        // AUDIT 1 의 "동의 없이 공개" 사고가 계정 전환 축에서 재현된 것이다.
+        // 여기가 유일하게 순서가 보장된 자리다 — 저장소 교체 직후, 데이터 로드 직전.
+        if(alive)setSocialVisibility(await loadVisibility());
       }catch(e){
         reportIssue('accountScope 정합 실패 — 부팅 중단(남의 데이터 노출 방지)',e);
         if(alive)setBootState('error');
@@ -1593,7 +1608,21 @@ function Main(){
     if(!LEADERBOARD_PUBLISH_ENABLED) return;
     // **동의한 사용자만 랭킹에 오른다.** AUDIT 1 의 사고가 정확히 "동의 없이 공개"였다 —
     // 플래그가 켜져도 이 가드가 없으면 같은 일이 반복된다. 공개 프로필과 같은 스위치를 쓴다.
-    if(socialVisibility!=='public') return;
+    //
+    // ⚠️ 그런데 **멈추는 것만으로는 부족하다**(2026-08-07). 예전엔 여기서 그냥 return 했고,
+    // 그 결과 철회해도 이미 올라간 엔트리가 남아 닉네임·거리·신발이 전원에게 계속 보였다.
+    // 공개 프로필처럼 **내린다.** 다만 매 동기마다 24개월을 지우면 낭비라, 올린 적이
+    // 있을 때만(표식) 한 번 회수하고 표식을 지운다.
+    if(socialVisibility!=='public'){
+      try{
+        const uid=authUser?.uid;
+        if(uid&&await AsyncStorage.getItem(LEADERBOARD_PUBLISHED_KEY)){
+          await unpublishMyRanking(uid,Date.now());
+          await AsyncStorage.removeItem(LEADERBOARD_PUBLISHED_KEY);
+        }
+      }catch(e){reportIssue('retract ranking',e);}
+      return;
+    }
     try{
       const liveShoes=liveRecords(merged.shoes);
       const liveRuns=liveRecords(merged.runs);
@@ -1620,6 +1649,9 @@ function Main(){
         progressPoints:view.rank.xp,
         nowMs:Date.now(),
       });
+      // 올린 적이 있다는 표식. 나중에 동의를 철회하면 이걸 보고 **회수**한다
+      // (없으면 지울 게 있는지 알 수 없어 매번 24개월을 훑어야 한다).
+      await AsyncStorage.setItem(LEADERBOARD_PUBLISHED_KEY,'1');
     }catch(e){reportIssue('publish ranking',e);}
   };
   const runCloudSync=async(opts?:{force?:boolean})=>{
