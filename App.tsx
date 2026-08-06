@@ -1584,9 +1584,11 @@ function Main(){
   const cloudRouteIdsRef=useRef<Set<string>>(new Set());
   // 머지된 payload 로 내 월간 랭킹 엔트리를 계산·발행한다. 점수는 live 레코드 기준,
   // 표시정보(닉네임/랭크/색/장착 타이틀)는 현재 progression 파생. best-effort(throw 흡수).
-  // ⚠️ 2026-07-29 감사로 **플래그 오프**. 랭킹 화면 진입점이 없는데도 닉네임·월간 거리가
-  // 전원 읽기 가능한 leaderboards 컬렉션에 동의 없이 쌓이고 있었다. 발행 구현과 화면은
-  // 그대로 두고 호출만 막는다 — 재개봉은 lib/featureFlags 의 플래그 하나로(1.1 예정).
+  // ⚠️ 2026-07-29 감사 때 플래그로 껐던 경로다 — 랭킹 화면 진입점이 없는데도 닉네임·월간
+  // 거리가 전원 읽기 가능한 leaderboards 컬렉션에 동의 없이 쌓이고 있었다.
+  // **2026-08-03 켰다**(옵트인·명예의 전당 진입점·처리방침 제4조의2 배포 — 켜는 조건 셋
+  // 충족. 배경은 lib/featureFlags 의 LEADERBOARD_PUBLISH_ENABLED 주석). 그래서 아래
+  // 두 가드가 그때의 규율을 대신 진다 — 어느 하나라도 지우면 같은 사고가 재발한다.
   const publishMyRankingNow=async(merged:{shoes:any[];runs:any[]})=>{
     if(!LEADERBOARD_PUBLISH_ENABLED) return;
     // **동의한 사용자만 랭킹에 오른다.** AUDIT 1 의 사고가 정확히 "동의 없이 공개"였다 —
@@ -1711,7 +1713,8 @@ function Main(){
       // Phase 3: 동기 직후 내 월간 랭킹 엔트리를 Firestore 에 발행(best-effort·논블로킹).
       // 점수는 머지된 live 레코드로 클라이언트가 계산하고, 표시정보(닉네임/랭크/타이틀)는
       // 현재 progression 에서 파생한다. 실패해도 동기 흐름·데이터엔 영향 없음(throw 흡수).
-      // ⚠️ 현재 LEADERBOARD_PUBLISH_ENABLED=false 라 이 호출은 즉시 반환한다(발행 없음).
+      // 발행 여부는 두 겹으로 갈린다: LEADERBOARD_PUBLISH_ENABLED(2026-08-03 켬) 그리고
+      // 사용자의 공개 동의(socialVisibility==='public'). 둘 중 하나만 빠져도 즉시 반환한다.
       void publishMyRankingNow(merged);
       // ── 소셜: 공개 프로필 발행(동의했을 때만) ──────────────────────────
       // 개인 저장소에서 **화이트리스트로 추린 것만** 별도 컬렉션에 올린다. 동의가
