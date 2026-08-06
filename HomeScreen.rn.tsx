@@ -125,7 +125,24 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }:
   const ref = useRef<any>(null);
   // KeegoHome ShoeCard 의 중앙강조(scale/opacity)는 scrollX 를 요구한다 → Animated.ScrollView.
   const scrollX = useRef(new Animated.Value(0)).current;
-  const onScroll = Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true });
+  // 페이지 도트는 **활성 신발(activeIdx)과 분리해서** 손가락을 따라간다.
+  // 왜 분리하나: activeIdx 는 부모가 소유하고, 바뀌면 아래 useEffect 가 scrollTo 를 건다.
+  // 스크롤 중에 그걸 갱신하면 프로그램 스크롤이 사용자의 손가락과 싸운다(카드가 튄다).
+  // 그래서 앱 상태는 관성이 멎은 뒤에 바꾸고, **점만** 먼저 움직인다.
+  // 전환 시점은 카드 절반(Math.round) — iOS 페이지 컨트롤과 같은 규약이라
+  // "카드가 반쯤 넘어가면 점도 넘어간다"로 읽힌다(2026-08-07 민우님 지적: 점이 마지막에 따라옴).
+  const [dotIdx, setDotIdx] = useState(activeIdx);
+  useEffect(() => { setDotIdx(activeIdx); }, [activeIdx]);
+  const onScroll = Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+    useNativeDriver: true,
+    // 네이티브 드라이버와 JS 리스너는 함께 쓸 수 있다(카드 애니메이션은 네이티브 유지).
+    // 같은 값이면 setState 가 리렌더를 건너뛰므로, 실제 리렌더는 칸을 넘을 때만 일어난다.
+    listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const raw = Math.round(e.nativeEvent.contentOffset.x / HERO_SNAP);
+      const i = Math.max(0, Math.min(shoes.length - 1, raw));
+      setDotIdx(prev => (prev === i ? prev : i));
+    },
+  });
   const onEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.x / HERO_SNAP);
     const clamped = Math.max(0, Math.min(shoes.length - 1, i));
@@ -172,8 +189,8 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }:
       {/* 페이지 도트만 — 스와이프 안내문은 제거(도트가 이미 넘김을 말한다. 프리미엄
           제품은 사용법 문구를 상주시키지 않는다 — 폴리싱 2026-07-02). */}
       {shoes.length > 1 && (
-        <View style={s.pageDots}>
-          {shoes.map((_, i) => <View key={i} style={[s.pageDot, i === activeIdx && s.pageDotOn]} />)}
+        <View style={s.pageDots} testID="home-page-dots">
+          {shoes.map((_, i) => <View key={i} testID={`home-page-dot-${i}`} style={[s.pageDot, i === dotIdx && s.pageDotOn]} />)}
         </View>
       )}
     </View>
