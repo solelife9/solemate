@@ -181,3 +181,44 @@ describe('실내는 거리 정본이 뒤집힌다', () => {
     expect(merged.km).toBe(PHONE.km);
   });
 });
+
+// ============================================================================
+// 도착 순서에 무관해야 한다 (2026-08-07 감사)
+//
+// 병합 검사가 **워치 수신 경로에만** 있었다(App.tsx 의 findMergeTarget 호출부가 한 곳뿐).
+// 그래서 순서가 뒤집히면 그대로 뚫렸다:
+//   워치에서 정지 → 워치가 즉시 런 전송 → 폰은 만보계·역지오코딩을 await 한 뒤에야
+//   저장 → 워치 런이 먼저 착지 → 병합 대상이 아직 없으니 새 런 → 폰도 새 런
+//   → **신발 이중 차감**(2026-07-28 "5.4km 러닝이 신발에 10.50km"와 같은 결과).
+//
+// 이제 두 경로가 대칭으로 검사하고, 권한도 양쪽 'watch' 로 고정했다. 그래서
+// **누가 먼저 도착하든 결과가 같아야 한다.** 그게 이 스위트의 계약이다.
+// ============================================================================
+describe('도착 순서가 결과를 바꾸지 않는다', () => {
+  test('워치가 먼저 와도, 폰이 먼저 와도 상대를 찾아낸다', () => {
+    // 폰이 먼저 저장된 상태에서 워치가 도착 (기존 경로)
+    expect(findMergeTarget(WATCH, [PHONE], {incomingStartMs: WATCH_START})).toBe(PHONE);
+    // 워치가 먼저 저장된 상태에서 폰이 도착 (2026-08-07 에 닫은 구멍)
+    expect(
+      findMergeTarget(PHONE, [WATCH], {startMsById: {[WATCH.id]: WATCH_START}}),
+    ).toBe(WATCH);
+  });
+
+  test('어느 순서로 합쳐도 남는 거리가 같다 — 신발은 한 번만 닳는다', () => {
+    const watchFirst = mergeRuns(PHONE, WATCH, 'watch'); // 폰이 기존, 워치가 도착
+    const phoneFirst = mergeRuns(WATCH, PHONE, 'watch'); // 워치가 기존, 폰이 도착
+    expect(watchFirst.km).toBe(phoneFirst.km);
+    expect(watchFirst.duration).toBe(phoneFirst.duration);
+    // 그리고 그 거리는 두 건의 합(10.5km)이 아니라 한 건이다 — 이중 차감의 반대말.
+    expect(watchFirst.km).toBeLessThan((PHONE.km ?? 0) + (WATCH.km ?? 0));
+  });
+
+  test("권한을 'phone' 으로 주면 순서에 따라 거리가 갈린다 — 그래서 쓰지 않는다", () => {
+    // 이 테스트는 회귀 방지용이다. 호출부가 실수로 'phone' 을 넘기면 같은 러닝이
+    // 도착 순서에 따라 다른 거리로 남는다는 것을 못 박아 둔다.
+    const a = mergeRuns(PHONE, WATCH, 'phone');
+    const b = mergeRuns(WATCH, PHONE, 'phone');
+    expect(a.km).toBe(b.km); // 권한 자체는 대칭이지만…
+    expect(a.km).not.toBe(mergeRuns(PHONE, WATCH, 'watch').km); // …'watch' 와는 다른 값이다
+  });
+});

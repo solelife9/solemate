@@ -2844,7 +2844,36 @@ function Main(){
           // 달리기에서 now−elapsed 로 재구성한 근사값).
           const startMs=Number(resumeSnap?.t0)||runTracker.getStartMs();
           const runDate=startMs>0?ymdLocal(new Date(startMs)):today();
-          const newId=await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal);
+          // ── 중복 방어: 같은 러닝을 워치가 이미 보냈는가 (2026-08-07 감사) ──────
+          // 워치 수신 경로에는 이 검사가 있었지만 **폰 저장 경로에는 없었다.** 그래서
+          // 순서가 뒤집히면 그대로 뚫렸다: 워치에서 정지 → 워치가 즉시 런을 보냄 →
+          // 폰은 만보계·역지오코딩을 await 한 뒤에야 여기 도달 → 워치 런이 먼저 착지해
+          // 병합 대상이 아직 없으므로 새 런 생성 → 폰도 새 런 생성 → **신발 이중 차감.**
+          // 2026-07-28 실사고("5.4km 러닝이 신발에 10.50km")와 같은 결과, 반대 순서다.
+          //
+          // 라이브 트래킹 두 경로가 대칭으로 검사하게 만든다. 수동 입력('manual')은
+          // 제외한다 — 과거 날짜를 손으로 적는 기록이라 겹칠 일이 없고, 겹친다면
+          // 사용자가 의도한 별개 기록이다.
+          const phoneIncoming={id:'incoming',shoe_id:activeRun.id,km,duration:dur,
+            run_date:runDate,source:'gps',updatedAt:Date.now(),route:route||'',location:location||'',
+            cadence:cad||0,heart_rate:avgBpm||0,calories:cal||0,elevation_m:elevM||0};
+          // runsForHrRef 는 매 렌더 runs 를 그대로 담는 거울이다(이름은 HR 유래지만
+          // syncRunDetails 등도 같이 쓴다). 여기서 필요한 건 '지금 이 순간의 런 목록'이다.
+          const watchDup=MERGE_PHONE_WATCH_RUNS
+            ?findMergeTarget(phoneIncoming as any,(runsForHrRef.current||[]) as any,{incomingStartMs:startMs})
+            :null;
+          if(watchDup){
+            // 워치 런이 이미 있다 — 새로 만들지 않고 폰 값을 얹는다.
+            // **권한은 'watch' 로 고정한다**(폰 아님). 워치 수신 경로도 'watch' 를 쓰므로,
+            // 이렇게 해야 어느 쪽이 먼저 도착하든 **결과가 같다.** 여기서 'phone' 을 주면
+            // 같은 러닝이 도착 순서에 따라 다른 거리로 남는다.
+            const merged=mergeRuns(watchDup as any,phoneIncoming as any,'watch');
+            setRuns(prev=>prev.map(r=>r.id===watchDup.id?({...r,...merged} as any):r));
+            if(route&&!String((watchDup as any).route||'')){
+              try{await AsyncStorage.setItem('route_'+watchDup.id,route);}catch{/* 비치명적 */}
+            }
+          }
+          const newId=watchDup?watchDup.id:await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal);
           // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.
           // 거리·페이스·PB 는 이미 랩 시계열(paceTrack=lapsToTrack)로 정본이라 별도 계산 불필요.
           if(trackMeta&&trackMeta.laps>0){
