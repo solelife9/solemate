@@ -8,6 +8,7 @@
 
 import {Run} from '../theme';
 import {maxDayStreak} from './stats';
+import {MIN_PLAUSIBLE_SEC_PER_KM} from './engineConstants';
 
 export type PersonalRecords = {
   /** 최장 단일 런 거리(km). 기록 없으면 0. */
@@ -24,6 +25,14 @@ export type PersonalRecords = {
 
 // 1km 미만 런은 페이스 기록에서 제외 — 짧은 스프린트/오기록이 '최고 페이스'를 왜곡하지 않게.
 const MIN_PACE_KM = 1;
+
+/**
+ * 사람이 낼 수 없는 페이스는 기록 후보가 아니다 — 거리 하한(위)만으로는 못 걸러진다.
+ * 2026-08-07 실기기에서 「1km 최고 00:02」가 실제로 떴다(상수 정의부에 근거).
+ * `lib/goals.personalRecords` 와 **같은 불변식**이라 상수를 공유한다.
+ */
+const plausiblePace = (paceSec: number) =>
+  Number.isFinite(paceSec) && paceSec >= MIN_PLAUSIBLE_SEC_PER_KM;
 
 /** 전체 런에서 올타임 개인 기록을 구한다(파생값만). */
 export function personalRecords(runs: Run[]): PersonalRecords {
@@ -43,11 +52,7 @@ export function personalRecords(runs: Run[]): PersonalRecords {
     // 평균 페이스 = 시간/거리. 1km 이상 + 시간 양수 + 유한일 때만 후보.
     if (Number.isFinite(km) && km >= MIN_PACE_KM && Number.isFinite(dur) && dur > 0) {
       const paceSec = dur / km;
-      if (
-        Number.isFinite(paceSec) &&
-        paceSec > 0 &&
-        (fastestPaceSec == null || paceSec < fastestPaceSec)
-      ) {
+      if (plausiblePace(paceSec) && (fastestPaceSec == null || paceSec < fastestPaceSec)) {
         fastestPaceSec = paceSec;
       }
     }
@@ -90,7 +95,8 @@ export function detectPRs(
   if (Number.isFinite(dur) && dur > 0 && dur > prior.longestDurationS) out.push('longestTime');
   if (Number.isFinite(km) && km >= MIN_PACE_KM && Number.isFinite(dur) && dur > 0) {
     const paceSec = dur / km;
-    if (paceSec > 0 && prior.fastestPaceSec != null && paceSec < prior.fastestPaceSec) {
+    // 오염된 런이 'PB 달성!' 축하를 띄우게 두지 않는다(위 plausiblePace 참조).
+    if (plausiblePace(paceSec) && prior.fastestPaceSec != null && paceSec < prior.fastestPaceSec) {
       out.push('fastestPace');
     }
   }

@@ -5,6 +5,8 @@
 //  - 'YYYY-MM-DD' 문자열을 직접 분해해 new Date(y, m-1, d)로 로컬 자정을
 //    만들므로 타임존/DST 파싱 차이(예: new Date('2026-05-25')의 UTC 해석)를 피한다.
 
+import {MIN_PLAUSIBLE_SEC_PER_KM} from './engineConstants';
+
 export interface Run {
   /** 로컬 날짜 'YYYY-MM-DD' (시각이 붙어도 날짜 부분만 사용) */
   run_date: string;
@@ -86,7 +88,8 @@ export function currentStreak(runs: Run[], todayISO: string): number {
 
 /**
  * 개인 기록: 1km/5km 최고 기록(평균 페이스 환산 시간, 초)과 최장 거리(km).
- * 페이스는 거리·시간이 모두 양수인 기록만 사용한다.
+ * 페이스는 거리·시간이 모두 양수인 기록만 사용하고,
+ * 사람이 낼 수 없는 페이스(`MIN_PLAUSIBLE_SEC_PER_KM` 미만)는 후보에서 제외한다.
  */
 export function personalRecords(runs: Run[]): PersonalRecords {
   let fastest1k: number | null = null;
@@ -99,6 +102,8 @@ export function personalRecords(runs: Run[]): PersonalRecords {
 
     if (r.km > 0 && r.durationS !== undefined && r.durationS > 0) {
       const secPerKm = r.durationS / r.km;
+      // 데이터 오류는 최고 기록 후보가 아니다(위 상수 주석 참조).
+      if (!Number.isFinite(secPerKm) || secPerKm < MIN_PLAUSIBLE_SEC_PER_KM) continue;
       if (r.km >= 1 && (fastest1k === null || secPerKm < fastest1k)) {
         fastest1k = secPerKm;
       }
