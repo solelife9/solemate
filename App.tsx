@@ -41,7 +41,7 @@ import {loadMedals, saveMedals, normalizeMedals, sortMedals, liveMedals, addMeda
 import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistance} from './data/raceEvents';
 import {syncRemoteRaces} from './lib/raceCatalogRemote';
 import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
-import {reconcileAccountStorage} from './lib/accountScope';
+import {reconcileAccountStorage,wipeAccountStorage} from './lib/accountScope';
 // 로그인 제공자 표시값 — **계정 정합이 끝난 뒤** 여기서만 쓴다(쓰는 곳이 둘이면 어긋난다).
 import {saveCloudAccount} from './lib/cloudAccount';
 import type {CloudProvider} from './lib/cloudPort';
@@ -1857,9 +1857,15 @@ function Main(){
   // 로컬 전체 삭제 + 상태를 신규(온보딩)로 초기화. 사용자가 명시적으로 요청한 파기이므로
   // '데이터 파괴 금지' 불변식의 정당한 예외다(되돌릴 수 없음을 화면에서 분명히 고지).
   const handleDeleteAccount=async()=>{
+    const gone=authUser?.uid;
     await cloudPortRef.current.deleteAccount();
     // 초기화 실패는 이전 계정 데이터가 남는다는 뜻 — 조용히 넘기면 안 된다.
-    try{await AsyncStorage.clear();}catch(e){recordError(e,'storage: clear all (reset)');}
+    //
+    // ⚠️ AsyncStorage.clear() 를 쓰지 않는다(2026-08-07). clear 는 보관함
+    // (acct_<uid>__*)까지 통째로 날려서, 가족이 한 폰을 쓰다 A 가 탈퇴하면 **B 의
+    // 미동기 로컬 기록이 함께 사라진다.** B 는 탈퇴한 적이 없다 — 데이터 파괴 금지
+    // 불변식의 예외는 '본인이 요청한 파기'까지이고 남의 데이터로 늘어나지 않는다.
+    try{await wipeAccountStorage(gone??'');}catch(e){recordError(e,'storage: wipe account (reset)');}
     setShoes([]);setRuns([]);
     setTombstones({shoes:[],runs:[]});
     setChallenges([]);

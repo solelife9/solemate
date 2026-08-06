@@ -13,6 +13,7 @@ import {
   parseArchiveKey,
   switchAccountStorage,
   reconcileAccountStorage,
+  wipeAccountStorage,
   USER_KEYS,
   USER_KEY_PREFIXES,
   DEVICE_KEYS,
@@ -305,5 +306,72 @@ describe('저장소 키 전수 대조 — 빠뜨린 계정 키가 없다', () =>
     ]) {
       expect(isUserKey(k)).toBe(true);
     }
+  });
+});
+
+// ============================================================================
+// wipeAccountStorage — 탈퇴는 내 것만 지운다 (2026-08-07 감사)
+//
+// 탈퇴 경로가 AsyncStorage.clear() 를 부르고 있었다. 그건 보관함까지 통째로 날려서,
+// 가족이 한 폰을 쓰다 A 가 탈퇴하면 **B 의 미동기 로컬 기록이 함께 사라진다.**
+// B 는 탈퇴한 적이 없고, 클라우드에 아직 올라가지 않았다면 되돌릴 방법이 없다.
+// ============================================================================
+describe('wipeAccountStorage — 탈퇴 범위', () => {
+  test('떠나는 계정의 데이터와 보관함은 지우고, 다른 계정 보관함은 남긴다', async () => {
+    await AsyncStorage.setMany({
+      // 지금 화면에 떠 있는 A 의 데이터
+      cache_shoes_v1: JSON.stringify([{id: 's1'}]),
+      cache_runs_v1: JSON.stringify([{id: 'r1'}]),
+      device_id: 'sl_device_fixed',
+      // A 자신의 보관함(예전 전환 잔재) — 함께 지워야 한다
+      [archiveKeyFor(A, 'cache_runs_v1')]: JSON.stringify([{id: 'old'}]),
+      // B 의 보관함 — **남아야 한다**
+      [archiveKeyFor(B, 'cache_runs_v1')]: JSON.stringify([{id: 'b-run'}]),
+      [archiveKeyFor(B, 'medals_v1')]: JSON.stringify([{id: 'b-medal'}]),
+    });
+
+    await wipeAccountStorage(A);
+
+    // A 의 것은 전부 사라진다.
+    expect(await AsyncStorage.getItem('cache_shoes_v1')).toBeNull();
+    expect(await AsyncStorage.getItem('cache_runs_v1')).toBeNull();
+    expect(await AsyncStorage.getItem(archiveKeyFor(A, 'cache_runs_v1'))).toBeNull();
+
+    // B 의 보관함은 그대로다 — 이게 이 함수의 존재 이유다.
+    expect(await AsyncStorage.getItem(archiveKeyFor(B, 'cache_runs_v1'))).toBe(
+      JSON.stringify([{id: 'b-run'}]),
+    );
+    expect(await AsyncStorage.getItem(archiveKeyFor(B, 'medals_v1'))).toBe(
+      JSON.stringify([{id: 'b-medal'}]),
+    );
+  });
+
+  test('B 로 로그인하면 남아 있던 기록이 실제로 돌아온다(사용자 관점 계약)', async () => {
+    await AsyncStorage.setMany({
+      cache_runs_v1: JSON.stringify([{id: 'a-run'}]),
+      cache_owner_uid: A,
+      [archiveKeyFor(B, 'cache_runs_v1')]: JSON.stringify([{id: 'b-run'}]),
+    });
+
+    await wipeAccountStorage(A);
+    await reconcileAccountStorage(B);
+
+    expect(JSON.parse((await AsyncStorage.getItem('cache_runs_v1')) as string)).toEqual([
+      {id: 'b-run'},
+    ]);
+  });
+
+  test('uid 를 모르면 보관함은 하나도 건드리지 않는다(안전한 쪽)', async () => {
+    await AsyncStorage.setMany({
+      cache_runs_v1: 'x',
+      [archiveKeyFor(A, 'cache_runs_v1')]: 'a',
+      [archiveKeyFor(B, 'cache_runs_v1')]: 'b',
+    });
+
+    await wipeAccountStorage('');
+
+    expect(await AsyncStorage.getItem('cache_runs_v1')).toBeNull();
+    expect(await AsyncStorage.getItem(archiveKeyFor(A, 'cache_runs_v1'))).toBe('a');
+    expect(await AsyncStorage.getItem(archiveKeyFor(B, 'cache_runs_v1'))).toBe('b');
   });
 });

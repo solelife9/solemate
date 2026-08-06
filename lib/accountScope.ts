@@ -284,3 +284,34 @@ export async function reconcileAccountStorage(uid: string): Promise<ReconcileOut
   await AsyncStorage.setItem(CACHE_OWNER_KEY, uid);
   return 'switched';
 }
+
+/**
+ * **탈퇴한 계정의 로컬 데이터만 지운다.** 같은 기기를 쓰는 다른 계정의 보관함은 남긴다.
+ *
+ * 왜 필요한가(2026-08-07 감사): 탈퇴 경로가 `AsyncStorage.clear()` 를 불렀다. 그건
+ * 보관함(`acct_<uid>__*`)까지 통째로 날린다 — 가족이 한 폰을 쓰다 A 가 탈퇴하면
+ * **B 의 미동기 로컬 기록이 함께 사라진다.** B 는 탈퇴한 적이 없고, 클라우드에 아직
+ * 올라가지 않은 기록이었다면 되돌릴 방법이 없다(Iron Law: 사용자 데이터 파괴 금지).
+ *
+ * 탈퇴는 '사용자가 명시적으로 요청한 파기'라 자기 데이터를 지우는 건 정당하다.
+ * 그 정당성이 **남의 데이터까지 늘어나지 않게** 범위를 좁히는 것이 이 함수다.
+ *
+ * 지우는 것: 현재 사용 중인 모든 키 + 떠나는 계정 자신의 보관함.
+ * 남기는 것: **다른 uid** 의 보관함만.
+ *
+ * @param uid 탈퇴하는 계정. 비어 있으면 보관함을 제외한 나머지를 지운다(안전한 쪽).
+ */
+export async function wipeAccountStorage(uid: string): Promise<void> {
+  const keys = await AsyncStorage.getAllKeys();
+  const doomed = keys.filter(k => {
+    // 소유자 표시는 남긴다. 이건 데이터가 아니라 **"지금 저장소가 누구 것인가"**라,
+    // 지워 버리면 다음 로그인의 정합이 'adopted'(=지금 상태를 그 계정 것으로 인정)로
+    // 빠져 **남아 있는 보관함을 복원하지 못한다.** 표시를 남겨 두면 다음 계정은
+    // 'switched' 로 들어와 자기 보관함을 정상적으로 꺼내 온다.
+    if (k === CACHE_OWNER_KEY) return false;
+    const parsed = parseArchiveKey(k);
+    if (!parsed) return true;            // 보관함이 아닌 것 = 지금 쓰는 데이터 → 지운다
+    return !!uid && parsed.uid === uid;  // 내 보관함이면 지우고, 남의 것이면 남긴다
+  });
+  if (doomed.length) await AsyncStorage.removeMany(doomed);
+}
