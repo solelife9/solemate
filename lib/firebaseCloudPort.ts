@@ -37,6 +37,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { BackupPayload } from './backup';
 import { observeServerClock } from './clockOffset';
 import type { CloudPort, CloudProvider, CloudUser } from './cloudPort';
+import { RECORD_COLLECTIONS } from './recordSync';
 import { withTimeout, isTimeoutError } from './withTimeout';
 
 /**
@@ -53,6 +54,28 @@ export const CLOUD_PURGE_TIMEOUT_MS = 15000;
 
 /** 사용자별 백업 문서가 사는 컬렉션. 문서 id 는 auth uid. */
 const BACKUPS_COLLECTION = 'userBackups';
+
+/**
+ * `userBackups/{uid}` **아래에 사는 하위 컬렉션 전부.**
+ *
+ * Firestore 는 부모 문서를 지워도 하위 컬렉션을 지우지 않는다. 그래서 탈퇴가 이 목록을
+ * 순회하지 않으면 데이터가 남고, **계정이 사라진 뒤라 본인조차 지울 수 없다.**
+ *
+ * 실제로 그렇게 됐었다(2026-08-07 감사): 2026-08-01 에 recordSync 가 runs·shoes·medals
+ * 미러를 새로 만들었는데 탈퇴 경로가 따라가지 않아, 탈퇴한 사용자의 러닝 기록 전량과
+ * 신발·메달이 Firestore 에 영구 잔존했다. 인앱 고지("모든 데이터가 영구 삭제")와 처리방침
+ * 양쪽과 어긋나는 상태였고 되돌릴 방법이 없었다.
+ *
+ * **그래서 목록을 손으로 적지 않고 RECORD_COLLECTIONS 에서 파생시킨다** — 새 레코드
+ * 종류가 늘면 탈퇴가 자동으로 따라간다. `runDetails` 만 별도인데, 이건 레코드 미러가 아니라
+ * 런 상세 사이드카라 RECORD_COLLECTIONS 에 없기 때문이다.
+ * 회귀 가드: __tests__/lib/firebaseCloudPort.test.ts
+ */
+const RUN_DETAILS_SUBCOLLECTION = 'runDetails';
+const USER_SUBCOLLECTIONS: readonly string[] = [
+  RUN_DETAILS_SUBCOLLECTION,
+  ...Object.values(RECORD_COLLECTIONS),
+];
 
 /** 월간 랭킹 엔트리가 사는 컬렉션(`leaderboards/{YYYY-MM}/entries/{uid}`). */
 const LEADERBOARDS_COLLECTION = 'leaderboards';
@@ -314,17 +337,23 @@ export function createFirebaseCloudPort(
       //    (개인정보 파기 의무 위반, 되돌릴 방법 없음). 그래서 초과면 여기서 중단한다 —
       //    사용자는 연결을 확인하고 다시 시도하면 되고, 이 단계는 멱등이라 재시도가 안전하다.
       const purgeUserData = async () => {
-        try {
-          // 하위 컬렉션(runDetails)은 부모 문서 삭제로 지워지지 않는다 — 탈퇴 완전삭제 요건상
-          // 명시적으로 순회 삭제(실패해도 계속 — 계정/백업 본체 삭제가 우선).
-          const details = await getDocs(collection(getFirestore(), BACKUPS_COLLECTION, user.uid, 'runDetails'));
-          for (const d of details.docs ?? []) {
-            try { await deleteDoc(runDetailRef(user.uid, d.id)); } catch { /* 개별 실패 무시 */ }
-          }
-        } catch { /* 목록 실패 — 본체 삭제 계속 */ }
+        // 하위 컬렉션은 부모 문서 삭제로 지워지지 않는다 — 탈퇴 완전삭제 요건상 **전부**
+        // 명시적으로 순회 삭제한다(실패해도 계속 — 계정/백업 본체 삭제가 우선).
+        // 목록은 USER_SUBCOLLECTIONS 한 곳에서 온다. 예전엔 여기 'runDetails' 가 손으로
+        // 박혀 있었고, 나중에 생긴 runs·shoes·medals 미러가 조용히 빠져 있었다.
+        const db = getFirestore();
+        for (const sub of USER_SUBCOLLECTIONS) {
+          try {
+            const snap = await getDocs(collection(db, BACKUPS_COLLECTION, user.uid, sub));
+            for (const d of snap.docs ?? []) {
+              try { await deleteDoc(doc(db, BACKUPS_COLLECTION, user.uid, sub, d.id)); }
+              catch { /* 개별 실패 무시 */ }
+            }
+          } catch { /* 목록 실패 — 다음 하위 컬렉션과 본체 삭제를 막지 않는다 */ }
+        }
         await deleteDoc(backupRef(user.uid));
         // 공개 프로필도 함께 내린다 — 탈퇴했는데 남들에게 계속 보이면 안 된다.
-        try { await deleteDoc(doc(getFirestore(), 'profiles', user.uid)); } catch { /* 없으면 no-op */ }
+        try { await deleteDoc(doc(db, 'profiles', user.uid)); } catch { /* 없으면 no-op */ }
       };
       try {
         await withTimeout(purgeUserData(), CLOUD_PURGE_TIMEOUT_MS, '클라우드 데이터 삭제');
@@ -389,7 +418,20 @@ export function createFirebaseCloudPort(
     /**
      * 레코드 하위 문서 일괄 기록(설계 1단계 — 이중 쓰기).
      * 각 문서에 `updatedAt: serverTimestamp()` 를 박아 델타 조회의 커서를 만든다.
-     * merge:true 로 upsert 한다 — 부분 갱신이 안전하고, 없던 문서는 새로 생긴다.
+     *
+     * **살아있는 레코드는 merge:true 로 upsert** 한다 — 부분 갱신이 안전하고, 없던 문서는
+     * 새로 생긴다.
+     *
+     * **묘비(`deleted:true`)는 merge 없이 통째로 덮어쓴다.** 이게 없으면 껍데기화가
+     * 무력해진다: `merge:true` 는 페이로드에 없는 필드를 지우지 않으므로, 지운 러닝의
+     * 문서가 km·날짜·메모·출발지역·심박을 전부 간직한 채 `deleted:true` 만 얹은 상태로
+     * 남았다(2026-08-07 감사). 90일 뒤 묘비가 덩어리에서 빠져도 이 하위 문서는 본문 그대로
+     * 영구 고아로 남는다.
+     *
+     * lib/recordSync.ts 의 `toRecordDoc` 이 묘비를 껍데기로 만드는 로직에는 전용 테스트가
+     * 있었고 **통과하고 있었다** — 순수 함수는 옳은데 I/O 계층이 그 의도를 지우고 있었다.
+     * 이 저장소가 2026-07-26 에 한 번 당한 것과 같은 형태(테스트가 Firestore 를 목으로
+     * 대체해 배선을 못 봄)라, 회귀 가드를 I/O 계층 계약으로 따로 뒀다.
      */
     async pushRecords(
       collectionName: string,
@@ -401,11 +443,13 @@ export function createFirebaseCloudPort(
       const batch = writeBatch(db);
       for (const d of docs) {
         if (!d?.id) continue;
-        batch.set(
-          doc(db, BACKUPS_COLLECTION, uid, collectionName, d.id),
-          {...d.data, updatedAt: serverTimestamp()},
-          {merge: true},
-        );
+        const ref = doc(db, BACKUPS_COLLECTION, uid, collectionName, d.id);
+        const body = {...d.data, updatedAt: serverTimestamp()};
+        if (d.data?.deleted === true) {
+          batch.set(ref, body); // merge 없음 = 본문을 껍데기로 교체
+        } else {
+          batch.set(ref, body, {merge: true});
+        }
       }
       await batch.commit();
     },

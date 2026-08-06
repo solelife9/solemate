@@ -434,9 +434,14 @@ jest.mock('@react-native-firebase/firestore', () => {
     );
   const runQuery = q => {
     let rows = docsUnder(q.__collection);
-    const wheres = q.__constraints.filter(c => c.__type === 'where');
+    // 제약이 없는 **일반 컬렉션 참조**도 받는다(2026-08-07). 실제 SDK 의 getDocs 는
+    // CollectionReference 를 그대로 받는데, 예전 목은 q.__constraints 를 무조건 읽어
+    // TypeError 를 던졌다. 호출부가 그걸 catch 로 삼키고 있었던 탓에
+    // deleteAccount 의 runDetails 순회 삭제는 **테스트에서 한 번도 실행된 적이 없었다.**
+    const constraints = q.__constraints || [];
+    const wheres = constraints.filter(c => c.__type === 'where');
     rows = applyWheres(rows, wheres);
-    const ob = q.__constraints.find(c => c.__type === 'orderBy');
+    const ob = constraints.find(c => c.__type === 'orderBy');
     if (ob) {
       rows.sort((a, b) => {
         const av = Number(a.data?.[ob.field]) || 0;
@@ -444,7 +449,7 @@ jest.mock('@react-native-firebase/firestore', () => {
         return ob.dir === 'asc' ? av - bv : bv - av;
       });
     }
-    const lim = q.__constraints.find(c => c.__type === 'limit');
+    const lim = constraints.find(c => c.__type === 'limit');
     if (lim) rows = rows.slice(0, lim.n);
     return rows;
   };
@@ -479,16 +484,22 @@ jest.mock('@react-native-firebase/firestore', () => {
     writeBatch: jest.fn(() => {
       const ops = [];
       const b = {
-        set: (ref, data) => { ops.push({t: 'set', ref, data}); return b; },
+        set: (ref, data, opts) => { ops.push({t: 'set', ref, data, opts}); return b; },
         update: (ref, data) => { ops.push({t: 'update', ref, data}); return b; },
         delete: ref => { ops.push({t: 'delete', ref}); return b; },
         commit: () => {
           for (const op of ops) {
             if (op.t === 'delete') { store.delete(op.ref.__path); continue; }
             writes += 1;
-            const prev = op.t === 'update' ? store.get(op.ref.__path) || {} : {};
-            // merge:true 를 흉내낸다 — set 도 기존 값 위에 얹는다(포트가 merge 로 쓴다).
-            const base = op.t === 'set' ? store.get(op.ref.__path) || {} : prev;
+            // **merge 옵션을 실제로 존중한다**(2026-08-07). 예전 목은 set 을 무조건 병합해
+            // 실제 SDK 와 다르게 굴었고, 그 바람에 "묘비는 껍데기만 남긴다"를 단언하는
+            // 테스트가 merge:true 버그가 있는 채로도 통과했다. 목이 실제보다 관대하면
+            // 그 테스트는 아무것도 지키지 못한다.
+            //   · update            → 항상 기존 위에 얹는다
+            //   · set + {merge:true}→ 기존 위에 얹는다
+            //   · set (옵션 없음)   → 문서를 통째로 교체한다
+            const merges = op.t === 'update' || op.opts?.merge === true;
+            const base = merges ? store.get(op.ref.__path) || {} : {};
             store.set(op.ref.__path, {...base, ...JSON.parse(JSON.stringify(op.data))});
           }
           return Promise.resolve();
@@ -549,6 +560,10 @@ jest.mock('@react-native-firebase/firestore', () => {
     },
     /** 지금까지 발생한 문서 쓰기 횟수(setDoc + 트랜잭션 set). __reset 이 0으로 되돌린다. */
     __writeCount: () => writes,
+    /** 저장소에 살아있는 문서 경로 전부("collection/id" 형태). 하위 컬렉션 잔존 검사용. */
+    __keys: () => Array.from(store.keys()),
+    /** 경로 하나의 현재 내용(없으면 undefined). 묘비 껍데기화 같은 문서 모양 검사용. */
+    __get: path => store.get(path),
   };
 });
 

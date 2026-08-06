@@ -193,6 +193,90 @@ describe('firebaseCloudPort (Firebase 클라우드 포트)', () => {
     await expect(port.deleteAccount()).rejects.toThrow(/계정/);
   });
 
+  // 레코드 미러 API 는 CloudPort 에서 선택(optional)이다. 옵셔널 호출(`?.()`)로 쓰면
+  // 메서드가 사라진 날 테스트가 조용히 통과해 버리므로, 있는지 먼저 못 박고 꺼내 쓴다.
+  const recordApi = (port: ReturnType<typeof createFirebaseCloudPort>) => {
+    const {pushRecords, pushRunDetail} = port;
+    if (!pushRecords || !pushRunDetail) {
+      throw new Error('firebaseCloudPort 에 pushRecords/pushRunDetail 이 없다');
+    }
+    return {pushRecords, pushRunDetail};
+  };
+
+  // ── 탈퇴가 하위 컬렉션을 전부 지운다 (2026-08-07 감사) ──────────────────────
+  // 2026-08-01 에 recordSync 가 runs·shoes·medals 미러를 만들었는데 탈퇴 경로가 따라가지
+  // 않았다. Firestore 는 부모 문서를 지워도 하위 컬렉션을 지우지 않으므로, 탈퇴한 사용자의
+  // 러닝 기록 전량이 남고 **계정이 사라져 본인조차 지울 수 없는** 상태가 됐다.
+  // 인앱 고지("모든 데이터가 영구 삭제")·처리방침 양쪽과 어긋났고 되돌릴 수 없다.
+  test('deleteAccount 는 runDetails·runs·shoes·medals 하위 문서를 남기지 않는다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+    const uid = 'anon-test-uid';
+
+    const {pushRecords, pushRunDetail} = recordApi(port);
+    await pushRunDetail('run-1', {route: [[37, 127]]});
+    await pushRecords('runs', [{id: 'run-1', data: {km: 5.4, memo: '한강'}}]);
+    await pushRecords('shoes', [{id: 'shoe-1', data: {name: 'Pegasus 41'}}]);
+    await pushRecords('medals', [{id: 'medal-1', data: {raceName: '서울마라톤', bib: '12345'}}]);
+
+    const under = (sub: string) =>
+      (firestoreMock as unknown as {__keys: () => string[]})
+        .__keys()
+        .filter(k => k.startsWith(`userBackups/${uid}/${sub}/`));
+
+    // 전제: 넷 다 실제로 올라가 있어야 이 테스트가 의미를 갖는다.
+    for (const sub of ['runDetails', 'runs', 'shoes', 'medals']) {
+      expect(under(sub).length).toBeGreaterThan(0);
+    }
+
+    await port.deleteAccount();
+
+    for (const sub of ['runDetails', 'runs', 'shoes', 'medals']) {
+      expect(under(sub)).toEqual([]);
+    }
+  });
+
+  // ── 묘비는 본문을 남기지 않는다 — I/O 계층 계약 (2026-08-07 감사) ───────────
+  // recordSync.toRecordDoc 이 묘비를 껍데기로 만드는 로직에는 전용 테스트가 있었고
+  // **통과하고 있었다.** 그런데 pushRecords 가 {merge:true} 로 써서 없는 필드를 지우지
+  // 않았고, 지운 러닝의 문서가 km·메모·심박을 그대로 간직한 채 deleted:true 만 얹혔다.
+  // 순수 함수 테스트로는 절대 잡히지 않는 자리라 계약을 여기에 못 박는다.
+  test('묘비 쓰기는 기존 본문을 덮어쓴다 — km·메모가 남지 않는다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+    const {pushRecords} = recordApi(port);
+    const key = 'userBackups/anon-test-uid/runs/run-1';
+    const read = () => (firestoreMock as unknown as {__get: (k: string) => any}).__get(key);
+
+    await pushRecords('runs', [
+      {id: 'run-1', data: {km: 5.4, memo: '한강 야간', location: '여의도', heart_rate: 152}},
+    ]);
+    expect(read()).toMatchObject({km: 5.4, memo: '한강 야간'});
+
+    // recordSync.toRecordDoc 이 만드는 묘비의 실제 모양.
+    await pushRecords('runs', [{id: 'run-1', data: {deleted: true, editedAt: 123}}]);
+
+    const doc = read();
+    expect(doc.deleted).toBe(true);
+    for (const gone of ['km', 'memo', 'location', 'heart_rate']) {
+      expect(doc[gone]).toBeUndefined();
+    }
+  });
+
+  // 반대 방향도 지킨다 — 살아있는 레코드까지 통째로 덮어쓰면 부분 갱신이 깨진다.
+  test('살아있는 레코드는 병합으로 upsert 된다 — 부분 갱신이 필드를 지우지 않는다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+    const {pushRecords} = recordApi(port);
+    const read = () =>
+      (firestoreMock as unknown as {__get: (k: string) => any}).__get('userBackups/anon-test-uid/runs/run-2');
+
+    await pushRecords('runs', [{id: 'run-2', data: {km: 10, memo: '롱런'}}]);
+    await pushRecords('runs', [{id: 'run-2', data: {km: 10.2}}]);
+
+    expect(read()).toMatchObject({km: 10.2, memo: '롱런'});
+  });
+
   // ── 탈퇴 시 월간 랭킹 엔트리 파기 (2026-07-29 감사) ─────────────────────────
   // 이전에는 leaderboards 엔트리가 탈퇴 대상에서 빠져 있었고, 규칙(`allow delete: if false`)
   // 이 삭제 자체를 막아 닉네임·월간 운동량이 탈퇴 후에도 영구히 남았다.
