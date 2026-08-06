@@ -114,11 +114,20 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     const t0=new Date();
     let fired=false;
     let alive=true;
+    // 일시정지 시작 시점의 누적 걸음 — 안드로이드는 이 기준으로 증가분을 센다.
+    // (2026-08-07) 예전엔 여기서도 getStepCountAsync 를 불렀는데, 안드로이드에서는 그게
+    // **항상 NotSupportedException 을 던진다.** 아래 catch 가 그걸 삼켜서 이 넛지는
+    // 안드로이드에서 한 번도 뜬 적이 없다. 커밋 1aeebe4 가 케이던스 쪽 호출부는 구독으로
+    // 바꿨지만 **두 호출부 중 이쪽을 놓쳤다.**
+    // 러닝 중에는 stepsRef 를 구독이 이미 채우고 있으므로 그 값을 그대로 쓴다.
+    const baseSteps=stepsRef.current;
     const iv=setInterval(()=>{
       void (async()=>{
         try{
-          const r=await Pedometer.getStepCountAsync(t0,new Date());
-          if(alive&&!fired&&(r?.steps??0)>=PAUSE_MOVE_NUDGE_STEPS){
+          const moved=Platform.OS==='android'
+            ? Math.max(0,stepsRef.current-baseSteps)
+            : ((await Pedometer.getStepCountAsync(t0,new Date()))?.steps??0);
+          if(alive&&!fired&&moved>=PAUSE_MOVE_NUDGE_STEPS){
             fired=true;
             hapticWarning(); // 주의 환기 1회 — 이후엔 배너가 상태를 계속 말한다(반복 진동 금지)
             setPauseMoveNudge(true);
@@ -713,7 +722,25 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
             // 걸음 정지 게이트 공급 — 일시정지 중에도 계속 먹인다. 끊으면 오토포즈가
             // 노이즈로 잠깐 풀리는 창에서 표본이 스테일해져 게이트가 꺼진 채 팬텀 거리가
             // 새던 바로 그 구간을 놓친다(도심 신호대기 팬텀 차단, 2026-07-11).
-            runTracker.feedSteps(steps,Date.now());
+            //
+            // ⚠️ **안드로이드에서 앱이 활성이 아니면 먹이지 않는다**(2026-08-07).
+            // watchStepCount 구독은 걸음 '이벤트'로만 발화하는데, 화면이 꺼지면
+            // expo-sensors 가 onHostPause 에서 구독을 멈춘다(SensorProxy). 그런데 이
+            // 폴링은 계속 돌아서 **얼어붙은 누적값에 현재 시각을 찍어** 먹였다.
+            // 그러면 게이트가 보는 신호가 "표본은 신선한데 걸음이 안 는다" = 서 있음이 되고,
+            // 12초 뒤 거리 적산이 얼어붙는다. 2분이 지나면 누적 300m 를 넘겨 re-anchor 로
+            // **그 거리가 영구 소실**된다. 조건이 칼만 속도 2.5m/s 미만이라
+            // **6'40"/km 보다 느린 러너 전부**가 대상이었다.
+            //
+            // 먹이지 않으면 표본이 스테일해져 게이트가 스스로 풀린다 — 안전한 방향이다.
+            // 주머니 러닝은 '달리는 중'이 전제이고, 그 구간의 팬텀 방어는 GPS 필터
+            // (acceptSegment·칼만)가 이미 한다. 복귀하면 누적값이 실제로 늘어 있으므로
+            // feedSteps 가 lastStepIncreaseMs 를 갱신하고 게이트는 정상 복귀한다.
+            //
+            // iOS 는 그대로다 — getStepCountAsync 가 구간 조회라 백그라운드에서도 진짜
+            // 최신값을 돌려준다(신선도가 거짓말이 되지 않는다).
+            const stepSignalTrustworthy=Platform.OS!=='android'||AppState.currentState==='active';
+            if(stepSignalTrustworthy) runTracker.feedSteps(steps,Date.now());
             if(runTracker.pausedFlag())return; // 케이던스 표시 계산만 일시정지 중 생략(기존 동작)
             const c=feedStepCount(cadenceState.current,steps,Date.now());
             cadenceState.current=c.state;
