@@ -56,14 +56,39 @@ export function initElevState(): ElevState {
  *
  * 측정 불가 표본(NaN/null)은 건너뛴다 — 0 으로 치면 해수면으로 읽혀 가짜 오르내림이 생긴다.
  *
- * ⚠️ 이 경로는 **시각이 없어 상승률 상한이 적용되지 않는다.** 워치가 표본 시각을 함께
- * 보내게 되면 그때 상한도 걸 수 있다(지금은 임계 히스테리시스만 작동).
+ * ── 상승률 상한 (2026-08-07) ────────────────────────────────────────────────
+ * 예전엔 이 경로에 **상한이 아예 없었다.** 워치가 표본 시각을 안 보내기 때문인데,
+ * 그 결과 임계 히스테리시스(3m)만 남아 잡음이 그대로 '오늘의 등반'이 됐다.
+ * 400표본 시뮬레이션에서 평지가 최대 **1,843m** 로 나온다 — 2026-08-05 아이폰에서
+ * 실제로 터진 1,814m 와 같은 크기다. 그쪽(GPS 경로)은 고쳤는데 워치 경로는 그대로였다.
+ *
+ * 표본 시각은 없지만 **러닝 총 시간은 안다.** 워치는 경로를 러닝 전체에 걸쳐 균등
+ * 다운샘플하므로(watchSession 이 400개로 자른다), 평균 간격 = durationS/(n-1) 로
+ * 시각을 재구성해 상한을 건다.
+ *
+ * ⚠️ 이건 **근사다.** 표본이 실제로 균등하지 않으면 간격이 틀린다. 그래도 상한이
+ * 없는 것보다 훨씬 낫다 — 틀리는 방향이 '조금 느슨하거나 조금 빡빡한 상한'이고,
+ * 없을 때는 '잡음 전량 누적'이다. durationS 를 모르면(구버전 페이로드) 예전처럼
+ * 히스테리시스만 적용한다.
+ *
+ * @param durationS 러닝 총 이동 시간(초). 주면 상승률 상한이 함께 걸린다.
  */
-export function elevationGainFrom(samples: readonly (number | null | undefined)[]): number {
+export function elevationGainFrom(
+  samples: readonly (number | null | undefined)[],
+  durationS?: number,
+): number {
+  const list = samples || [];
+  // 균등 간격 가정으로 표본 시각을 재구성한다. 표본이 2개 미만이거나 시간이 없으면 0.
+  const stepMs =
+    typeof durationS === 'number' && durationS > 0 && list.length > 1
+      ? (durationS * 1000) / (list.length - 1)
+      : 0;
   let st = initElevState();
-  for (const a of samples || []) {
+  let i = -1;
+  for (const a of list) {
+    i += 1;
     if (a == null || !Number.isFinite(a)) continue;
-    st = feedAltitude(st, a);
+    st = feedAltitude(st, a, stepMs > 0 ? i * stepMs : undefined);
   }
   return Math.round(st.gain);
 }

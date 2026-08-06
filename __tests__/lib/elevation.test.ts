@@ -1,4 +1,4 @@
-import {initElevState, feedAltitude, ELEV_THRESHOLD_M} from '../../lib/elevation';
+import {initElevState, feedAltitude, elevationGainFrom, ELEV_THRESHOLD_M} from '../../lib/elevation';
 
 describe('elevation gain accumulation', () => {
   it('첫 표본은 기준만 설정하고 누적은 0', () => {
@@ -89,5 +89,49 @@ describe('평지에서 고도가 쌓이지 않는다', () => {
     let st = initElevState();
     for (let i = 0; i <= 600; i++) st = feedAltitude(st, 100 - (i / 600) * 100, i * 1000);
     expect(st.gain).toBeLessThan(5);
+  });
+});
+
+// ============================================================================
+// 워치 경로 상승률 상한 (2026-08-07 감사)
+//
+// elevationGainFrom 은 워치가 보낸 고도 원자료를 폰이 계산하는 유일한 경로인데,
+// **상한이 아예 없었다**(표본 시각이 없어서). 임계 히스테리시스(3m)만 남아 잡음이
+// 그대로 누적됐고, 400표본 시뮬레이션에서 평지가 최대 1,843m 로 나온다 —
+// 2026-08-05 아이폰에서 실제로 터진 1,814m 와 같은 크기다.
+// GPS 경로는 4f39cb9 로 고쳤지만 워치 경로는 그대로였다.
+//
+// 표본 시각은 없지만 러닝 총 시간은 안다. 균등 다운샘플이므로 평균 간격으로
+// 재구성해 상한을 건다(근사임을 함수 주석에 명시).
+// ============================================================================
+describe('워치 고도 — 상승률 상한', () => {
+  /** 평지 위 잡음: 진폭 amp(m), period 표본마다 오르내림. */
+  const noisyFlat = (n: number, amp: number, period: number) =>
+    Array.from({length: n}, (_, i) => 100 + (Math.floor(i / period) % 2 ? amp : 0));
+
+  test('평지 잡음이 등반으로 둔갑하지 않는다 (감사 재현: 400표본)', () => {
+    const samples = noisyFlat(400, 8, 3);
+    const durationS = 30 * 60; // 30분 러닝
+
+    // 시간을 안 주면 예전 동작 — 잡음이 그대로 쌓인다(그래서 상한이 필요했다).
+    expect(elevationGainFrom(samples)).toBeGreaterThan(500);
+
+    // 시간을 주면 사람이 낼 수 없는 상승률이 걸러진다.
+    expect(elevationGainFrom(samples, durationS)).toBeLessThan(100);
+  });
+
+  test('진짜 언덕은 자르지 않는다 — 상한이 정상 러닝을 깎으면 그게 더 나쁘다', () => {
+    // 30분에 200m 를 꾸준히 오르는 러닝(≈6.7 m/분 — 사람의 범위 안).
+    const n = 400;
+    const climb = Array.from({length: n}, (_, i) => 100 + (200 * i) / (n - 1));
+    const gain = elevationGainFrom(climb, 30 * 60);
+    expect(gain).toBeGreaterThan(180);
+    expect(gain).toBeLessThanOrEqual(200);
+  });
+
+  test('표본이 부족하거나 시간이 없으면 히스테리시스만 적용한다(구버전 페이로드)', () => {
+    expect(elevationGainFrom([100, 110], 0)).toBe(10);
+    expect(elevationGainFrom([100, 110])).toBe(10);
+    expect(elevationGainFrom([])).toBe(0);
   });
 });

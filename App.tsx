@@ -1990,7 +1990,10 @@ function Main(){
       // (구버전 elevGainM)은 0.5m 증분을 다 더해 평지에서도 부풀었다 — 실측 274m(폰 33m).
       // 구버전 워치는 routeAlt 가 없으므로 그때만 elevGainM 을 폴백으로 받는다.
       const elevM=Array.isArray(p.routeAlt)&&p.routeAlt.length>0
-        ? elevationGainFrom(p.routeAlt)
+        // durationS 를 함께 넘겨 상승률 상한이 걸리게 한다(2026-08-07). 워치는 표본
+        // 시각을 안 보내지만 균등 다운샘플이라 평균 간격으로 재구성할 수 있다 —
+        // 없으면 잡음이 그대로 누적돼 평지에서 1,800m 대가 나온다.
+        ? elevationGainFrom(p.routeAlt,p.durationS)
         : Math.round(p.elevGainM);
       // ── 중복 방어: 같은 러닝을 폰이 이미 저장했는가 ──────────────────────────
       // runId 중복 방어(위)는 '같은 워치 런이 두 번 오는 것'만 막는다. 폰과 워치를 둘 다
