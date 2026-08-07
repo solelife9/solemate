@@ -19,6 +19,20 @@ Expo 모듈 **~56** · Node ≥22.11. 저장: AsyncStorage(로컬-퍼스트) + *
 - 이 줄을 고칠 땐 `package.json` 을 열어 대조한다 — 실제와 어긋난 스택 표기가 오래 방치된 적이 있다
   (2026-07-29 재감사에서 RN·TS 버전과 React Navigation 표기가 전부 틀린 것으로 확인).
 
+## 출시 방침 (2026-08-07 민우님 확정 — 최상위)
+- **iOS·Android 동시 출시.** iOS 단독 선출시 방침은 폐기.
+- **"출시 후"는 없다.** 오래 걸려도 **전부 완성해서** 낸다. 감사에서 나온 항목을
+  `MINOR`·`NITPICK`이라는 이유로 출시 후로 미루지 않는다 — **미룰 항목을 새로 만들지 마라.**
+  기존 문서의 "출시 후에 해도 되는 것" 목록은 전부 출시 전 범위로 승격됐다.
+- **단 하나의 예외**: *사용자가 있어야 존재하는 데이터*는 출시 전에 만들 수 없다
+  (온보딩 이탈률·D1/D7 리텐션·실제 문의 상위 10개). 이건 미루는 게 아니라 불가능한 것이고,
+  그 셋 외에 "출시 후"로 분류되는 항목은 없다.
+- **Wear OS 앱도 범위다**(2026-08-07 확정). iOS 는 Apple Watch 단독 러닝이 되는데 Android 는
+  워치 앱 자체가 없다 — '완벽하게'를 **플랫폼 동등**까지로 본다. watchOS 앱과 **코드 재사용 0**
+  (Compose for Wear · Health Services · Wearable Data Layer = 전부 다른 API)이고,
+  **Wear OS 실기기가 없으면 착수 불가**다(에뮬레이터로는 GPS·심박·전력을 판정할 수 없다).
+- 판정·잔여 목록의 정본 = `docs/audit/FINAL-readiness.md` · `docs/TODO.md` · `docs/release-checklist.md`.
+
 ## 작업 모드 — 그냥 Claude (Tenet 제거됨 2026-07-09)
 이 프로젝트는 **터미널 Claude Code로 직접** 개발한다. 과거 Tenet MCP 방법론 하니스는 제거했다 — 매 변경마다 저널·status·harness·DESIGN 동기화가 따라와 느렸기 때문. (`.mcp.json`에서 tenet 비활성화. `.tenet/` 문서는 삭제하지 않고 **참고 정본**으로 유지.)
 - **작업 루프:** `MISSION.md`·`CLAUDE.md` 읽기 → 짧게 계획 → 승인 → 구현 → `tsc`·`lint`·`test` → 커밋(한국어).
