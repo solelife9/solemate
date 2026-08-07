@@ -1065,3 +1065,56 @@ describe('死구간에서 만보계로 메운 거리에는 시간이 따라붙�
     expect(t.getElapsed() - beforeStall).toBeLessThan(10);
   });
 });
+
+// ============================================================================
+// 수직 정확도 게이트 (2026-08-07 감사)
+//
+// 엔진은 여태 coords.altitude 를 그대로 먹었고 **수직 정확도는 한 번도 보지 않았다**
+// (RawFix 에 필드조차 없었다). GPS 수직 오차는 보통 수평의 2~3배라, 수평 5m 로 '양호'
+// 판정을 받은 fix 의 고도가 수십 m 씩 틀린다 — 그 값이 상승고도와 GAP 에 들어갔다.
+// 워치 Swift 는 이미 verticalAccuracy > 0 을 보고 있었다. 폰이 더 무신경했다.
+// ============================================================================
+describe('고도 — OS 가 무효라고 표시한 표본은 안 쓴다', () => {
+  const fixAlt = (lat: number, ts: number, altitude: number, altitudeAccuracy: number | null): RawFix => ({
+    coords: {latitude: lat, longitude: LON, accuracy: 5, altitude, altitudeAccuracy},
+    timestamp: ts,
+  });
+
+  test('수직 정확도가 0 이하면 그 고도는 버린다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    let ts = 100000;
+    // 워밍업 3점(유효 고도, 평지)
+    for (let i = 0; i < 3; i++) t.ingestFix(fixAlt(37.5, (ts += 2000), 100, 5));
+    // 이후 '무효' 표시가 붙은 고도가 30m 씩 튄다 — 상승으로 세면 안 된다.
+    for (let i = 0; i < 10; i++) {
+      t.ingestFix(fixAlt(37.5 + (i + 1) * 0.0002, (ts += 3000), 100 + (i % 2 ? 30 : 0), -1));
+    }
+    expect(t.getState().elevGainM).toBe(0);
+  });
+
+  test('정확도가 유효하면 예전처럼 누적한다 — 게이트가 진짜 고도를 막지 않는다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    let ts = 100000;
+    for (let i = 0; i < 3; i++) t.ingestFix(fixAlt(37.5, (ts += 2000), 100, 5));
+    // 3분에 걸쳐 30m 상승(=10 m/분, 사람의 범위) — 그대로 잡혀야 한다.
+    for (let i = 1; i <= 6; i++) {
+      t.ingestFix(fixAlt(37.5 + i * 0.0002, (ts += 30000), 100 + i * 5, 5));
+    }
+    expect(t.getState().elevGainM).toBeGreaterThan(20);
+  });
+
+  test('필드를 아예 안 주는 소스는 예전처럼 통과한다(하위호환)', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    let ts = 100000;
+    const noVa = (lat: number, tsv: number, altitude: number): RawFix => ({
+      coords: {latitude: lat, longitude: LON, accuracy: 5, altitude},
+      timestamp: tsv,
+    });
+    for (let i = 0; i < 3; i++) t.ingestFix(noVa(37.5, (ts += 2000), 100));
+    for (let i = 1; i <= 6; i++) t.ingestFix(noVa(37.5 + i * 0.0002, (ts += 30000), 100 + i * 5));
+    expect(t.getState().elevGainM).toBeGreaterThan(20);
+  });
+});

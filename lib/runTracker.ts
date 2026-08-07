@@ -28,6 +28,34 @@ import {saveSnapshot} from './runPersistence';
 import {recordError} from './crashlytics';
 import {initElevState, feedAltitude, ElevState} from './elevation';
 
+/**
+ * OS 가 **믿을 만하다고 표시한** 고도만 돌려준다(아니면 null).
+ *
+ * 왜 필요한가(2026-08-07 감사): 엔진은 여태 `coords.altitude` 를 그대로 먹었고
+ * **수직 정확도는 한 번도 보지 않았다**(RawFix 에 필드조차 없었다). GPS 수직 오차는
+ * 보통 수평의 2~3배라, 수평 5m 로 '양호' 판정을 받은 fix 의 고도가 수십 m 씩 틀린다.
+ * 그 값이 상승고도·GAP(경사보정페이스)에 그대로 들어갔다.
+ *
+ * 판정 규칙은 **워치 Swift 와 같은 것**을 쓴다(WorkoutManager: `verticalAccuracy > 0`).
+ * iOS CLLocation 규약상 음수/0 은 "이 고도는 무효"라는 뜻이고, 안드로이드도
+ * 제공하지 않으면 null 이다. 폰이 워치보다 덜 조심스러웠던 것을 맞춘다.
+ *
+ * ⚠️ 여기서 **양수 임계값을 새로 만들지 않는다.** "정확도가 N m 보다 나쁘면 버린다"는
+ * 규칙은 그럴듯하지만, 적정 N 은 실기기 원자료 없이는 정할 수 없다. 합성 모델로
+ * 튜닝해 보니 현행 상승률 상한이 잡음 구간에서 **진짜 등반을 과소 보고**하는 정반대
+ * 실패까지 나왔다(모델 의존적이라 채택하지 않음). 그건 실측 항목으로 남긴다.
+ */
+function trustedAltitude(fix: RawFix): number | null {
+  const alt = fix.coords.altitude;
+  if (alt == null || !Number.isFinite(alt)) return null;
+  const va = fix.coords.altitudeAccuracy;
+  // 필드를 안 주는 소스(구 페이로드·백그라운드 경로 일부)는 예전처럼 통과시킨다 —
+  // 없다고 버리면 고도가 통째로 사라진다(회귀).
+  if (va == null) return alt;
+  if (!Number.isFinite(va) || va <= 0) return null;
+  return alt;
+}
+
 // 스냅샷 쓰기 주기(ms) — persist() 주석 참조. 스칼라는 자주, 경로는 드물게.
 // 3000: 구 인터벌과 같은 주기(복구 정확도 불변). 15000: 경로 모양의 최대 손실 구간 —
 // 거리·시간은 스칼라가 3초 주기로 지키므로 이 값이 커져도 기록의 정확도는 그대로다.
@@ -42,7 +70,19 @@ const ROUTE_WRITE_MS = 15000;
  *  altitude(m) is optional — used for elevation-gain accumulation; absent/null
  *  fixes simply don't contribute to elevation. */
 export interface RawFix {
-  coords: {latitude: number; longitude: number; accuracy: number | null; altitude?: number | null; speed?: number | null};
+  coords: {
+    latitude: number;
+    longitude: number;
+    accuracy: number | null;
+    altitude?: number | null;
+    /**
+     * 수직 정확도(m). OS 가 그 고도값을 얼마나 믿는지 스스로 매긴 값이다.
+     * **0 이하/무한/없음 = 그 고도는 무효**라는 뜻(iOS CLLocation 규약).
+     * 여태 이 필드를 읽지 않아 무효 표본이 그대로 상승고도에 들어갔다.
+     */
+    altitudeAccuracy?: number | null;
+    speed?: number | null;
+  };
   timestamp: number;
 }
 
@@ -588,8 +628,8 @@ class RunTracker {
           this.paceTrack.push({d: this.dist, t: tNow});
           // 같은 점의 raw GPS 고도를 GAP 시계열에 적립(고도 없는 fix 는 건너뜀 — 거리 기준
           // 매칭이라 빠져도 인접 구간 경사는 옳게 계산된다).
-          const alt = fix.coords.altitude;
-          if (alt != null && Number.isFinite(alt)) {
+          const alt = trustedAltitude(fix);
+          if (alt != null) {
             this.gapTrack.push({d: this.dist, t: tNow, e: alt});
           }
         }
@@ -606,7 +646,7 @@ class RunTracker {
         // 임계 히스테리시스만 남는다 — 1Hz 잡음이 임계 근처에서 진동하면 올라갈 때마다
         // 적립되고 내려갈 때는 기준만 낮아진다(2026-08-05 실측: 아이폰 5km 에 1,814m).
         // 아래 두 호출도 같은 이유로 ts 를 넘긴다.
-        this.elev = feedAltitude(this.elev, fix.coords.altitude, ts);
+        this.elev = feedAltitude(this.elev, trustedAltitude(fix), ts);
       } else if (idx < WARMUP_FIXES) {
         // warmup: don't count, but advance last-good so the first post-warmup
         // segment isn't a giant settling jump.
@@ -630,7 +670,7 @@ class RunTracker {
         this.lastGood = f;
         this.lastGoodMs = ts;
         this.pts.push(f);
-        this.elev = feedAltitude(this.elev, fix.coords.altitude, ts);
+        this.elev = feedAltitude(this.elev, trustedAltitude(fix), ts);
       }
       // 그 외 거부(정확도/노이즈/속도)는 last-good 보존 — 노이즈 fix 를 건너뛰고 다음 양호
       // fix 와 직접 잇기 위함(짧은 노이즈는 cap 미만이라 위 re-anchor 분기에 안 들어온다).
@@ -642,7 +682,7 @@ class RunTracker {
       this.lastGoodMs = ts;
       this.pts.push(f);
       // 첫 채택 지점의 고도를 기준으로 설정(누적 0에서 시작).
-      this.elev = feedAltitude(this.elev, fix.coords.altitude, ts);
+      this.elev = feedAltitude(this.elev, trustedAltitude(fix), ts);
     }
 
     this.persist();

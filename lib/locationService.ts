@@ -56,6 +56,12 @@ export function toRawFix(loc: Location.LocationObject): RawFix {
       longitude: loc.coords.longitude,
       accuracy: loc.coords.accuracy ?? null,
       altitude: loc.coords.altitude ?? null,
+      // 수직 정확도(m). 여태 **버리고 있었다**(2026-08-07 감사) — 엔진은 수평 정확도만
+      // 보고 고도는 그대로 먹였다. GPS 수직 오차는 보통 수평의 2~3배라, 수평 5m 인
+      // fix 의 고도가 40m 씩 틀리는 일이 흔하다. 워치 Swift 는 이미 이걸 보고 있었다
+      // (WorkoutManager: verticalAccuracy > 0 인 표본만 고도로 쓴다) — 폰이 워치보다
+      // 덜 조심스러웠다.
+      altitudeAccuracy: loc.coords.altitudeAccuracy ?? null,
       // OS doppler 속도(m/s). 무효 시 expo 가 -1/null — 엔진이 표시 전용 현재-페이스 보강에만
       // 쓰고 임계로 거른다(거리 누적과 무관). 백그라운드 task 경로도 동일 변환을 거친다.
       speed: loc.coords.speed ?? null,
