@@ -1238,10 +1238,22 @@ function Main(){
   //   1) 사이드키(route_/time_) 영속 + 캐시에 즉시 durable 기록(크래시-세이프티) — 네트워크 무관.
   //   2) 낙관적 setRuns. 영속/동기는 부팅캐시 + cloudSync(Firestore)가 담당한다.
   // localId(genRunId)가 런의 영구 id다 — 서버 재키잉이 없으므로 머지 키가 안정적이다.
-  async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number,elevationM?:number,calories?:number,opts?:{startMs?:number}){
+  async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number,elevationM?:number,calories?:number,opts?:{startMs?:number;id?:string}){
     const timeStr=nowTimeLabel();
     const stampedAt=syncNowMs(); // AUDIT 3 D-2 — 서버 보정 시계(병합 LWW 기준)
-    const localId=genRunId(stampedAt);
+    // ── 저장은 멱등해야 한다 (2026-08-07 감사) ─────────────────────────────
+    // 예전엔 저장하는 순간 새 id 를 만들었다. 그래서 같은 러닝이 두 번 저장되는 경로가
+    // 열려 있었다: ① 저장 실패 재시도('저장하기')가 이미 성공한 addRun 을 다시 부른다
+    // ② addRun 과 clearSnapshot 사이에서 크래시 → 부팅 복구가 같은 러닝을 또 저장한다.
+    // 둘 다 결과가 **신발 이중 차감**이다(2026-07-28 실사고와 같은 증상).
+    //
+    // 이제 런이 시작할 때 id 를 갖고(runTracker.getRunId), 저장 경로가 그걸 넘긴다.
+    // 같은 id 가 이미 있으면 새로 만들지 않는다.
+    const localId=opts?.id||genRunId(stampedAt);
+    if(opts?.id&&(runsForHrRef.current||[]).some(r=>String(r.id)===localId)){
+      // 이미 저장된 러닝이다 — 재시도·복구가 같은 줄을 다시 만들지 않게 여기서 멈춘다.
+      return localId;
+    }
     // 완주 런 레코드 — 모든 필드(source/location/heart_rate 포함)를 담아 Firestore 정본에
     // 유실 없이 올린다(이전엔 일부 필드가 REST 왕복으로만 보존됐다). updatedAt 으로 머지 최신 우선.
     const record:BackendRun={
@@ -2885,7 +2897,7 @@ function Main(){
               try{await AsyncStorage.setItem('route_'+watchDup.id,route);}catch{/* 비치명적 */}
             }
           }
-          const newId=watchDup?watchDup.id:await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal,{startMs});
+          const newId=watchDup?watchDup.id:await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal,{startMs,id:runTracker.getRunId()});
           // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.
           // 거리·페이스·PB 는 이미 랩 시계열(paceTrack=lapsToTrack)로 정본이라 별도 계산 불필요.
           if(trackMeta&&trackMeta.laps>0){

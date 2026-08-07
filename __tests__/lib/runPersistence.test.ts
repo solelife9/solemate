@@ -57,6 +57,10 @@ const SNAP: RunSnapshot = {
   goalMin: 0,
   pacePlan: [],
   cadence: 172,
+  // 2026-08-07 신설 — 스냅샷 정화기는 **화이트리스트**라, 새 필드를 추가하면 여기와
+  // sanitize 양쪽을 같이 고쳐야 한다. 픽스처에 넣어 왕복을 실제로 검증한다.
+  movingSteps: 5100,   // 이동 중에만 쌓인 걸음(복구 런 평균 케이던스의 분자)
+  runId: 'run_1700000000000_abc1234', // 이 러닝의 저장 id(저장 멱등의 열쇠)
   location: '서울',
   track: null,
   savedAt: 1_700_000_745_000,
@@ -483,5 +487,35 @@ describe('goalMin/pacePlan 스냅샷 보존', () => {
     });
     expect(bad?.goalMin).toBe(0);
     expect(bad?.pacePlan).toEqual([240]);
+  });
+});
+
+// ============================================================================
+// 정화기는 화이트리스트다 (2026-08-07)
+//
+// sanitizeSnapshot 은 알려진 필드만 통과시킨다. 그래서 스냅샷에 필드를 추가하면서
+// 정화기를 안 고치면 **엔진은 쓰는데 복원이 통째로 버린다** — 조용히, 아무 오류 없이.
+// 실제로 movingSteps·runId 를 넣으면서 한 번 밟았다(복구 런의 케이던스와 저장 id 가
+// 그대로 사라졌다). 그 실수를 다음에도 잡도록 못 박는다.
+// ============================================================================
+describe('스냅샷 필드가 조용히 사라지지 않는다', () => {
+  test('복구에 필요한 필드가 전부 왕복한다', async () => {
+    await saveSnapshot(SNAP);
+    const loaded = (await loadSnapshot()) as RunSnapshot;
+    // 러닝을 이어 달리려면 이 넷이 반드시 살아 있어야 한다.
+    expect(loaded.dist).toBe(SNAP.dist);
+    expect(loaded.elapsed).toBe(SNAP.elapsed);
+    expect(loaded.movingSteps).toBe(SNAP.movingSteps);
+    expect(loaded.runId).toBe(SNAP.runId);
+  });
+
+  test('구 스냅샷(신규 필드 없음)도 안전하게 복원된다 — 하위호환', async () => {
+    const {movingSteps, runId, ...legacy} = SNAP as any;
+    await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(legacy));
+    const loaded = (await loadSnapshot()) as RunSnapshot;
+    expect(loaded).toBeTruthy();
+    expect(loaded.dist).toBe(SNAP.dist);
+    expect(loaded.movingSteps).toBe(0);   // 없으면 0 = 예전과 같은 동작
+    expect(loaded.runId).toBeUndefined(); // 없으면 저장 시점에 만든다
   });
 });

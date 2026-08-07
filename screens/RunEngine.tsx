@@ -676,6 +676,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
         // 이동 걸음 누적을 이어받는다(2026-08-07). 안 이으면 분자는 0 에서 다시 시작하는데
         // 분모(ft)는 런 전체를 덮어 복구 런의 평균 케이던스가 무너진다(실측 24 spm).
         movingSteps:seed.movingSteps??0,
+        // 저장 id 를 이어받는다 — '이어 달리기'가 원래 런과 같은 줄로 저장되게(멱등).
+        runId:seed.runId,
         seedPts:seed.pts as any,seedLocation:seed.location});
       // 크래시 전 통과한 km 만큼 스플릿 슬롯을 채워, 재개 후의 km 경계부터 실측이 기록되게
       // 한다(이전 구간 페이스는 스냅샷에 없어 복원 불가 — 0 으로 둠). 안내 km 도 시드한다.

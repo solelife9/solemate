@@ -27,6 +27,7 @@ import {gpsStallStatus, GPS_STALL_THRESHOLD_MS} from './gpsHealth';
 import {saveSnapshot} from './runPersistence';
 import {recordError} from './crashlytics';
 import {initElevState, feedAltitude, ElevState} from './elevation';
+import {genRunId} from './genId';
 
 /**
  * OS 가 **믿을 만하다고 표시한** 고도만 돌려준다(아니면 null).
@@ -143,6 +144,8 @@ export interface RunTrackerConfig {
   pedFillMs?: number;
   /** 복구 시드 — 이동 중에만 쌓인 누적 걸음수(기본 0). 복구 런의 평균 케이던스에 쓴다. */
   movingSteps?: number;
+  /** 복구 시드 — 이 러닝의 저장 id(스냅샷에서 이어받는다). 없으면 새로 만든다. */
+  runId?: string;
   /**
    * 크래시 복구 '이어 달리기' 시드 — 직전 스냅샷의 누적 거리(km). 기본 0.
    * 새 fix는 여기서부터 누적된다. (t0 는 호출자가 now − elapsed 로 줘 경과시간을 잇는다.)
@@ -224,6 +227,11 @@ class RunTracker {
   // GPS 死구간(stall) 누적 시간 — 임계 초과 무신호는 거리가 안 쌓이므로 elapsed 에서 뺀다
   // (백그라운드 throttle/터널에서 '거리 0 + 시간만 증가 → 페이스 왜곡' 방지). 임계(8s)까지는
   // 정상 fix 간격이라 세지 않고, 그 *초과분*만 누적해 타이머가 뒤로 튀지 않게 한다.
+  /**
+   * 이 러닝이 저장될 때 쓸 id. **시작할 때 한 번 정하고 끝까지 바뀌지 않는다.**
+   * 저장을 멱등하게 만드는 열쇠다(스냅샷 주석 참조).
+   */
+  private runId = '';
   /** 이동 중에만 쌓인 누적 걸음수(스냅샷 영속용 — 컨테이너가 setMeta 로 갱신). */
   private movingSteps = 0;
   private stalledMs = 0;
@@ -322,6 +330,8 @@ class RunTracker {
     this.pedFillMs = config.pedFillMs ?? 0;
     this.pedFillAtMs = 0;
     this.movingSteps = config.movingSteps ?? 0;
+    // 복구면 스냅샷의 id 를 이어받는다 — 그래야 '이어 달리기' 저장이 원래 런과 같은 줄이 된다.
+    this.runId = config.runId || genRunId(this.now());
     this.isPaused = false;
     this.autoPausedFlag = false;
     this.pausedMs = 0;
@@ -397,6 +407,11 @@ class RunTracker {
   }
 
   // ── meta the engine doesn't compute but persists (set by the UI) ──
+  /** 이 러닝의 저장 id(시작 시 확정). 저장 경로가 멱등하려면 이 값을 써야 한다. */
+  getRunId(): string {
+    return this.runId;
+  }
+
   setMeta(meta: {cadence?: number; location?: string; movingSteps?: number}) {
     if (typeof meta.cadence === 'number') this.cadence = meta.cadence;
     if (typeof meta.location === 'string') this.location = meta.location;
@@ -978,6 +993,7 @@ class RunTracker {
       pacePlan: this.pacePlan,
       cadence: this.cadence,
       movingSteps: this.movingSteps,
+      runId: this.runId,
       location: this.location,
       track: this.trackMeta,
       savedAt: now,

@@ -1118,3 +1118,56 @@ describe('고도 — OS 가 무효라고 표시한 표본은 안 쓴다', () => 
     expect(t.getState().elevGainM).toBeGreaterThan(20);
   });
 });
+
+// ============================================================================
+// 저장 id 는 러닝이 소유한다 — 저장이 멱등해야 한다 (2026-08-07 감사)
+//
+// 예전엔 저장하는 순간 새 id 를 만들었다(genRunId(저장시각)). 그래서 같은 러닝이 두 번
+// 저장되는 경로가 열려 있었다:
+//   ① 저장 실패 재시도('저장하기' 버튼)가 이미 성공한 addRun 을 다시 부른다
+//   ② addRun 과 clearSnapshot 사이에서 크래시 → 부팅 복구가 같은 러닝을 또 저장한다
+// 둘 다 결과가 **신발 이중 차감**이다(2026-07-28 "5.4km 러닝이 신발에 10.50km"와 같은 증상).
+//
+// id 를 러닝이 소유하면 재시도·복구가 같은 id 로 들어와 저장 경로가 스스로 걸러낸다.
+// ============================================================================
+describe('러닝 저장 id', () => {
+  test('시작할 때 정해지고 러닝 내내 바뀌지 않는다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    const id = t.getRunId();
+    expect(id).toMatch(/^run_/);
+
+    clearWarmup(t);
+    t.ingestFix(fix(37.5006, LON, 5, 110000));
+    t.togglePause();
+    t.togglePause();
+    expect(t.getRunId()).toBe(id); // 일시정지·재개·fix 로 바뀌지 않는다
+  });
+
+  test('새 러닝은 새 id 를 받는다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    const first = t.getRunId();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 200000});
+    expect(t.getRunId()).not.toBe(first);
+  });
+
+  test('복구는 스냅샷의 id 를 이어받는다 — 이어 달리기가 같은 줄로 저장된다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000, runId: 'run_seeded_abc'});
+    expect(t.getRunId()).toBe('run_seeded_abc');
+  });
+
+  test('스냅샷에 실린다 — 실리지 않으면 복구가 id 를 잃는다', async () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    const id = t.getRunId();
+    clearWarmup(t);
+    set(200000);
+    t.ingestFix(fix(37.5006, LON, 5, 200000));
+    await Promise.resolve();
+    const raw = await AsyncStorage.getItem(SNAPSHOT_KEY);
+    expect(raw).toBeTruthy();
+    expect(JSON.parse(raw as string).runId).toBe(id);
+  });
+});

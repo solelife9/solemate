@@ -49,6 +49,19 @@ export interface RunSnapshot {
   goalMin: number;
   /** 스피드 모드 km별 목표 페이스(초/km) 플랜. []=비스피드. 복구 시 코칭을 잇는다. */
   pacePlan: number[];
+  /**
+   * 이 러닝이 저장될 때 쓸 **id**(러닝 시작 시점에 정해진다). 2026-08-07 신설.
+   *
+   * 왜 시작 시점인가: 예전엔 저장하는 순간 새 id 를 만들었다. 그래서 같은 러닝이
+   * 두 번 저장될 수 있는 경로가 열려 있었다 —
+   *   · 저장 실패 재시도('저장하기' 버튼)가 이미 성공한 addRun 을 다시 부른다
+   *   · addRun 과 clearSnapshot 사이에서 크래시 → 부팅 복구가 같은 러닝을 또 저장한다
+   * 둘 다 결과가 **신발 이중 차감**이다.
+   *
+   * id 를 러닝이 소유하면 재시도·복구가 **같은 id** 로 들어와 저장이 멱등해진다.
+   * 구 스냅샷엔 없다 — 없으면 예전처럼 저장 시점에 만든다.
+   */
+  runId?: string;
   cadence: number; // last spm reading (>= 0)
   /**
    * **이동 중에만** 쌓인 누적 걸음수(>= 0). 2026-08-07 신설.
@@ -147,6 +160,12 @@ export function sanitizeRunState(raw: unknown): Omit<RunSnapshot, 'pts'> | null 
           .slice(0, 100)
       : [],
     cadence: Math.floor(nonNeg(r.cadence)),
+    // ⚠️ 이 정화기는 **화이트리스트**다 — 여기 없는 필드는 복원되지 않는다.
+    // 그래서 스냅샷에 필드를 추가하면 **반드시 여기도 추가해야 한다.**
+    // 2026-08-07 에 movingSteps·runId 를 넣으면서 실제로 한 번 밟았다(엔진은 썼는데
+    // 복원이 통째로 버려서, 복구 런의 케이던스와 저장 id 가 그대로 사라졌다).
+    movingSteps: Math.floor(nonNeg(r.movingSteps)),
+    runId: typeof r.runId === 'string' && r.runId ? r.runId : undefined,
     location: typeof r.location === 'string' ? r.location : '',
     track: sanitizeTrackMeta(r.track),
     savedAt: nonNeg(r.savedAt),
