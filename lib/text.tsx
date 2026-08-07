@@ -67,6 +67,11 @@ export const TextInput = React.forwardRef<React.ElementRef<typeof RNTextInput>, 
         ref={ref}
         maxFontSizeMultiplier={FONT_SCALE_CAP}
         keyboardAppearance="dark"
+        // 안드로이드 입력란도 글꼴 여백을 끈다(2026-08-07). Text 래퍼는 2026-08-05 에
+        // 전역으로 껐는데 **TextInput 은 빠져 있었다** — ReactEditText 는 기본이 true 라
+        // 신발 검색·직접 추가·메달 입력에서만 위아래 여백이 더 붙어, 같은 화면의 Text 와
+        // 줄맞춤이 어긋났다. style 을 먼저 두어 소비처가 필요하면 덮을 수 있게 한다.
+        style={[TEXT_METRICS, props.style]}
         {...props}
       />
     );
