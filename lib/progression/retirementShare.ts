@@ -17,7 +17,7 @@
 // 공유로 조용히 폴백한다 — 절대 크래시하지 않는다(shareRunCard/shareRecapCard 계약).
 // ============================================================================
 import {Share} from 'react-native';
-import {captureCardDataUrl, SvgRefLike} from '../shareCard';
+import {captureCardDataUrl, saveCardToLibrary, shareCardAsImage, SvgRefLike} from '../shareCard';
 import {RetirementCardModel} from './retirementCard';
 
 /** 캡처된 PNG dataURL 을 받아 영속(갤러리 저장)하는 주입 가능 저장기. */
@@ -33,15 +33,10 @@ export function setCardImageSaver(fn: CardImageSaver | null): void {
   saverImpl = fn;
 }
 
-/** 현재 등록된 저장기(없으면 기본 시트 저장기). */
-function activeSaver(): CardImageSaver {
-  return saverImpl ?? defaultSheetSaver;
-}
-
-/** 기본 저장기 — OS 공유 시트(오프라인). 사용자가 "이미지 저장"을 고르면 갤러리에 영속. */
-async function defaultSheetSaver(dataUrl: string): Promise<void> {
-  await Share.share({url: dataUrl});
-}
+// 기본 저장기는 더 이상 없다(2026-08-07). 예전 기본값은 Share.share({url: dataUrl}) 이었는데
+// **RN Share 는 안드로이드에서 url 을 그냥 버려서**(lib/shareCard.ts 실측 기록) 은퇴 카드
+// '이미지 저장'이 빈 시트를 열고 아무것도 저장하지 않는 조용한 실패였다.
+// 이제 저장기가 등록돼 있지 않으면 갤러리 저장의 정본(saveCardToLibrary)으로 간다.
 
 /**
  * 은퇴 카드 텍스트 폴백(캡처/저장/공유 실패 시 RN Share 메시지). 실데이터로 keep-going
@@ -70,8 +65,16 @@ export async function saveRetirementCardImage(
   fallback?: RetirementCardModel,
 ): Promise<boolean> {
   try {
-    const url = await captureCardDataUrl(ref);
-    await activeSaver()(url);
+    // 주입된 저장기가 있으면 그걸 쓴다(테스트·대체 구현). 없으면 **갤러리 저장의
+    // 정본 구현**을 쓴다 — 예전 기본값(Share.share({url})) 은 안드로이드에서 url 을
+    // 버려서 아무 일도 일어나지 않았다(조용한 실패).
+    if (saverImpl) {
+      const url = await captureCardDataUrl(ref);
+      await saverImpl(url);
+      return true;
+    }
+    const res = await saveCardToLibrary(ref);
+    if (!res.ok) throw new Error(res.reason ?? 'save failed');
     return true;
   } catch {
     // 캡처/저장 실패 — 사용자가 빈손이 되지 않게 텍스트 시트로 폴백(크래시 금지).
@@ -90,8 +93,9 @@ export async function shareRetirementCard(
   fallback?: RetirementCardModel,
 ): Promise<void> {
   try {
-    const url = await captureCardDataUrl(ref);
-    await Share.share({url});
+    // 안드로이드는 파일+expo-sharing 경로가 필요하다 — RN Share 는 url 을 버려서
+    // **빈 공유 시트**가 뜬다. shareCardAsImage 가 두 플랫폼을 모두 옳게 처리한다.
+    await shareCardAsImage(ref, 'keego-retire');
   } catch {
     await Share.share({message: buildRetirementShareText(fallback)}).catch(() => {});
   }

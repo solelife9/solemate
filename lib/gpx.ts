@@ -5,8 +5,9 @@
 //   · buildGpx  — 순수 문자열 생성(테스트가 XML 을 직접 단언).
 //   · exportGpx — 파일 쓰기 + RN Share(네이티브, no-throw graceful).
 
-import {Share} from 'react-native';
+import {Platform, Share} from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import {type LatLon} from './route';
 
 /** XML 특수문자 이스케이프(name/creator 에 사용자 텍스트가 들어갈 수 있다). */
@@ -77,6 +78,21 @@ export async function exportGpx(
     const xml = buildGpx(valid, meta);
     const fileUri = `${dir}keego-${safeFileStem(runId)}.gpx`;
     await FileSystem.writeAsStringAsync(fileUri, xml, {encoding: FileSystem.EncodingType.UTF8});
+    // ── 안드로이드는 RN 의 Share 로 파일을 붙일 수 없다 (2026-08-07) ──────────
+    // RN Share 는 안드로이드에서 `url` 을 **그냥 버린다**(lib/shareCard.ts 에 그 실측과
+    // 이유가 기록돼 있다: 갤럭시 S10e). 그래서 여기는 여태 **빈 공유 시트를 열고
+    // {ok:true} 를 돌려주고 있었다** — 사용자는 GPX 를 내보냈다고 믿고, 아무 파일도
+    // 나가지 않는다. 조용한 거짓 성공이라 어떤 자동 수단으로도 안 잡힌다.
+    // 공유 카드는 2026-08-06 에 expo-sharing 으로 고쳤는데 이 경로는 빠져 있었다.
+    if (Platform.OS === 'android') {
+      if (!(await Sharing.isAvailableAsync())) return {ok: false, reason: 'sharing unavailable'};
+      await Sharing.shareAsync(fileUri, {
+        mimeType: 'application/gpx+xml',
+        UTI: 'com.topografix.gpx',
+        dialogTitle: 'GPX 내보내기',
+      });
+      return {ok: true};
+    }
     await Share.share({url: fileUri});
     return {ok: true};
   } catch (e) {

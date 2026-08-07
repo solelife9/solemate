@@ -7,7 +7,7 @@
  *
  * @format
  */
-import {buildGpx, safeFileStem} from '../../lib/gpx';
+import {buildGpx, safeFileStem, exportGpx} from '../../lib/gpx';
 
 const P = (lat: number, lon: number) => ({lat, lon});
 
@@ -45,4 +45,58 @@ test('safeFileStem — 영숫자·하이픈만, 빈 값 폴백', () => {
   expect(safeFileStem('7월 5일 · ASICS')).toBe('7-5-ASICS');
   expect(safeFileStem('  ')).toBe('run');
   expect(safeFileStem('run/../etc')).toBe('run-etc');
+});
+
+// ============================================================================
+// 안드로이드 공유 경로 (2026-08-07 감사)
+//
+// RN 의 Share 는 안드로이드에서 `url` 을 **그냥 버린다**(lib/shareCard.ts 에 갤럭시
+// S10e 실측 기록). 그래서 GPX 내보내기는 **빈 공유 시트를 열고 {ok:true} 를 돌려주고
+// 있었다** — 사용자는 파일을 내보냈다고 믿는데 아무것도 나가지 않는다.
+// 공유 카드는 2026-08-06 에 expo-sharing 으로 고쳤는데 이 경로는 빠져 있었다.
+//
+// jest 의 기본 플랫폼이 ios 라 이런 결함은 **구조적으로 안 잡힌다.**
+// 그래서 여기서는 Platform.OS 를 명시적으로 안드로이드로 바꿔 본다.
+// ============================================================================
+describe('GPX 내보내기 — 안드로이드', () => {
+  const {Platform} = require('react-native');
+  const Sharing = require('expo-sharing');
+  const orig = Platform.OS;
+  afterEach(() => {
+    Platform.OS = orig;
+    jest.clearAllMocks();
+  });
+
+  test('RN Share 가 아니라 expo-sharing 으로 파일을 붙인다', async () => {
+    Platform.OS = 'android';
+    const {Share} = require('react-native');
+    const shareSpy = jest.spyOn(Share, 'share');
+    const shareAsync = jest.spyOn(Sharing, 'shareAsync').mockResolvedValue(undefined as never);
+
+    const res = await exportGpx('run-1', [
+      {lat: 37.5, lon: 127.0},
+      {lat: 37.501, lon: 127.001},
+    ]);
+
+    expect(res.ok).toBe(true);
+    expect(shareAsync).toHaveBeenCalledTimes(1);
+    // 파일 URI 와 GPX MIME 으로 넘긴다.
+    expect(shareAsync.mock.calls[0][0]).toMatch(/\.gpx$/);
+    expect(shareAsync.mock.calls[0][1]).toMatchObject({mimeType: 'application/gpx+xml'});
+    // RN Share 로는 절대 가지 않는다 — 그게 빈 시트의 원인이었다.
+    expect(shareSpy).not.toHaveBeenCalled();
+    shareSpy.mockRestore();
+  });
+
+  test('공유가 불가능한 기기면 성공이라고 말하지 않는다', async () => {
+    Platform.OS = 'android';
+    jest.spyOn(Sharing, 'isAvailableAsync').mockResolvedValue(false as never);
+
+    const res = await exportGpx('run-1', [
+      {lat: 37.5, lon: 127.0},
+      {lat: 37.501, lon: 127.001},
+    ]);
+
+    expect(res.ok).toBe(false);
+  });
 });

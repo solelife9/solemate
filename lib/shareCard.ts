@@ -431,7 +431,7 @@ export const canShareCardImage = (): boolean => Platform.OS === 'ios' || Platfor
  *
  * 실패하면 throw 한다 → 호출부의 catch 가 텍스트 공유로 폴백한다(막다른 길 없음).
  */
-async function shareCardAsImage(ref: SvgRefLike, fileStem: string): Promise<void> {
+export async function shareCardAsImage(ref: SvgRefLike, fileStem: string): Promise<void> {
   const dataUrl = await captureCardDataUrl(ref);
   if (Platform.OS !== 'android') {
     await Share.share({url: dataUrl});

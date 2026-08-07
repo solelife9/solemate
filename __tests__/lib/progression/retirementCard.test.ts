@@ -157,11 +157,23 @@ describe('retirementShare (저장/공유, 오프라인·크래시 금지)', () =
     expect(spy).not.toHaveBeenCalled();
   });
 
-  test('saveRetirementCardImage: 저장기 미등록이면 기본 시트(url)로 저장한다', async () => {
+  // 2026-08-07 감사: 예전 계약은 "저장기 미등록이면 Share.share({url}) 로 저장한다"였고
+  // 이 테스트가 그걸 정답으로 못 박고 있었다. 그런데 **RN Share 는 안드로이드에서 url 을
+  // 그냥 버린다**(lib/shareCard.ts 에 갤럭시 S10e 실측 기록). 즉 안드로이드에서 은퇴 카드
+  // '이미지 저장'은 빈 시트를 열고 아무것도 저장하지 않는 조용한 실패였다.
+  // 이제 갤러리 저장의 정본(saveCardToLibrary — 캐시 파일 + MediaLibrary)으로 간다.
+  test('saveRetirementCardImage: 저장기 미등록이면 갤러리 정본 경로로 저장한다', async () => {
+    const MediaLibrary = require('expo-media-library/legacy');
+    const saveSpy = jest.spyOn(MediaLibrary, 'saveToLibraryAsync');
     const ref = {current: {toDataURL: (cb: (b: string) => void) => cb('PNGDATA')}};
+
     const ok = await saveRetirementCardImage(ref, model);
+
     expect(ok).toBe(true);
-    expect(spy).toHaveBeenCalledWith({url: 'data:image/png;base64,PNGDATA'});
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    // 공유 시트는 열지 않는다 — 저장은 저장이지 공유가 아니다.
+    expect(spy).not.toHaveBeenCalled();
+    saveSpy.mockRestore();
   });
 
   test('saveRetirementCardImage: 캡처 실패 시 텍스트 폴백 공유(크래시 금지, false)', async () => {
