@@ -122,7 +122,7 @@ import {detectPRs, PRKind} from './lib/records';
 import {runInsights} from './lib/runInsights';
 import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
 import type {RunBestEfforts} from './lib/bestEfforts';
-import {hkSaveRunWorkout, hkBackfillHeartRate, hkEnsureLinked, hkFindRunWorkoutWindow} from './lib/health';
+import {hkSaveRunWorkout, hkBackfillHeartRate, hkReadableWithoutPrompt, hkFindRunWorkoutWindow} from './lib/health';
 import {pickRepairCandidates, repairHeartRates, hrRepairDone, markHrRepairDone} from './lib/hrRepair';
 import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack, hasHrTrack} from './lib/hrBackfill';
 import {syncRunDetails, runsWithCloudRoute, enqueueDetailDeletion} from './lib/runDetailSync';
@@ -2143,7 +2143,9 @@ function Main(){
     const sweep=async()=>{
       try{
         // 자가 복구 포함(재설치로 연동 플래그가 지워져도 OS 권한이 있으면 복원 후 진행).
-        if(!(await hkEnsureLinked()))return;
+        // **권한 창을 띄우지 않는 판정만 쓴다**(2026-08-07). 예전엔 hkEnsureLinked 였고
+        // 그건 안드로이드에서 권한 시트를 띄운다 — 부팅 8초 뒤 아무 맥락 없이.
+        if(!(await hkReadableWithoutPrompt()))return;
         const last=Number(await AsyncStorage.getItem(HR_SWEEP_AT_KEY))||0;
         if(Date.now()-last<24*3600*1000)return;
         const candidates=(runsForHrRef.current||[]).filter(r=>(Number(r.duration)||0)>300).slice(0,30);

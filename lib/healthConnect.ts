@@ -23,6 +23,22 @@
 // ============================================================================
 import {Platform} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {reportIssue} from './crashlytics';
+
+/**
+ * Health Connect 호출 실패를 **관측 가능하게** 남긴다.
+ *
+ * 왜 필요한가(2026-08-07 감사): 이 파일의 catch 들이 전부 조용히 0/false/null 을
+ * 돌려주고 있었다. 그러면 텔레메트리로 **"안드로이드 심박이 깨졌다"와 "이 사용자는
+ * 워치가 없다"를 구분할 수 없다.** 안드로이드 케이던스를 한 달 살려 둔 것과 정확히
+ * 같은 형태다(예외를 삼키는 호출부).
+ *
+ * 실패해도 동작은 그대로 유지한다 — 심박은 부가 정보라 러닝을 막으면 안 된다.
+ * 바뀌는 건 '보이느냐'뿐이다.
+ */
+function hcIssue(where: string, e: unknown): void {
+  reportIssue(`healthConnect: ${where}`, e);
+}
 
 /** 우리가 쓰는 만큼만 타입을 좁혀 둔다(라이브러리 전체 타입을 앱에 퍼뜨리지 않는다). */
 interface HCPermission {
@@ -84,7 +100,8 @@ export async function hcSdkReady(): Promise<boolean> {
   if (!m) return false;
   try {
     return (await m.getSdkStatus()) === SDK_AVAILABLE;
-  } catch {
+  } catch (e) {
+    hcIssue('getSdkStatus', e);
     return false;
   }
 }
@@ -98,7 +115,8 @@ export async function hcLinked(): Promise<boolean> {
     await m.initialize();
     const granted = await m.getGrantedPermissions();
     return has(granted, 'read', 'HeartRate');
-  } catch {
+  } catch (e) {
+    hcIssue('getGrantedPermissions', e);
     return false;
   }
 }
@@ -115,7 +133,8 @@ export async function hcLink(): Promise<boolean> {
     await m.initialize();
     const granted = await m.requestPermission(PERMISSIONS);
     return has(granted ?? [], 'read', 'HeartRate');
-  } catch {
+  } catch (e) {
+    hcIssue('requestPermission', e);
     return false;
   }
 }
@@ -145,24 +164,44 @@ export async function hcBackfillHeartRate(
   if (!m || !runId || !(startMs < endMs)) return 0;
   if (!(await hcLinked())) return 0;
   try {
-    const res = await m.readRecords('HeartRate', {
-      timeRangeFilter: {
-        operator: 'between',
-        startTime: new Date(startMs).toISOString(),
-        endTime: new Date(endMs).toISOString(),
-      },
-    });
-    // HeartRate 레코드는 한 건에 여러 samples 를 담는다(구간 묶음) — 전부 펼친다.
+    // ── 레코드는 넓게 찾고, 표본은 정확히 자른다 (2026-08-07 감사) ──────────────
+    //
+    // HeartRate 는 **구간 레코드**다 — 한 건이 startTime~endTime 을 덮고 그 안에
+    // samples[] 를 담는다. 그리고 `between` 은 그 **레코드의 구간**을 기준으로 거른다.
+    // 삼성헬스처럼 워크아웃 전체를 한 레코드로 쓰는 앱이라면, 그 레코드가 우리 창보다
+    // **1초만 먼저 시작해도 반환되지 않는다** → 러닝 전체가 0표본이 된다.
+    //
+    // 그래서 레코드 검색창을 앞뒤로 넉넉히 넓히고(RECORD_SEARCH_PAD_MS), 표본은
+    // 아래에서 **실제 러닝 창으로 다시 거른다.** 정밀도는 그대로고 누락만 사라진다.
     const track: {t: number; bpm: number}[] = [];
-    for (const rec of (res?.records ?? []) as {samples?: {time: string; beatsPerMinute: number}[]}[]) {
-      for (const s of rec?.samples ?? []) {
-        const tMs = new Date(s.time).getTime();
-        if (!Number.isFinite(tMs)) continue;
-        const bpm = Math.round(Number(s.beatsPerMinute) || 0);
-        if (!(bpm > 30 && bpm < 240)) continue; // 명백한 노이즈 컷(HK 경로와 동일 기준)
-        track.push({t: Math.max(0, Math.round((tMs - startMs) / 1000)), bpm});
+    let pageToken: string | undefined;
+    let pages = 0;
+    do {
+      const res: any = await m.readRecords('HeartRate', {
+        timeRangeFilter: {
+          operator: 'between',
+          startTime: new Date(startMs - RECORD_SEARCH_PAD_MS).toISOString(),
+          endTime: new Date(endMs + RECORD_SEARCH_PAD_MS).toISOString(),
+        },
+        // 페이지네이션 — 예전엔 지정하지 않아 네이티브 기본(1000)에 잘렸고 다음 페이지를
+        // 따라가지도 않았다. 장시간 러닝의 뒷부분 심박이 통째로 빠질 수 있었다.
+        pageSize: HR_PAGE_SIZE,
+        ...(pageToken ? {pageToken} : {}),
+      });
+      for (const rec of (res?.records ?? []) as {samples?: {time: string; beatsPerMinute: number}[]}[]) {
+        for (const s of rec?.samples ?? []) {
+          const tMs = new Date(s.time).getTime();
+          if (!Number.isFinite(tMs)) continue;
+          // **표본 단위로 러닝 창 안인지 확인한다** — 위에서 넓힌 만큼 여기서 자른다.
+          if (tMs < startMs || tMs > endMs) continue;
+          const bpm = Math.round(Number(s.beatsPerMinute) || 0);
+          if (!(bpm > 30 && bpm < 240)) continue; // 명백한 노이즈 컷(HK 경로와 동일 기준)
+          track.push({t: Math.max(0, Math.round((tMs - startMs) / 1000)), bpm});
+        }
       }
-    }
+      pageToken = res?.pageToken;
+      pages += 1;
+    } while (pageToken && pages < HR_MAX_PAGES);
     if (track.length < 2) return 0; // 표시 가치 없음(RunDetail 계약과 동일)
     track.sort((a, b) => a.t - b.t);
 
@@ -177,10 +216,23 @@ export async function hcBackfillHeartRate(
     }
     await AsyncStorage.setItem('hrTrack_' + runId, JSON.stringify(track));
     return track.length;
-  } catch {
+  } catch (e) {
+    hcIssue('readRecords(HeartRate)', e);
     return 0;
   }
 }
+
+/**
+ * 심박 **레코드**를 찾을 때 러닝 창 앞뒤로 넓히는 폭(ms).
+ * 구간 레코드가 러닝보다 먼저 시작/늦게 끝나도 놓치지 않기 위한 여유다.
+ * 30분이면 "워크아웃 전체를 한 레코드로 쓰는" 실사용 패턴을 덮는다.
+ * 넓혀도 표본은 러닝 창으로 다시 자르므로 정밀도 손실은 없다.
+ */
+const RECORD_SEARCH_PAD_MS = 30 * 60 * 1000;
+/** 한 페이지에 읽을 레코드 수. 네이티브 기본(1000)에 조용히 잘리지 않게 명시한다. */
+const HR_PAGE_SIZE = 1000;
+/** 페이지 순회 상한(무한 루프 방어). 1000×20 = 2만 레코드면 실사용을 충분히 덮는다. */
+const HR_MAX_PAGES = 20;
 
 /** 안정시 심박(bpm). 최근 30일 중 가장 최신 값. 없으면 0. */
 export async function hcRestingHR(): Promise<number> {
@@ -319,7 +371,14 @@ export async function hcFindRunWorkoutWindow(
   }
 }
 
-/** 이미 연결돼 있으면 true, 아니면 권한 창을 띄운다(자동 호출 금지 — 사용자 동작에서만). */
+/**
+ * 이미 연결돼 있으면 true, 아니면 **권한 창을 띄운다.**
+ *
+ * ⚠️ 자동 호출 금지 — 사용자 동작에서만. 이 주석은 예전에도 있었는데 App 의 부팅 8초
+ * 타이머가 파사드(hkEnsureLinked)를 통해 이걸 불렀다. 파사드가 iOS 에서는 창을 안 띄우는
+ * 함수라 호출부가 안전하다고 믿은 것이다. 2026-08-07 에 파사드를 계약별로 갈랐다 —
+ * 백그라운드는 `hkReadableWithoutPrompt()`, 사용자 동작만 `hkLink()`.
+ */
 export async function hcEnsureLinked(): Promise<boolean> {
   if (await hcLinked()) return true;
   return hcLink();
