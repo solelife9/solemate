@@ -9,13 +9,13 @@
 // ============================================================================
 import React, {useEffect, useRef} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Pressable, StyleSheet, Animated} from 'react-native';
+import {View, Pressable, ScrollView, StyleSheet, Animated} from 'react-native';
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BG, T1, T3, FONT, DISPLAY, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE, MOTION} from './theme';
 import {success, impactHeavy} from './lib/haptics';
-import {Button} from './primitives';
+import {Button, useReduceMotion} from './primitives';
 
 export type CelebrationData =
   | {
@@ -132,13 +132,19 @@ function Glow({color}: {color: string}) {
 // 메달 주변 ping 링(무한)
 function PingRing({color, delay = 0}: {color: string; delay?: number}) {
   const v = useRef(new Animated.Value(0)).current;
+  // 시스템 '동작 줄이기'를 존중한다(DESIGN §6.7). 무한 반복 확대 링은 전정장애가 있는
+  // 사용자에게 가장 부담이 큰 형태이고, 이 화면은 러닝 저장 직후 **자동으로** 뜬다.
+  // 다른 프리미티브(primitives.tsx)는 이미 useReduceMotion 을 보는데 여기만 빠져 있었다.
+  const rm = useReduceMotion();
   useEffect(() => {
+    if (rm) return; // 링을 그리지 않는다 — 아래 렌더에서도 null
     const loop = Animated.loop(
       Animated.timing(v, {toValue: 1, duration: 2800, delay, easing: MOTION.ease.out, useNativeDriver: true}),
     );
     loop.start();
     return () => loop.stop();
-  }, [v, delay]);
+  }, [v, delay, rm]);
+  if (rm) return null;
   const scale = v.interpolate({inputRange: [0, 1], outputRange: [1, 1.7]});
   const opacity = v.interpolate({inputRange: [0, 0.1, 1], outputRange: [0, 0.55, 0]});
   return <Animated.View style={[st.ring, {borderColor: withAlpha(color, 0.36), opacity, transform: [{scale}]}]} pointerEvents="none" />;
@@ -199,7 +205,11 @@ export default function CelebrationScreen({
     return (
       <View style={[st.screen, {paddingTop: insets.top + 64, paddingBottom: insets.bottom + 32}]}>
         <Glow color={c} />
-        <View style={st.body}>
+        <ScrollView
+          style={st.bodyScroll}
+          contentContainerStyle={st.body}
+          showsVerticalScrollIndicator={false}
+          bounces={false}>
           <Rise anim={anim} from={0.05} to={0.35}>
             <Text style={[st.eyebrow, {color: c}]}>등급 상승</Text>
           </Rise>
@@ -232,7 +242,7 @@ export default function CelebrationScreen({
               )}
             </Text>
           </Rise>
-        </View>
+        </ScrollView>
         <Rise anim={anim} from={0.48} to={0.9} style={st.actions}>
           {/* 수제 56px Pressable → 전역 Button size="hero"(검수 디밸롭 ⑤ 수렴). */}
           <Button size="hero" label="계속하기" onPress={onClose} />
@@ -257,7 +267,11 @@ export default function CelebrationScreen({
         testID="celebration-skip">
         <Text style={st.skipTxt}>{remaining > 0 ? `모두 건너뛰기 (${remaining})` : '건너뛰기'}</Text>
       </Pressable>
-      <View style={st.body}>
+      <ScrollView
+        style={st.bodyScroll}
+        contentContainerStyle={st.body}
+        showsVerticalScrollIndicator={false}
+        bounces={false}>
         <Rise anim={anim} from={0.05} to={0.35}>
           <Text style={[st.eyebrow, {color: c}]}>업적 획득</Text>
         </Rise>
@@ -276,7 +290,7 @@ export default function CelebrationScreen({
         <Rise anim={anim} from={0.32} to={0.72}>
           <Text style={st.desc}>{data.detail}</Text>
         </Rise>
-      </View>
+      </ScrollView>
       <Rise anim={anim} from={0.48} to={0.9} style={st.actions}>
         <Button size="hero" label="확인" onPress={onClose} />
       </Rise>
@@ -289,13 +303,29 @@ const st = StyleSheet.create({
   glow: {position: 'absolute', top: '-8%'},
   skip: {position: 'absolute', right: 22, zIndex: 2, padding: rs(6)},
   skipTxt: {fontSize: TYPE.label.fontSize, fontWeight: '500', color: T3, fontFamily: FONT},
-  body: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+  // 본문은 스크롤 가능한 영역이다(2026-08-07).
+  //
+  // 예전엔 flex:1 + justifyContent:'center' 인 View 였고 화면 전체에 overflow:'hidden'
+  // 이 걸려 있었다. 그래서 작은 폰 + 큰 글꼴 + 긴 설명이 겹치면 **하단 CTA 가 화면 밖으로
+  // 밀리는데 스크롤할 방법이 없었다.** 러닝 저장 직후 자동으로 뜨는 전체화면이라
+  // 그대로 앱이 잠긴다. 게다가 탈출구인 '건너뛰기'는 업적 변형에만 있고 등급 상승
+  // 변형에는 없다 — 등급 상승 + 긴 문구 + 작은 폰이 정확히 그 조합이다.
+  //
+  // flexGrow:1 + center 라 **공간이 넉넉하면 예전과 똑같이 가운데 정렬**이고,
+  // 모자랄 때만 스크롤이 생긴다. CTA 는 이 영역 밖의 형제라 항상 보인다.
+  bodyScroll: {flex: 1, alignSelf: 'stretch'},
+  body: {flexGrow: 1, alignItems: 'center', justifyContent: 'center'},
 
   eyebrow: {fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 2.6, marginBottom: rv(32), textTransform: 'uppercase', fontFamily: FONT},
   medalwrap: {width: rs(124), height: rs(124), marginBottom: rv(30), alignItems: 'center', justifyContent: 'center'},
   // borderRadius 를 width 와 같은 rs 스케일로(감사 #42) — raw 62 는 큰 기기(rs>1)에서
   // rs(124)/2 에 못 미쳐 원이 둥근 사각형으로 깨진다. 항상 지름의 절반 = 진짜 원.
-  ring: {position: 'absolute', width: rs(124), height: rs(124), borderRadius: rs(124) / 2, borderCurve: 'continuous', borderWidth: 1},
+  // 링은 메달보다 **커야** 보인다(2026-08-07).
+  // 예전엔 링이 rs(124), 감싸는 메달 영역이 rs(148) 이라 링이 더 작았다. 확대가
+  // scale 1.19 를 넘어서야 메달 밖으로 나오는데, 불투명도 정점(0.55 @ scale 1.07)이
+  // **메달 뒤에서** 일어나 사실상 안 보였다. 효과는 거의 못 받으면서 전정장애 리스크만
+  // 지불하고 있었다. 메달 크기에 맞춰 처음부터 테두리에서 퍼지게 한다.
+  ring: {position: 'absolute', width: rs(148), height: rs(148), borderRadius: rs(148) / 2, borderCurve: 'continuous', borderWidth: 1},
 
   rankfrom: {fontSize: TYPE.body.fontSize, fontWeight: '500', color: T3, marginBottom: rv(2), fontFamily: FONT, textAlign: 'center'},
   name: {fontSize: TYPE.display.fontSize, fontWeight: '700', color: T1, letterSpacing: -0.6, lineHeight: rf(38), textAlign: 'center', fontFamily: DISPLAY},
