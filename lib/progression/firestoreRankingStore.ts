@@ -36,6 +36,7 @@ import {
   RankingStatsInput,
 } from './firestoreRanking';
 import {RankingProvider, RankTier} from './types';
+import {withRankingCache} from './rankingCache';
 
 /** 월간 엔트리 컬렉션 경로: leaderboards/{yearMonth}/entries. 문서 id = uid. */
 function entriesPath(yearMonth: string): string {
@@ -118,11 +119,17 @@ export const firestoreRankingStore: RankingStore = {
 /**
  * Firestore 에 연결된 라이브 RankingProvider. HallOfFameScreen 의 기본 provider.
  * (인터페이스=RankingProvider — 로컬 stub·REST provider 와 호환.)
+ *
+ * **읽기 캐시로 감싼다(2026-08-07).** 이 화면은 진입 1회에 약 103 읽기이고, 화면의 로드
+ * effect 가 `category` 에 의존해 **칩을 누를 때마다 다시 읽는다**(탭 3개 = 309).
+ * 재진입이면 또 309. 앱 전체가 하루 6 읽기인데 이 화면 하나가 그 50일치를 쓴다 —
+ * 무료 한도가 **세 자릿수 사용자에서 깨지고**, 그 구간이 베타 모집 2단계다.
+ * 캐시 계약과 안전선(실패 미캐시 · uid 별 격리)은 `rankingCache.ts` 머리말 참조.
  */
-export const keegoFirestoreRankingProvider: RankingProvider = createFirestoreRankingProvider(
-  firestoreRankingStore,
-  getFirebaseUid,
-);
+export const keegoFirestoreRankingProvider: RankingProvider = withRankingCache(
+  createFirestoreRankingProvider(firestoreRankingStore, getFirebaseUid),
+  {getUid: getFirebaseUid},
+) as RankingProvider;
 
 /** 현재 활동 월(YYYY-MM)을 호출부 주입 시각으로부터 계산한다(결정성 — Date.now 비의존). */
 export function yearMonthOf(nowMs: number): string {
