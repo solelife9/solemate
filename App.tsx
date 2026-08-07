@@ -1,7 +1,8 @@
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import {
-  View, StatusBar, Linking, AppState, InteractionManager,
+  View, StatusBar, Linking, AppState, InteractionManager, BackHandler,
 } from 'react-native';
+import {handleBack as popBackStack} from './lib/backStack';
 import {showDialog, showPermissionSettingsDialog} from './lib/dialog';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -2827,6 +2828,59 @@ function Main(){
     }
     setOverlay('none');
   };
+
+  // ── 안드로이드 하드웨어 뒤로가기 ─────────────────────────────────────────────
+  // 2026-08-07 실기기 확정: 기록 상세에서 시스템 뒤로가기를 누르면 목록으로 돌아가는 게
+  // 아니라 **앱이 통째로 종료됐다**. 저장소 전체에 BackHandler 가 0건이었다 — iOS 만 보고
+  // 만든 흔적이다. 안드로이드에서 가장 많이 눌리는 버튼이고 Play 품질 가이드라인 항목이다.
+  //
+  // 처리 순서는 **아래 렌더 사다리와 같아야 한다** — 사다리가 위에서부터 첫 일치를 그리므로,
+  // 뒤로가기도 위에서부터 첫 일치를 닫아야 화면 맨 위가 닫힌다. 새 화면을 사다리에 끼울 땐
+  // 여기에도 같은 자리에 끼운다(둘이 어긋나면 엉뚱한 화면이 닫힌다).
+  //
+  // 탭 **안쪽** 드릴다운(기록 상세·신발 상세·설정 하위)은 여기서 볼 수 없다 — 그 state 는
+  // 탭 컴포넌트가 소유한다. 그래서 화면들이 lib/backStack 에 자기 닫기를 등록하고 이 핸들러가
+  // popBackStack() 으로 꺼낸다. 오버레이가 떠 있으면 사다리가 early-return 이라 탭이 아예
+  // 언마운트돼 등록도 사라지므로, 둘의 우선순위가 겹칠 일은 구조적으로 없다.
+  const backRef=useRef<()=>boolean>(()=>false);
+  backRef.current=()=>{
+    // ① 러닝 중 — 무엇도 하지 않고 **먹는다**. 뒤로가기 한 번에 러닝이 날아가면
+    //    Iron Law(거리/시간 유실 금지) 위반이다. 종료는 화면 안의 홀드 버튼으로만.
+    if(overlay==='run'&&activeRun) return true;
+    if(overlay==='countdown'&&activeRun){setOverlay('goal');return true;}
+    // ② 오버레이 사다리(렌더 순서 그대로).
+    if(overlay==='add'){setOverlay('none');return true;}
+    if(previewOnboard){setPreviewOnboard(null);return true;}
+    if(locPrimeGoal!=null){setLocPrimeGoal(null);return true;}
+    if(overlay==='goal'&&pendingShoe){setOverlay('none');setPendingShoe(null);setPermRetryGoal(null);return true;}
+    if(celebration){nextCelebration();return true;}
+    if(showHallOfFame){
+      // 러너 프로필은 랭킹 위에 얹혀 있다 — 먼저 그것부터 닫고 순위 자리로 돌아간다.
+      if(viewedRunner){setViewedRunner(null);return true;}
+      setShowHallOfFame(false);return true;
+    }
+    if(showProgression){setShowProgression(false);return true;}
+    if(showHallOfShoes){setShowHallOfShoes(false);return true;}
+    if(showArchive){setShowArchive(false);return true;}
+    if(medalFlow){setMedalFlow(null);return true;}
+    if(showFindShoes){setShowFindShoes(false);return true;}
+    if(showMedalArchive){setShowMedalArchive(false);return true;}
+    if(runRecap){setRunRecap(null);setRecapRace(null);setTab(2);maybePrimePush();return true;}
+    // ③ 탭 안쪽 드릴다운(화면들이 스스로 등록한 것).
+    if(popBackStack()) return true;
+    // ④ 홈이 아닌 탭이면 홈으로. 안드로이드 표준 동선이다(홈에서 한 번 더 누르면 종료).
+    if(tab!==0){setTab(0);return true;}
+    // ⑤ 아무것도 없으면 false — OS 가 앱을 닫는다.
+    //    로그인·필수 업데이트·최초 온보딩·공개범위 동의 같은 **강제 게이트도 여기로 떨어진다**:
+    //    뒤로가기로 우회시키지 않으면서, 버튼이 먹통이 되지도 않게 하는 유일한 답이 종료다.
+    return false;
+  };
+  useEffect(()=>{
+    // 구독은 한 번만 — ref 를 통해 항상 최신 상태를 본다(매 렌더 재구독하면 러닝 중처럼
+    // 상태가 자주 바뀌는 구간에서 리스너가 끊임없이 갈린다).
+    const sub=BackHandler.addEventListener('hardwareBackPress',()=>backRef.current());
+    return ()=>sub.remove();
+  },[]);
 
   // ── render ──────────────────────────────────────────────────
   // 필수 로그인 게이트 — 부팅보다 먼저 검사한다. 인증 확인중이면 스플래시(스켈레톤),

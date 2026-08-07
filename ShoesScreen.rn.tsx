@@ -25,6 +25,7 @@ import { wearTier, SHOE_CAUTION_PCT, SHOE_REPLACE_PCT, clampMaxKm, baseMaxKmFrom
 import { LIFESPAN_BASIS_KO } from './data/shoeModels';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastConfidenceKo, forecastLineKo, type ReplacementForecast } from './lib/wearView';
+import { useBackClose } from './lib/backStack';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
 import RetirementFlow from './RetirementFlow.rn';
 import FindShoesScreen from './FindShoesScreen.rn';
@@ -139,6 +140,9 @@ function ShoeDetail({
   };
   // 런 상세 — 기록탭과 같은 RunDetail 재사용(읽기 전용: 삭제/편집은 기록탭 담당).
   const [selRun, setSelRun] = useState<Run | null>(null);
+  // 안드로이드 하드웨어 뒤로가기 — 신발 상세 **위에** 얹힌 런 상세를 먼저 닫는다.
+  // 신발 상세(부모)가 먼저 등록되고 이 런 상세는 그 뒤에 켜지므로 자연히 위가 된다.
+  useBackClose(selRun != null, () => { setSelRun(null); return true; });
 
   // ── 추가 스탯(2026-07-04, CD 추천 확정): 최장 런(이 신발의 베스트) · 주 평균
   //    (최근 4주 — '약 N주 후 교체 예상'의 근거를 눈에 보이게) · 첫 착용부터 함께한
@@ -674,6 +678,9 @@ function ShoesScreen({
     const i = shoes.findIndex((sh) => sh.id === detailShoeId);
     return i >= 0 ? i : null;
   });
+  // 안드로이드 하드웨어 뒤로가기 — 신발 상세를 닫고 목록으로. (상세 안의 런 상세는
+  // 자식 컴포넌트가 따로 등록해 이보다 위에 얹힌다.)
+  useBackClose(detail != null, () => { setDetail(null); return true; });
   // 홈 히어로에서 넘어온 신발 id를 상세로 연다(한 번만 소비).
   useEffect(() => {
     if (!detailShoeId) return;

@@ -32,6 +32,7 @@ import { buildSplits } from './lib/splits';
 import { buildShareCardModel } from './lib/shareCard';
 import { exportGpx } from './lib/gpx';
 import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './lib/inputMask';
+import { useBackClose } from './lib/backStack';
 import ShareCardPicker from './ShareCardPicker';
 
 // ── manual-run / edit form helpers ──────────────────────────────────────────
@@ -959,6 +960,11 @@ function HistoryScreen({
   const [draftYearYear, setDraftYearYear] = useState(now.getFullYear());
   const [detail, setDetail] = useState<Run | null>(null);
   const [form, setForm] = useState<null | { mode: 'add' } | { mode: 'edit'; run: Run }>(null);
+  // 안드로이드 하드웨어 뒤로가기 — 이 두 화면은 **탭 안쪽**이라 App.tsx 가 볼 수 없다.
+  // 등록 순서가 곧 우선순위다(나중 = 위). 아래 렌더는 form 을 detail 보다 먼저 반환하므로
+  // form 이 위인데, form 은 항상 detail 이 열린 뒤에 켜지므로 등록도 자연히 나중이 된다.
+  useBackClose(detail != null, () => { setDetail(null); return true; });
+  useBackClose(form != null, () => { setForm(null); return true; });
   const [refreshing, setRefreshing] = useState(false);
   const handleRefresh = async () => {
     if (!onRefresh || refreshing) return;
