@@ -25,14 +25,14 @@ import {
   getCountFromServer,
 } from '@react-native-firebase/firestore';
 
-import {getFirebaseUid} from '../firebaseCloudPort';
+import {getFirebaseUid, getFirebaseIdToken} from '../firebaseCloudPort';
+import {SOCIAL_BACKEND} from '../socialConfig';
 import {
   RankingStore,
   StoredRankingEntry,
   createFirestoreRankingProvider,
   type EntryShoe,
   computeRankingStats,
-  buildStoredEntry,
   sanitizeEntryShoes,
   RankingStatsInput,
 } from './firestoreRanking';
@@ -111,6 +111,10 @@ export const firestoreRankingStore: RankingStore = {
     return num(snap.data().count);
   },
 
+  // ⚠️ 2026-08-07 부터 **운영에서는 항상 실패한다.** firestore.rules 가 리더보드 엔트리의
+  // 클라이언트 쓰기를 막았고(점수 위조 차단), 발행은 Cloud Functions 만 한다
+  // (publishMyRanking → POST /api/ranking/publish). 이 메서드는 RankingStore 인터페이스
+  // 계약과 로컬/스텁 구현을 위해 남는다 — **앱 코드에서 새로 부르지 말 것.**
   async publish(yearMonth, entry) {
     const db = getFirestore();
     const ref = doc(db, entriesPath(yearMonth), entry.uid);
@@ -201,46 +205,55 @@ export interface PublishRankingArgs {
 }
 
 /**
- * 내 월간 랭킹 엔트리를 계산해 Firestore 에 발행한다. 클라우드 동기(App.runCloudSync)
- * 뒤에 best-effort 로 호출 — 미로그인/실패는 false(throw 없음 — 동기 흐름을 막지 않는다).
- * 점수는 클라이언트가 computeRankingStats 로 계산한다(백엔드 leaderboardService 와 동일 의미).
+ * 내 월간 랭킹 엔트리를 발행한다. 클라우드 동기(App.runCloudSync) 뒤에 best-effort 로
+ * 호출 — 미로그인/실패는 false(throw 없음 — 동기 흐름을 막지 않는다).
  *
- * ── 이번 달에 달리지 않았으면 올리지 않는다 (2026-08-04) ──────────────────────
- * 실제 리더보드를 열어 보니 **엔트리 5개가 전부 거리 0km · 활동 0일**이었다. 발행이
- * 활동 여부를 안 보고 동기할 때마다 돌았기 때문이다. 그 결과 두 가지가 깨진다:
- *   · 화면 라벨이 거짓이 된다 — 진척 포인트 축은 "…에 **달린 러너 중**"이라고 적혀 있다.
- *   · 첫 사용자가 랭킹을 열면 `러너 0km` 가 늘어선 죽은 표를 본다.
- * 그래서 **이번 달 활동(거리 또는 활동일)이 있을 때만** 올리고, 없으면 이미 올라간 줄을
- * **내린다** — 발행을 '안 하는' 것만으로는 지난달에 올려둔 줄이 그대로 남는다.
+ * ── 점수는 이제 **서버가 계산한다** (2026-08-07) ─────────────────────────────
+ * 예전엔 여기서 computeRankingStats 로 계산해 Firestore 에 직접 썼다. 규칙이 형태와
+ * 상한을 봤지만 **사람이 낼 수 있는 범위 안이면 아무 숫자나 통과했다** — 300km 를
+ * 달렸다고 쓰는 데 300km 가 필요 없었다.
+ *
+ * 그래서 규칙이 클라이언트 쓰기를 막고(`allow create, update: if false`), Cloud
+ * Functions 가 **그 사용자의 러닝 기록을 직접 읽어** 거리·활동일수를 다시 계산한다.
+ * 스트라바·나이키가 쓰는 구조다: 활동은 업로드되고 순위는 업로드된 활동에서 서버가 만든다.
+ *
+ * 여기서 보내는 것은 **서버가 알 수 없는 표시정보**뿐이다 — 닉네임·랭크 색·장착 타이틀,
+ * 그리고 진척 포인트(랭크 XP). 진척 포인트는 업적·타이틀·은퇴·챌린지가 얽힌 약 1,900줄
+ * 엔진의 산출물이라 서버에 옮겨 적으면 두 벌이 되어 반드시 갈라진다. 상한(10,000)으로
+ * 조이고 남은 구멍은 정직하게 적어 뒀다(`functions/ranking.js` 헤더 · 감사 L-7).
+ *
+ * '이번 달에 달리지 않았으면 명단에서 내린다'(2026-08-04)는 판단도 서버로 갔다 —
+ * 이제 거리·활동일수를 아는 쪽이 서버뿐이다.
  */
 export async function publishMyRanking(args: PublishRankingArgs): Promise<boolean> {
   try {
-    const uid = await getFirebaseUid();
-    if (!uid) return false;
-    const yearMonth = yearMonthOf(args.nowMs);
-    const stats = computeRankingStats({
-      runs: args.runs,
-      shoes: args.shoes,
-      yearMonth,
-      progressPoints: args.progressPoints,
+    const token = await getFirebaseIdToken();
+    if (!token) return false;
+    const r = await fetch(`${SOCIAL_BACKEND}/api/ranking/publish`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', Authorization: `Bearer ${token}`},
+      body: JSON.stringify({
+        yearMonth: yearMonthOf(args.nowMs),
+        nickname: args.nickname,
+        rankTier: args.rankTier,
+        rankColor: args.rankColor,
+        equippedTitle: args.equippedTitle ?? null,
+        progressPoints: args.progressPoints,
+        // 화면에 없는 축이지만 규칙이 필드를 요구한다(HallOfFameScreen 이 2026-08-04 에
+        // 내렸다). 서버가 전 기간 러닝을 읽지 않아도 되게 여기서 보낸다 — 순위에 쓰이지
+        // 않으므로 조작할 이유가 없고, 상한 0~100 으로 조인다.
+        shoeHealth: computeRankingStats({
+          runs: args.runs,
+          shoes: args.shoes,
+          yearMonth: yearMonthOf(args.nowMs),
+          progressPoints: args.progressPoints,
+        }).shoeHealth,
+        shoes_summary: args.shoes_summary ?? [],
+      }),
     });
-    const entry = buildStoredEntry({
-      uid,
-      nickname: args.nickname,
-      rankTier: args.rankTier,
-      rankColor: args.rankColor,
-      equippedTitle: args.equippedTitle ?? null,
-      stats,
-      updatedAt: args.nowMs,
-      shoes: args.shoes_summary,
-    });
-    // 이번 달 활동이 없으면 명단에서 빠진다(올린 적 없으면 no-op).
-    if (!(stats.distance > 0) && !(stats.consistency > 0)) {
-      await firestoreRankingStore.unpublish(yearMonth, uid);
-      return false;
-    }
-    await firestoreRankingStore.publish(yearMonth, entry);
-    return true;
+    if (!r.ok) return false;
+    const body = (await r.json()) as {published?: boolean};
+    return body?.published === true;
   } catch {
     return false;
   }

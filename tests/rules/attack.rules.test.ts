@@ -143,21 +143,24 @@ describe('시나리오 5 — 남의 uid 로 문서를 생성할 수 있는가', 
       setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), validEntry(VICTIM)),
     );
   });
-  it('본인 uid 로는 정상 생성된다(대조군)', async () => {
-    await assertSucceeds(
+  // 2026-08-07: 대조군이 뒤집혔다. 예전엔 '본인 uid 로는 쓸 수 있다'가 정상이었는데,
+  // 그게 곧 **점수를 지어낼 수 있다**는 뜻이었다(형태만 맞으면 통과). 이제 발행은
+  // Cloud Functions 만 한다 — 본인이라도 직접 못 쓴다.
+  it('본인 uid 로도 쓸 수 없다 — 발행은 서버 전용', async () => {
+    await assertFails(
       setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), validEntry(ATTACKER)),
     );
   });
 });
 
 describe('시나리오 6 — 임의 필드 추가·타입 변조가 되는가', () => {
-  it('랭킹: 점수를 문자열로', async () => {
+  // 랭킹 쓰기는 통째로 막혔다(2026-08-07). 예전엔 '점수 문자열'은 막히고 '모르는 필드
+  // 1KB'는 통과했다 — 후자가 남의 화면까지 늘어뜨리는 구멍이었다. 둘 다 사라졌다.
+  it('랭킹: 어떤 형태로도 쓸 수 없다(점수 문자열·거대 필드 모두)', async () => {
     await assertFails(
       setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), validEntry(ATTACKER, {distance: '9999'})),
     );
-  });
-  it('랭킹: 모르는 필드 추가 — **규칙이 막는가?**', async () => {
-    await assertSucceeds(
+    await assertFails(
       setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), validEntry(ATTACKER, {payload: 'x'.repeat(1000)})),
     );
   });
@@ -200,9 +203,11 @@ describe('시나리오 7 — 문서 크기·개수 제한이 없어 한 유저�
       setDoc(doc(attacker(), 'userBackups', ATTACKER), {blob: 'x'.repeat(200000)}),
     );
   });
-  it('리더보드 엔트리를 여러 달에 생성할 수 있는가', async () => {
+  // 2026-08-07: 예전엔 **가능했다** — 미래 달(2099-12)에까지 엔트리를 심어 둘 수 있었다.
+  // 쓰기가 서버 전용이 되면서 닫혔고, 서버는 요청한 달만 쓴다(형태 검증 + 그달 기록 기준).
+  it('리더보드 엔트리를 여러 달에 심을 수 없다(미래 달 선점 포함)', async () => {
     for (const m of ['2026-01', '2026-02', '2026-03', '2099-12']) {
-      await assertSucceeds(
+      await assertFails(
         setDoc(doc(attacker(), 'leaderboards', m, 'entries', ATTACKER), validEntry(ATTACKER)),
       );
     }
@@ -327,22 +332,18 @@ describe('랭킹 재개봉 후 방어', () => {
     await assertFails(deleteDoc(doc(attacker(), 'leaderboards', YM, 'entries', VICTIM)));
   });
 
-  it('신발 요약은 배열이어야 한다 — 깨진 문서가 순위표를 오염시키지 못하게', async () => {
-    await assertFails(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), withShoes(ATTACKER, '신발')));
-    await assertFails(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), withShoes(ATTACKER, 42)));
-  });
-
-  it('신발을 3켤레 넘게 심을 수 없다 — 남의 화면까지 느려진다', async () => {
-    const many = Array.from({length: 4}, (_, i) => ({brand: 'B', model: `M${i}`, usedKm: 1}));
-    await assertFails(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), withShoes(ATTACKER, many)));
-  });
-
-  it('정상 신발 요약은 통과한다(대조군)', async () => {
+  // ── 2026-08-07: 형태 검증에서 **쓰기 차단**으로 ────────────────────────────
+  // 예전엔 '깨진 신발 요약은 막고 정상은 통과'가 방어선이었다. 그런데 정상 형태로 점수를
+  // 지어내는 것이 애초에 문제였으므로, 클라이언트 쓰기를 통째로 닫았다.
+  // 신발 요약의 형태·개수 검증은 이제 서버가 한다(functions/ranking.js — 3켤레 상한,
+  // 문자열 아닌 것 버림. 회귀는 __tests__/functions/ranking.test.ts).
+  it('신발 요약이 정상이든 깨졌든, 클라이언트는 아무것도 못 쓴다', async () => {
     const ok = [{brand: 'Nike', model: 'Pegasus 41', usedKm: 412}];
-    await assertSucceeds(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), withShoes(ATTACKER, ok)));
-  });
-
-  it('신발 필드가 없어도 통과한다(옛 엔트리 호환)', async () => {
-    await assertSucceeds(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), validEntry(ATTACKER)));
+    const many = Array.from({length: 4}, (_, i) => ({brand: 'B', model: `M${i}`, usedKm: 1}));
+    for (const shoes of [ok, many, '신발', 42]) {
+      await assertFails(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), withShoes(ATTACKER, shoes)));
+    }
+    // 신발 필드가 아예 없어도 마찬가지다.
+    await assertFails(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), validEntry(ATTACKER)));
   });
 });

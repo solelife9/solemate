@@ -2,7 +2,9 @@
 //
 // 검증(행동): jest.setup 의 인메모리 firestore 목으로 publish→읽기 라운드트립을 단언한다.
 //  1) firestoreRankingStore: publish 후 topByCategory(정렬+limit)·getEntry·countAbove·total.
-//  2) publishMyRanking: 로그인 uid 로 leaderboards/{ym}/entries/{uid} 발행, 미로그인 → false.
+//  2) publishMyRanking: **서버 발행 경로**를 탄다(2026-08-07 — 점수 위조 차단으로 쓰기가
+//     Cloud Functions 전용이 됐다). 여기서는 '무엇을 보내는가'와 'Firestore 에 직접 쓰지
+//     않는가'를 본다. 점수 재계산 규칙 자체는 __tests__/functions/ranking.test.ts.
 //  3) keegoFirestoreRankingProvider: 발행된 엔트리를 라이브 provider 가 그대로 읽는다.
 
 import {getAuth, signInWithCredential, signOut} from '@react-native-firebase/auth';
@@ -58,42 +60,67 @@ describe('firestoreRankingStore — 라운드트립', () => {
   });
 });
 
-describe('publishMyRanking', () => {
+describe('publishMyRanking — 서버 발행 경로', () => {
   const NOW = Date.UTC(2026, 5, 15); // 2026-06
+  const args = {
+    nickname: '나',
+    rankTier: 'platinum' as const,
+    rankColor: '#14B8A6',
+    equippedTitle: 'shoe_master',
+    runs: [{shoe_id: 's1', km: 12, run_date: '2026-06-02'}],
+    shoes: [{id: 's1', max_km: 600, start_km: 0}],
+    progressPoints: 300,
+    nowMs: NOW,
+  };
+  const fetchMock = () => (global as unknown as {fetch: jest.Mock}).fetch;
 
-  test('로그인 uid 로 내 엔트리 발행', async () => {
-    await signInWithCredential(getAuth(), {uid: 'me'} as any);
-    const ok = await publishMyRanking({
-      nickname: '나',
-      rankTier: 'platinum',
-      rankColor: '#14B8A6',
-      equippedTitle: 'shoe_master',
-      runs: [{shoe_id: 's1', km: 12, run_date: '2026-06-02'}],
-      shoes: [{id: 's1', max_km: 600, start_km: 0}],
-      progressPoints: 300,
-      nowMs: NOW,
-    });
-    expect(ok).toBe(true);
-    const ym = yearMonthOf(NOW);
-    const e = await firestoreRankingStore.getEntry('me', ym);
-    expect(e?.uid).toBe('me');
-    expect(e?.nickname).toBe('나');
-    expect(e?.distance).toBe(12);
-    expect(e?.equippedTitle).toBe('shoe_master');
-    expect(e?.progressPoints).toBe(300);
+  beforeEach(() => {
+    (global as unknown as {fetch: jest.Mock}).fetch = jest.fn(() =>
+      Promise.resolve({ok: true, json: () => Promise.resolve({ok: true, published: true})}),
+    );
   });
 
-  test('미로그인 → false, 아무것도 쓰지 않음', async () => {
-    const ok = await publishMyRanking({
-      nickname: '나',
-      rankTier: 'bronze',
-      rankColor: '#CD7F32',
-      runs: [],
-      shoes: [],
-      progressPoints: 0,
-      nowMs: NOW,
-    });
-    expect(ok).toBe(false);
+  test('ID 토큰을 실어 표시정보만 보낸다 — 점수는 서버가 기록에서 다시 계산한다', async () => {
+    await signInWithCredential(getAuth(), {uid: 'me'} as never);
+    expect(await publishMyRanking(args)).toBe(true);
+
+    const [url, opts] = fetchMock().mock.calls[0];
+    expect(String(url)).toContain('/api/ranking/publish');
+    expect(opts.headers.Authorization).toMatch(/^Bearer /);
+    const sent = JSON.parse(opts.body);
+    expect(sent.yearMonth).toBe(yearMonthOf(NOW));
+    expect(sent.nickname).toBe('나');
+    expect(sent.equippedTitle).toBe('shoe_master');
+    expect(sent.progressPoints).toBe(300);
+    // **거리·활동일수는 보내지 않는다.** 보내면 서버가 그걸 쓸 유혹이 생기고, 그 순간
+    // 위조 차단이 무의미해진다. 이 단언이 그 경계를 지킨다.
+    expect(sent.distance).toBeUndefined();
+    expect(sent.consistency).toBeUndefined();
+  });
+
+  test('Firestore 에 **직접 쓰지 않는다** — 규칙이 막았고, 뚫으려 들면 안 된다', async () => {
+    await signInWithCredential(getAuth(), {uid: 'me'} as never);
+    await publishMyRanking(args);
+    expect(await firestoreRankingStore.total(yearMonthOf(NOW))).toBe(0);
+  });
+
+  test('서버가 "안 올렸다"고 하면 false', async () => {
+    await signInWithCredential(getAuth(), {uid: 'me'} as never);
+    fetchMock().mockResolvedValue({ok: true, json: () => Promise.resolve({ok: true, published: false})});
+    expect(await publishMyRanking(args)).toBe(false);
+  });
+
+  test('서버 오류·네트워크 실패는 false — 동기 흐름을 막지 않는다', async () => {
+    await signInWithCredential(getAuth(), {uid: 'me'} as never);
+    fetchMock().mockResolvedValue({ok: false, status: 500});
+    expect(await publishMyRanking(args)).toBe(false);
+    fetchMock().mockRejectedValue(new Error('offline'));
+    await expect(publishMyRanking(args)).resolves.toBe(false);
+  });
+
+  test('미로그인 → false, 서버를 부르지도 않는다', async () => {
+    expect(await publishMyRanking({...args, equippedTitle: null})).toBe(false);
+    expect(fetchMock()).not.toHaveBeenCalled();
     expect(await firestoreRankingStore.total(yearMonthOf(NOW))).toBe(0);
   });
 });
@@ -104,16 +131,10 @@ describe('keegoFirestoreRankingProvider (라이브 배선)', () => {
   test('발행된 엔트리를 provider 가 읽어 내 순위를 준다', async () => {
     await signInWithCredential(getAuth(), {uid: 'me'} as any);
     const ym = yearMonthOf(NOW);
+    // 이 describe 가 보는 것은 **읽기 배선**이다(발행은 이제 서버가 한다).
+    // 그래서 엔트리는 store 로 직접 심는다 — 서버 왕복을 흉내 낼 이유가 없다.
     await firestoreRankingStore.publish(ym, storedEntry('rival', 100));
-    await publishMyRanking({
-      nickname: '나',
-      rankTier: 'gold',
-      rankColor: '#FFD700',
-      runs: [{shoe_id: 's1', km: 50, run_date: '2026-06-02'}],
-      shoes: [{id: 's1', max_km: 600, start_km: 0}],
-      progressPoints: 10,
-      nowMs: NOW,
-    });
+    await firestoreRankingStore.publish(ym, storedEntry('me', 50));
     const lb = await keegoFirestoreRankingProvider.getLeaderboard('distance', ym);
     expect(lb.available).toBe(true);
     expect(lb.entries.map(e => e.uid)).toEqual(['rival', 'me']); // 100 > 50
@@ -136,53 +157,8 @@ describe('yearMonthOf', () => {
 });
 
 // ─── 이번 달에 달리지 않았으면 명단에 없다 (2026-08-04) ────────────────────────
-// 실제 리더보드를 열어 보니 **엔트리 5개가 전부 거리 0km · 활동 0일**이었다(민우님
-// 테스트 계정들). 발행이 활동 여부를 안 보고 클라우드 동기마다 돌았기 때문이다.
-// 그러면 두 가지가 깨진다:
-//   · 화면 라벨이 거짓이 된다 — 진척 포인트 축은 "…에 **달린 러너 중**"이라고 적혀 있다.
-//   · 첫 사용자가 랭킹을 열면 `러너 0km` 가 늘어선 죽은 표를 본다.
-describe('publishMyRanking — 활동 게이트', () => {
-  const NOW = Date.UTC(2026, 5, 15); // 2026-06
-  const ym = yearMonthOf(NOW);
-
-  test('이번 달 러닝이 없으면 발행하지 않는다', async () => {
-    await signInWithCredential(getAuth(), {uid: 'idle'} as any);
-    const ok = await publishMyRanking({
-      nickname: '나', rankTier: 'silver', rankColor: '#C0C0C0',
-      runs: [{shoe_id: 's1', km: 10, run_date: '2026-04-02'}], // 지난달
-      shoes: [{id: 's1', max_km: 600, start_km: 0}],
-      progressPoints: 260, // XP 는 있어도 이번 달 활동이 아니다
-      nowMs: NOW,
-    });
-    expect(ok).toBe(false);
-    expect(await firestoreRankingStore.getEntry('idle', ym)).toBeNull();
-  });
-
-  test('달렸다가 그 기록을 지우면 명단에서 **내려간다**', async () => {
-    await signInWithCredential(getAuth(), {uid: 'gone'} as any);
-    const base = {
-      nickname: '나', rankTier: 'silver' as const, rankColor: '#C0C0C0',
-      shoes: [{id: 's1', max_km: 600, start_km: 0}], progressPoints: 100, nowMs: NOW,
-    };
-    // 먼저 달려서 올라간다
-    expect(await publishMyRanking({...base, runs: [{shoe_id: 's1', km: 5, run_date: '2026-06-02'}]})).toBe(true);
-    expect(await firestoreRankingStore.getEntry('gone', ym)).not.toBeNull();
-    // 그 런이 사라지면 — 발행을 '안 하는' 것만으로는 이미 올라간 줄이 남는다
-    expect(await publishMyRanking({...base, runs: []})).toBe(false);
-    expect(await firestoreRankingStore.getEntry('gone', ym)).toBeNull();
-  });
-
-  test('거리는 0 이어도 활동일이 있으면 올린다 — 아주 짧은 러닝도 달린 것이다', async () => {
-    await signInWithCredential(getAuth(), {uid: 'tiny'} as any);
-    const ok = await publishMyRanking({
-      nickname: '나', rankTier: 'bronze', rankColor: '#CD7F32',
-      runs: [{shoe_id: 's1', km: 0, run_date: '2026-06-03'}],
-      shoes: [{id: 's1', max_km: 600, start_km: 0}],
-      progressPoints: 0, nowMs: NOW,
-    });
-    expect(ok).toBe(true);
-  });
-});
+// 이 규칙은 **서버로 옮겼다**(2026-08-07). 거리·활동일수를 아는 쪽이 서버뿐이기 때문이다.
+// 검증은 __tests__/functions/ranking.test.ts 의 '활동 게이트' describe 에 있다.
 
 // ============================================================================
 // 「1,2,3위는 뭘 신나」가 화면에 뜬 적이 없었다 (2026-08-07 감사)

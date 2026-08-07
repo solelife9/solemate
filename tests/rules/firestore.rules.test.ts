@@ -160,37 +160,27 @@ describe('leaderboards/{ym}/entries/{uid}', () => {
     await assertFails(getDoc(doc(asGuest(), 'leaderboards', YM, 'entries', OTHER)));
   });
 
-  it('본인 엔트리는 유효한 형태일 때만 쓴다', async () => {
-    await assertSucceeds(
+  // ── 쓰기는 서버만 (2026-08-07) ─────────────────────────────────────────────
+  // 예전엔 '본인 엔트리를 유효한 형태로' 쓸 수 있었다. 그런데 형태와 상한만 보므로
+  // **사람이 낼 수 있는 범위 안이면 아무 숫자나 통과했다** — 300km 를 달렸다고 쓰는 데
+  // 300km 가 필요 없었다. 이제 발행은 Cloud Functions 만 한다(admin SDK 는 규칙 우회).
+  it('본인 엔트리라도 **직접 쓸 수 없다** — 발행은 서버만 한다', async () => {
+    await assertFails(
       setDoc(doc(asMe(), 'leaderboards', YM, 'entries', ME), validEntry(ME)),
     );
   });
 
-  it('타인 uid 엔트리는 쓸 수 없다(사칭 차단)', async () => {
+  it('이미 있는 내 엔트리를 고쳐 쓸 수도 없다(점수 덮어쓰기 차단)', async () => {
+    await seed(['leaderboards', YM, 'entries', ME], validEntry(ME));
+    await assertFails(
+      setDoc(doc(asMe(), 'leaderboards', YM, 'entries', ME), {...validEntry(ME), distance: 1499}),
+    );
+  });
+
+  it('타인 uid 엔트리는 당연히 쓸 수 없다(사칭 차단)', async () => {
     await assertFails(
       setDoc(doc(asMe(), 'leaderboards', YM, 'entries', OTHER), validEntry(OTHER)),
     );
-  });
-
-  it('문서 id 와 다른 uid 필드를 심을 수 없다', async () => {
-    await assertFails(
-      setDoc(doc(asMe(), 'leaderboards', YM, 'entries', ME), validEntry(OTHER)),
-    );
-  });
-
-  it('형태가 깨진 엔트리는 거부(점수가 문자열)', async () => {
-    await assertFails(
-      setDoc(doc(asMe(), 'leaderboards', YM, 'entries', ME), {
-        ...validEntry(ME),
-        distance: '999999',
-      }),
-    );
-  });
-
-  it('필드가 빠진 엔트리는 거부', async () => {
-    const partial: Record<string, unknown> = {...validEntry(ME)};
-    delete partial.progressPoints;
-    await assertFails(setDoc(doc(asMe(), 'leaderboards', YM, 'entries', ME), partial));
   });
 
   it('본인 엔트리는 삭제할 수 있다(탈퇴 시 파기 경로)', async () => {
@@ -324,46 +314,32 @@ describe('미정의 경로', () => {
 });
 
 // ============================================================================
-// 랭킹 점수 크기 검증 (2026-08-04)
+// 랭킹 쓰기 차단 (2026-08-04 상한 → 2026-08-07 서버 전용)
 // ============================================================================
-// 점수는 **클라이언트가 계산한다.** 전에는 규칙이 `is number` 만 봐서, 형태만 맞추면
-// 누구나 distance: 999999 를 써서 영구 1위가 될 수 있었다. 리더보드를 실제로 공개한
-// 뒤로는(2026-08-03) 노출된 구멍이다.
-//
-// 서버 재계산(Cloud Function)이 진짜 답이지만 그건 큰 작업이고, 그 전에도 **사람이 낼 수
-// 없는 값**은 규칙에서 막을 수 있다. 여기서는 그 방어선을 고정한다.
-describe('leaderboards — 점수 크기 검증', () => {
+describe('leaderboards — 클라이언트 쓰기는 어떤 형태로도 막힌다', () => {
   const write = (over: Record<string, unknown>) =>
     setDoc(doc(asMe(), 'leaderboards', YM, 'entries', ME), {...validEntry(ME), ...over});
 
-  test('정상 범위는 통과한다', async () => {
-    await assertSucceeds(write({distance: 300, consistency: 20, progressPoints: 5000}));
+  // 2026-08-04 에는 여기서 **상한**을 지켰다(distance ≤ 1500 등). 형태만 맞으면 통과하는
+  // 구조라 '사람이 낼 수 없는 값'만 막을 수 있었기 때문이다.
+  // 2026-08-07 에 그 전제가 사라졌다 — 발행이 Cloud Functions 전용이 되면서 **어떤 값도
+  // 클라이언트는 못 쓴다.** 상한은 이제 서버가 건다(functions/ranking.js CAPS, 회귀는
+  // __tests__/functions/ranking.test.ts + rankingParity).
+  //
+  // 그래서 이 describe 가 지키는 것은 상한이 아니라 **문이 닫혀 있다는 사실**이다.
+  test('정상 범위여도 못 쓴다 — 그게 예전에 뚫려 있던 구멍이다', async () => {
+    await assertFails(write({distance: 300, consistency: 20, progressPoints: 5000}));
   });
 
-  test('사람이 낼 수 없는 거리는 거부한다 — 월 1,500km 상한', async () => {
+  test('과장된 값은 당연히 못 쓴다', async () => {
     await assertFails(write({distance: 999999}));
-    await assertFails(write({distance: 1501}));
-  });
-
-  test('한 달은 31일을 넘을 수 없다', async () => {
     await assertFails(write({consistency: 32}));
-  });
-
-  test('총 획득 가능 XP(≈6,310)를 크게 넘는 진척 포인트는 거부한다', async () => {
     await assertFails(write({progressPoints: 10001}));
-  });
-
-  test('신발 관리는 퍼센트다 — 100 초과 거부', async () => {
     await assertFails(write({shoeHealth: 101}));
   });
 
-  test('음수는 전부 거부한다 — 정렬을 뒤집는 장난을 막는다', async () => {
+  test('음수·긴 닉네임도 마찬가지', async () => {
     await assertFails(write({distance: -1}));
-    await assertFails(write({consistency: -1}));
-    await assertFails(write({progressPoints: -1}));
-  });
-
-  test('긴 닉네임은 거부한다 — 랭킹 행이 남의 화면까지 늘어진다', async () => {
     await assertFails(write({nickname: 'x'.repeat(41)}));
   });
 });

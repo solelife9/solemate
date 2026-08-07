@@ -32,6 +32,7 @@ const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const express = require('express');
 const {verifyNaverIdentity} = require('./naverAuth');
+const {mountRanking} = require('./ranking');
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -188,6 +189,12 @@ app.get('/shop/price', rateLimit, async (req, res) => {
     res.status(500).json({error: String((e && e.message) || e), items: []});
   }
 });
+
+// ── 월간 리더보드 발행/회수 (2026-08-07) ─────────────────────────────────────
+// 앱이 자기 점수를 직접 쓰던 것을 서버 계산으로 옮긴다 — 근거·한계는 ./ranking.js 헤더.
+// firestore.rules 가 leaderboards 엔트리의 클라이언트 쓰기를 막고 있으므로,
+// **이 경로가 유일한 발행 통로**다(admin SDK 는 규칙을 우회한다).
+mountRanking(app);
 
 // 헬스체크(배포 확인용).
 app.get('/health', (_req, res) => res.json({ok: true}));

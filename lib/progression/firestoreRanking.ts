@@ -222,8 +222,25 @@ function ymOf(date: unknown): string {
   return typeof date === 'string' ? date.slice(0, 7) : '';
 }
 
+/**
+ * 살아있는 레코드만. **묘비(soft-delete)와 빈 칸을 여기서 거른다**(2026-08-07).
+ *
+ * 예전엔 거르지 않았다 — 호출부(App.publishMyRankingNow)가 `liveRecords` 로 미리 걸러
+ * 넘겼기 때문에 실사고는 없었지만, 함수 자체는 묘비를 그대로 셌다. 서버 재계산
+ * (`functions/ranking.js`)을 붙이면서 같은 입력으로 대조하니 **두 구현이 갈라졌고**
+ * (`__tests__/rankingParity.test.ts`) 서버가 맞았다. 계약을 함수 안으로 들인다 —
+ * 안전한 호출부에만 기대는 규칙은 새 호출부가 생기는 순간 깨진다.
+ */
+function alive<T>(list: readonly T[]): T[] {
+  return (Array.isArray(list) ? list : []).filter(
+    r => !!r && (r as {deleted?: unknown}).deleted !== true,
+  );
+}
+
 export function computeRankingStats(input: RankingStatsInput): RankingStats {
-  const {runs, shoes, yearMonth} = input;
+  const runs = alive(input.runs);
+  const shoes = alive(input.shoes);
+  const {yearMonth} = input;
   const monthRuns = runs.filter(r => ymOf(r.run_date) === yearMonth);
   const distance = monthRuns.reduce((a, r) => a + num(r.km), 0);
   // 활동 일수 = 서로 다른 '날짜'(YYYY-MM-DD) 수. run_date 에 시간 접미사가 실리면 같은
