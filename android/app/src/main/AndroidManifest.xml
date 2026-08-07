@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -60,6 +61,50 @@
          중복 선언하지 않는다. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- ── 라이브러리가 끌고 들어온 권한을 걷어낸다 (2026-08-07) ──────────────────
+         아래는 **우리가 선언한 적 없는데 머지된 매니페스트에 들어와 있던 것들**이다.
+         소스만 읽으면 안 보이고, 사용자에게는 스토어의 '권한' 목록으로 그대로 노출된다.
+         확인 방법: android/app/build/intermediates/merged_manifest/release/.../AndroidManifest.xml
+
+         ① 광고 식별자 3종 — Firebase Analytics 가 기본으로 끌고 온다.
+            이 앱은 광고를 쓰지 않고 iOS 도 IDFA 미사용(PrivacyInfo NSPrivacyTracking=false)이다.
+            **선언돼 있으면 Play 데이터 보안 폼에서 "광고 ID 수집"을 답해야 하고**,
+            처리방침에도 없는 식별자가 앱에 붙어 있는 상태가 된다.
+            고지를 늘리는 대신 **수집 자체를 끊는 쪽**을 골랐다 — 쓰지 않는 것을 받지 않는다.
+            (Firebase 공식 문서가 광고 기능을 안 쓸 때 권장하는 방법이 이 제거다.)
+
+         ② 런처 배지 권한 다수 — 알림 라이브러리(ShortcutBadger 계열)가 끌고 온다.
+            삼성·화웨이·오포·HTC·소니 런처의 설정 읽기/쓰기, 바로가기 설치/삭제까지 포함된다.
+            **이 앱은 배지를 쓰지 않는다**(setBadgeCount 호출부 0건 — grep 확인).
+            남겨두면 스토어 권한 목록에 "바로가기 설치·런처 설정 변경"이 뜨는데,
+            러닝 앱이 그걸 요구할 이유를 사용자에게 설명할 수 없다.
+
+         ⚠️ 되살릴 일이 생기면(배지를 실제로 쓰게 되면) 그때 이 블록에서 빼고
+            처리방침·데이터 보안 폼을 함께 고칠 것. 회귀 가드: __tests__/nativePermissions.test.ts -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" tools:node="remove" />
+
+    <uses-permission android:name="android.permission.READ_APP_BADGE" tools:node="remove" />
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" tools:node="remove" />
+    <uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT" tools:node="remove" />
+    <uses-permission android:name="com.android.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.android.launcher.permission.WRITE_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.anddoes.launcher.permission.UPDATE_COUNT" tools:node="remove" />
+    <uses-permission android:name="com.htc.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.htc.launcher.permission.UPDATE_SHORTCUT" tools:node="remove" />
+    <uses-permission android:name="com.huawei.android.launcher.permission.CHANGE_BADGE" tools:node="remove" />
+    <uses-permission android:name="com.huawei.android.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.huawei.android.launcher.permission.WRITE_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.majeur.launcher.permission.UPDATE_BADGE" tools:node="remove" />
+    <uses-permission android:name="com.oppo.launcher.permission.READ_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.oppo.launcher.permission.WRITE_SETTINGS" tools:node="remove" />
+    <uses-permission android:name="com.sec.android.provider.badge.permission.READ" tools:node="remove" />
+    <uses-permission android:name="com.sec.android.provider.badge.permission.WRITE" tools:node="remove" />
+    <uses-permission android:name="com.sonyericsson.home.permission.BROADCAST_BADGE" tools:node="remove" />
+    <uses-permission android:name="com.sonymobile.home.permission.PROVIDER_INSERT_BADGE" tools:node="remove" />
+    <uses-permission android:name="me.everything.badger.permission.BADGE_COUNT_READ" tools:node="remove" />
+    <uses-permission android:name="me.everything.badger.permission.BADGE_COUNT_WRITE" tools:node="remove" />
 
     <application
       android:name=".MainApplication"
