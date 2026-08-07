@@ -656,8 +656,11 @@ function ProfileScreen({
   // 심폐 체력(VO2max) — 러너 스펙(기록 탭 FitnessCard 를 마이 탭 스펙 카드로 이관). 같은 매핑.
   // 심박을 함께 넘긴다(2026-08-04). 전에는 km·시간·날짜만 넘겨서, 애플 건강을 연동해도
   // 이 화면은 **페이스만 보고** 체력을 추정했다 — 심박 기반 경로가 있어도 굶고 있었다.
-  // 안정시 심박·나이는 설정에서 이미 들어온다(아래 props). 최대 심박은 런들에서 관측된
-  // 값을 fitnessSummary 가 직접 집계한다.
+  // 안정시 심박·나이는 설정에서 이미 들어온다(아래 props).
+  // 최대 심박(2026-08-07): 예전 주석은 "런들에서 관측된 값을 fitnessSummary 가 직접
+  // 집계한다"고 적혀 있었는데 **사실이 아니었다** — 집계할 원본이 아예 없어서 심박 기반
+  // 훈련부하(TRIMP)가 한 번도 발동하지 않았다. 이제 레코드가 heart_rate_max 를 들고
+  // 있고(저장 시 hrTrack 에서 측정), 없는 런은 예전처럼 페이스 기반으로 떨어진다.
   const vo2 = useMemo(
     () => fitnessSummary(
       (recapRuns as RecapRun[]).map((r) => ({
@@ -665,6 +668,7 @@ function ProfileScreen({
         durationS: Number(r?.duration ?? 0),
         runDate: String(r?.run_date || ''),
         hrAvg: Number((r as {heart_rate?: number})?.heart_rate ?? 0),
+        hrMax: Number((r as {heart_rate_max?: number})?.heart_rate_max ?? 0),
         hrRest: restHR,
       })),
       todayISO || '',

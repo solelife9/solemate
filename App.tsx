@@ -49,6 +49,7 @@ import {mirrorRecords, pullRecords, mergePulled, isPayloadMirrored, stripRecordA
 import {retirementRecordsFromShoes, setShoeRetirement, migrateRetiredShoes} from './lib/shoeRetirement';
 import {buildPublicProfile, publishProfile, loadVisibility, saveVisibility, type ProfileVisibility} from './lib/publicProfile';
 import {fitnessSummary} from './lib/analytics/fitness';
+import {hrSummary} from './lib/analytics/hrZones';
 import SocialConsentScreen from './SocialConsentScreen.rn';
 import ForceUpdateScreen from './ForceUpdateScreen.rn';
 import {nativeRecognizer} from './lib/ocrNative';
@@ -1239,7 +1240,7 @@ function Main(){
   //   1) 사이드키(route_/time_) 영속 + 캐시에 즉시 durable 기록(크래시-세이프티) — 네트워크 무관.
   //   2) 낙관적 setRuns. 영속/동기는 부팅캐시 + cloudSync(Firestore)가 담당한다.
   // localId(genRunId)가 런의 영구 id다 — 서버 재키잉이 없으므로 머지 키가 안정적이다.
-  async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number,elevationM?:number,calories?:number,opts?:{startMs?:number;id?:string}){
+  async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number,elevationM?:number,calories?:number,opts?:{startMs?:number;id?:string;heartRateMax?:number}){
     const timeStr=nowTimeLabel();
     const stampedAt=syncNowMs(); // AUDIT 3 D-2 — 서버 보정 시계(병합 LWW 기준)
     // ── 저장은 멱등해야 한다 (2026-08-07 감사) ─────────────────────────────
@@ -1266,6 +1267,8 @@ function Main(){
       // 역산했는데, duration 은 **이동 시간**이라 일시정지만큼 창이 통째로 밀렸다.
       // 앱은 이 값을 이미 알고 있다 — 그냥 적는다. 모르면(수동 입력 등) 필드를 비운다.
       ...(opts?.startMs && opts.startMs>0 ? {start_ms:opts.startMs} : {}),
+      // 최대 심박 — 훈련부하(TRIMP)의 필수 입력이다. 측정된 값이 있을 때만 싣는다.
+      ...(opts?.heartRateMax && opts.heartRateMax>0 ? {heart_rate_max:opts.heartRateMax} : {}),
     };
     // ── 1) 로컬 우선 영속화(크래시-세이프티) — 사이드키 + 캐시 즉시 durable 기록 ──
     // 사이드키(route/time)는 보조 데이터다 — setItem 이 실패해도 삼켜서 런 자체(캐시+상태)는
@@ -2038,6 +2041,9 @@ function Main(){
       // (정상 모드에선 병합돼 한 건이라 메모가 필요 없다).
       const watchMemo=MERGE_PHONE_WATCH_RUNS?'':'⌚️ 워치 기록 (측정 모드 — 폰 기록과 비교용)';
       const newId=await ctx.addRun(shoeId,p.km,date,watchMemo,'watch',Math.round(p.durationS),Math.round(p.cadence),routeStr,'',Math.round(p.avgBpm),elevM,Math.round(p.kcal),{startMs:p.startMs});
+      // ⚠️ 워치 페이로드에는 최대 심박이 없다(avgBpm 만 온다). **지어내지 않는다** —
+      // 워치가 러닝 끝에 따로 보내는 심박 트랙(onWatchHrTrack → saveWatchHrTrack)이
+      // 도착하면 repairAvgBpm 이 레코드의 평균·최대를 그 실측에서 채운다.
       // 워치 런 계측(2026-08-04 출시 운영 감사 L-11). 이전엔 이 경로에 계측이 없어
       // **워치 사용량이 통째로 보이지 않았다** — device:'watch' 값이 프로덕션에서 한 번도
       // 전송된 적이 없었다(테스트 파일에만 존재). 워치는 가장 많은 시간을 쏟은 영역 중
@@ -2091,14 +2097,33 @@ function Main(){
   const repairAvgBpm=async(runId:string)=>{
     const sid=String(runId);
     const target=runsForHrRef.current.find(r=>String(r.id)===sid);
-    if(!target||(Number(target.heart_rate)||0)>0)return;
+    if(!target)return;
+    // 평균과 **최대**를 각각 본다(2026-08-07). 예전엔 평균이 있으면 곧장 빠져나갔는데,
+    // 최대 심박은 저장하는 곳이 아예 없었으므로 그 조기 반환이 곧 "최대는 영영 안 채움"
+    // 이었다. 그 결과 훈련부하(TRIMP)의 필수 입력이 늘 비어 심박 기반 경로가 한 번도
+    // 돌지 않았다(늘 페이스 기반 폴백).
+    const needAvg=(Number(target.heart_rate)||0)<=0;
+    const needMax=(Number(target.heart_rate_max)||0)<=0;
+    if(!needAvg&&!needMax)return;
     try{
       const raw=await AsyncStorage.getItem('hrTrack_'+sid);
-      const avg=raw?avgBpmFromTrack(JSON.parse(raw)):null;
-      if(avg==null)return;
+      if(!raw)return;
+      const track=JSON.parse(raw);
+      const patch:Partial<BackendRun>={};
+      if(needAvg){
+        const avg=avgBpmFromTrack(track);
+        if(avg!=null)patch.heart_rate=avg;
+      }
+      if(needMax){
+        // 측정된 시계열에서 뽑는다 — 나이 공식으로 추정하지 않는다(그건 이 사람의
+        // 최대 심박이 아니라 인구 평균이고, 훈련부하를 통째로 왜곡한다).
+        const max=hrSummary(Array.isArray(track)?track:[]).max;
+        if(max>0)patch.heart_rate_max=max;
+      }
+      if(Object.keys(patch).length===0)return;
       const editedAt=Date.now();
-      setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,heart_rate:avg},editedAt):r));
-      await persistRunToCache(stampUpdatedAt({...target,heart_rate:avg},editedAt));
+      setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,...patch},editedAt):r));
+      await persistRunToCache(stampUpdatedAt({...target,...patch},editedAt));
     }catch{/* 비치명적 */}
   };
   // 백필 + 평균 보정 묶음 — retryPendingHr/recoverRecentHr 가 트랙을 채우는 모든 경로에서
@@ -2900,7 +2925,9 @@ function Main(){
               try{await AsyncStorage.setItem('route_'+watchDup.id,route);}catch{/* 비치명적 */}
             }
           }
-          const newId=watchDup?watchDup.id:await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal,{startMs,id:runTracker.getRunId()});
+          const newId=watchDup?watchDup.id:await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal,{startMs,id:runTracker.getRunId(),
+            // 최대 심박은 **추정하지 않는다** — 방금 측정한 시계열에서 뽑는다.
+            heartRateMax:hrTrack&&hrTrack.length>0?hrSummary(hrTrack).max:0});
           // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.
           // 거리·페이스·PB 는 이미 랩 시계열(paceTrack=lapsToTrack)로 정본이라 별도 계산 불필요.
           if(trackMeta&&trackMeta.laps>0){
