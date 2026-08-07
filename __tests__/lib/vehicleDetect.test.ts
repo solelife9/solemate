@@ -172,3 +172,38 @@ describe('최종 판정 — OS 가 휴리스틱을 이긴다', () => {
     expect(isVehicleNow(null, false)).toBe(false);
   });
 });
+
+// ── 배선 확인 ────────────────────────────────────────────────────────────────
+// 네이티브 모듈은 **등록을 빠뜨려도 조용하다** — JS 파사드가 'unknown' 폴백을 돌려주므로
+// 앱은 멀쩡히 돌고, 1순위(OS)가 영영 안 켜진 채 백스톱만 도는 상태가 된다.
+// 이 저장소가 겪은 "만들었는데 배선이 안 된" 사고(고도 상한·헬스커넥트 근거 화면)와 같은
+// 종류라 소스 레벨로 못 박는다.
+describe('배선 — OS 활동 인식 모듈이 실제로 앱에 등록돼 있다', () => {
+  const read = (f: string) => require('fs').readFileSync(require('path').join(__dirname, '../..', f), 'utf8');
+  const AND = 'android/app/src/main/java/com/keego/app';
+
+  test('안드로이드 모듈이 존재하고 이름이 JS 파사드와 같다', () => {
+    const mod = read(`${AND}/KeegoActivityRecognitionModule.kt`);
+    expect(mod).toContain('const val NAME = "KeegoActivityRecognition"');
+    // JS 는 NativeModules.KeegoActivityRecognition 으로 찾는다 — 이름이 갈리면 영영 못 만난다.
+    expect(read('lib/activityRecognition.ts')).toContain('KeegoActivityRecognition');
+  });
+
+  test('ReactPackage 에 등록돼 있다 — 안 하면 모듈이 조용히 없는 상태가 된다', () => {
+    expect(read(`${AND}/KeegoWidgetPackage.kt`)).toContain('KeegoActivityRecognitionModule(reactContext)');
+  });
+
+  test('네이티브가 돌려주는 문자열을 JS 가 전부 해석할 수 있다', () => {
+    const mod = read(`${AND}/KeegoActivityRecognitionModule.kt`);
+    // Kotlin kindOf() 가 내보내는 값 ↔ normalizeActivityKind() 가 아는 값
+    for (const k of ['in_vehicle', 'on_bicycle', 'running', 'walking', 'still']) {
+      expect(mod).toContain(`"${k}"`);
+      expect(normalizeActivityKind(k)).not.toBe('unknown');
+    }
+  });
+
+  test('권한이 매니페스트에 선언돼 있다', () => {
+    expect(read('android/app/src/main/AndroidManifest.xml'))
+      .toContain('android.permission.ACTIVITY_RECOGNITION');
+  });
+});

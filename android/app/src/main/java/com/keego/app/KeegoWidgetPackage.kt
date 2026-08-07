@@ -12,8 +12,14 @@ import com.facebook.react.uimanager.ViewManager
  * MainApplication 의 패키지 목록에 손으로 넣어야 한다.
  */
 class KeegoWidgetPackage : ReactPackage {
+    // 앱 내부 네이티브 모듈은 전부 여기 모은다(패키지를 늘리면 MainApplication 도 같이
+    // 늘어나고, 하나 빠뜨렸을 때 "모듈이 조용히 없는" 상태가 된다 — JS 파사드가 폴백을
+    // 돌려주므로 티도 안 난다).
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> =
-        listOf(KeegoWidgetModule(reactContext))
+        listOf(
+            KeegoWidgetModule(reactContext),
+            KeegoActivityRecognitionModule(reactContext),
+        )
 
     override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> =
         emptyList()
