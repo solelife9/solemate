@@ -183,3 +183,47 @@ describe('publishMyRanking — 활동 게이트', () => {
     expect(ok).toBe(true);
   });
 });
+
+// ============================================================================
+// 「1,2,3위는 뭘 신나」가 화면에 뜬 적이 없었다 (2026-08-07 감사)
+//
+// 엔트리에 신발을 담아 두는 이유는 **추가 읽기 0**이다(랭킹 화면은 어차피 상위 100명
+// 엔트리를 읽으므로, 프로필을 따로 읽으면 100명 × 1읽기가 더 붙는다).
+// 그런데 읽기 쪽 정규화(toStored)가 shoes 를 **복사하지 않았다.** 발행할 땐 실어 보내고
+// 읽을 땐 통째로 버리고 있었으니, 그 기능은 한 번도 동작한 적이 없다.
+// ============================================================================
+describe('랭킹 엔트리의 신발', () => {
+  const YM2 = '2026-08';
+  test('발행한 신발이 읽을 때 살아남는다', async () => {
+    const uid = 'u-shoes';
+    await firestoreRankingStore.publish(YM2, {
+      ...storedEntry(uid, 42),
+      shoes: [
+        {brand: 'Nike', model: 'Pegasus 41', usedKm: 320},
+        {brand: 'Asics', model: 'Novablast 5', usedKm: 110},
+      ],
+    } as never);
+
+    const back = await firestoreRankingStore.getEntry(uid, YM2);
+    expect(back?.shoes).toHaveLength(2);
+    expect(back?.shoes?.[0]).toMatchObject({brand: 'Nike', model: 'Pegasus 41', usedKm: 320});
+  });
+
+  test('신발이 없던 옛 엔트리는 필드 없이 그대로 읽힌다(하위호환)', async () => {
+    const uid = 'u-legacy';
+    await firestoreRankingStore.publish(YM2, storedEntry(uid, 10));
+    const back = await firestoreRankingStore.getEntry(uid, YM2);
+    expect(back?.shoes).toBeUndefined();
+  });
+
+  test('목록 조회에서도 신발이 따라온다 — 화면이 읽는 경로', async () => {
+    const uid = 'u-top';
+    await firestoreRankingStore.publish(YM2, {
+      ...storedEntry(uid, 99),
+      shoes: [{brand: 'Hoka', model: 'Clifton 10', usedKm: 55}],
+    } as never);
+    const top = await firestoreRankingStore.topByCategory('distance', YM2, 10);
+    const mine = top.find(e => e.uid === uid);
+    expect(mine?.shoes?.[0]?.model).toBe('Clifton 10');
+  });
+});

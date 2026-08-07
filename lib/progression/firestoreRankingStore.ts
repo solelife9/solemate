@@ -33,6 +33,7 @@ import {
   type EntryShoe,
   computeRankingStats,
   buildStoredEntry,
+  sanitizeEntryShoes,
   RankingStatsInput,
 } from './firestoreRanking';
 import {RankingProvider, RankTier} from './types';
@@ -63,6 +64,14 @@ function toStored(data: Record<string, unknown> | undefined, uid: string): Store
     collection: num(d.collection),
     progressPoints: num(d.progressPoints),
     updatedAt: num(d.updatedAt),
+    // 그달 주력 신발(2026-08-07). 예전엔 이 정규화가 shoes 를 **복사하지 않아서**,
+    // 발행할 땐 실어 보내고 읽을 땐 통째로 버렸다. 그래서 「1,2,3위는 뭘 신나」가
+    // 화면에 한 번도 뜬 적이 없다 — 추가 읽기 0으로 만들려고 엔트리에 넣어 둔 값을
+    // 읽는 쪽에서 잃고 있었다. 형태 검증은 sanitizeEntryShoes 가 한다(옛 엔트리엔 없다).
+    ...(() => {
+      const shoes = sanitizeEntryShoes((d as {shoes?: EntryShoe[]}).shoes);
+      return shoes.length ? {shoes} : {};
+    })(),
   };
 }
 
