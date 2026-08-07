@@ -2035,6 +2035,19 @@ function Main(){
         if(routeStr&&!String((dup as any).route||'')){
           try{await AsyncStorage.setItem('route_'+dup.id,routeStr);}catch{/* 비치명적 */}
         }
+        // ── 숫자가 바뀌었으면 말한다 (2026-08-07 감사) ─────────────────────────
+        // 병합은 거리·시간·심박을 워치 값으로 덮는다. 그런데 여기서 조용히 return 해서
+        // **사용자는 완주 화면에서 5.14km 를 보고 축하까지 받은 뒤, 기록 탭에 들어가면
+        // 5.36km 를 본다.** 아무 설명이 없으니 "앱이 숫자를 조작한다"로 읽힌다.
+        // (워치 런 수신 토스트는 새 런을 만들 때만 뜨고 이 분기엔 없었다.)
+        //
+        // 자동으로 고른 값이면 왜 그런지 한 줄은 말해야 한다. 거리가 실제로 달라진
+        // 경우에만 띄운다 — 같은 값이면 알릴 것이 없다.
+        const beforeKm=Number((dup as any).km)||0;
+        const afterKm=Number((merged as any).km)||0;
+        if(beforeKm>0&&Math.abs(afterKm-beforeKm)>=0.01){
+          showToast({message:`워치 기록으로 거리를 ${afterKm.toFixed(2)}km 로 맞췄어요`,durationMs:4000});
+        }
         return; // 새 런을 만들지 않는다 — 신발 이중 차감의 근본 차단.
       }
       // 측정 모드에선 두 건이 나란히 남으므로 어느 쪽이 워치인지 메모로 구분해 준다
