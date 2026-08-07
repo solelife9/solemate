@@ -8,6 +8,7 @@
 // react-native-svg 만으로 그려 ref.toDataURL()로 캡처(네이티브 0).
 // ============================================================================
 import React from 'react';
+import {PixelRatio} from 'react-native';
 import Svg, {Rect, Path, Circle, Text as SvgText, G, Image as SvgImage, Defs, RadialGradient, LinearGradient, Stop} from 'react-native-svg';
 import {T1, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO, BG} from './theme';
 import {SHARE_DARK_STOPS, SHARE_TEXT_SHADOW} from './theme.palettes';
@@ -63,7 +64,21 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
 
   const L = layoutShareCard(model, {layout, showMap, showStats, textScale, mapScale});
   const W = L.w, H = L.h;
-  const dispW = displayWidth && displayWidth > 0 ? Math.round(displayWidth) : W;
+  // 캡처 기본 폭 = 설계 px ÷ 화면 배율 (2026-08-07).
+  //
+  // 예전 기본값은 W(=설계 px)를 **dp 로** 넘기는 것이었다. react-native-svg 의 width 는
+  // dp 라, 3배율 기기에서 1080dp → **3240px** 이 구워졌다. 어느 플랫폼도 그 해상도로
+  // 표시하지 않고, 9배를 더 그리느라 안드로이드 공유가 실측 3.6초 걸렸다.
+  //
+  // 형제 카드 3종(RecapShareCard·MedalShareCard·RunnerSpecShareCard)은 2026-08-06 에
+  // 같은 수정을 받았는데 **가장 많이 쓰는 이 카드(러닝 리캡 → 공유)만 빠졌다.**
+  // viewBox 가 좌표계를 W×H 로 유지하므로 카드 내부 좌표는 한 줄도 바뀌지 않고,
+  // 결과 이미지는 배율과 무관하게 항상 설계 치수가 된다.
+  //
+  // ⚠️ toDataURL(cb,{width,height}) 로 줄이는 방법은 쓰지 말 것 — 안드로이드에서는
+  // 축소가 아니라 **잘라내기**라 카드 왼쪽 위만 남는다(lib/shareCard.ts 주석).
+  const captureScale = PixelRatio.get() || 1;
+  const dispW = displayWidth && displayWidth > 0 ? Math.round(displayWidth) : Math.round(W / captureScale);
   const dispH = Math.round((dispW * H) / W);
 
   const isPhoto = !!photoUri;

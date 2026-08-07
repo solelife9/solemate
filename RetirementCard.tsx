@@ -13,6 +13,7 @@
 // 감정적 keepsake 정합 — 게임화 배지(등급)는 싣지 않고 배웅 문장을 중심에 둔다.
 // ============================================================================
 import React from 'react';
+import {PixelRatio} from 'react-native';
 import Svg, {Rect, Text as SvgText, G, Line, Defs, LinearGradient, RadialGradient, Stop} from 'react-native-svg';
 import {T1, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO, withAlpha} from './theme';
 import {SHARE_DARK_STOPS, SHARE_TEXT_SHADOW} from './theme.palettes';
@@ -158,7 +159,11 @@ const RetirementCard = React.forwardRef<unknown, RetirementCardProps>(
   ({model, format = DEFAULT_RETIREMENT_CARD_FORMAT, displayWidth}, ref) => {
     const fmt: RetirementCardFormat = format === 'S' ? 'S' : 'E';
     const cardH = fmt === 'S' ? STORY_H : CARD_H;
-    const dispW = displayWidth && displayWidth > 0 ? Math.round(displayWidth) : CARD_W;
+    // 캡처 기본 폭 = 설계 px ÷ 화면 배율 (2026-08-07 — 형제 카드 3종과 같은 규약).
+    // CARD_W 를 그대로 넘기면 그건 **dp** 라, 3배율 기기에서 3240px 이 구워진다.
+    // viewBox 가 좌표계를 유지하므로 카드 내부 좌표는 그대로다.
+    const captureScale = PixelRatio.get() || 1;
+    const dispW = displayWidth && displayWidth > 0 ? Math.round(displayWidth) : Math.round(CARD_W / captureScale);
     const dispH = Math.round((dispW * cardH) / CARD_W);
     return (
       <Svg ref={ref as never} width={dispW} height={dispH} viewBox={`0 0 ${CARD_W} ${cardH}`}>

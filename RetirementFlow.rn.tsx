@@ -521,12 +521,27 @@ function CardStep({
         })}
       </View>
 
-      {/* 카드 미리보기 — RetirementCard(캡처용 순수 SVG, viewBox 축소 렌더). ref 로 PNG 캡처. */}
+      {/* 카드 미리보기 — 화면에 보이는 축소본. **ref 를 달지 않는다.** */}
       <View
         style={[s.preview, format === 'S' && [s.previewStory, {width: previewW}]]}
         testID="retire-card-preview">
-        <RetirementCard ref={cardRef} model={model} format={format} displayWidth={previewW} />
+        <RetirementCard model={model} format={format} displayWidth={previewW} />
         <GlassEdge glints={false} radius={RADIUS.lg} />
+      </View>
+
+      {/* 캡처 전용 오프스크린 마운트 (2026-08-07).
+          예전엔 미리보기 하나에 ref 를 달아 **보이는 크기 그대로 구웠다.** 스토리 포맷은
+          previewW = bodyW × 0.62 ≈ 219dp 라 결과가 약 657×1168px — 설계 1080×1920 의
+          36% 다. 인스타 스토리로 나가는 시그니처 자산이 스크린샷 품질이었고, 1080 기준으로
+          튜닝된 텍스트 그림자도 뭉갰다.
+          displayWidth 를 주지 않아 RetirementCard 가 설계 px ÷ 화면 배율로 굽는다.
+          ShareCardPicker 가 쓰는 것과 같은 패턴이다. */}
+      <View
+        style={s.captureMount}
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants">
+        <RetirementCard ref={cardRef} model={model} format={format} />
       </View>
 
       <RetirementCardActions onSave={onSave} onShare={onShare} />
@@ -812,6 +827,8 @@ const s = StyleSheet.create({
 
   // 불투명 CARD → 유리(GLASS.fill + GlassEdge) — 카드 재질 통일. SVG 카드가 면을 다
   // 덮으므로 표면은 로딩 순간의 배경 역할만 한다.
+  // 캡처 전용 마운트 — 화면 밖. 미리보기와 분리해야 설계 치수로 구워진다.
+  captureMount: {position: 'absolute', left: -10000, top: 0, opacity: 0},
   preview: {
     aspectRatio: 1,
     borderRadius: RADIUS.lg,
