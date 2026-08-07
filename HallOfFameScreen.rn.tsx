@@ -30,6 +30,9 @@ import {shoeTrends, type ShoeTrend} from './lib/shoeTrends';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {recordRank, sanitizeRankBests, formatYearMonthKo,
   RANK_HISTORY_KEY, type RankBests} from './lib/rankHistory';
+// 차단(App Store 1.2) — 차단한 러너는 순위 어디에도 뜨지 않는다.
+import {ensureBlockedLoaded, subscribeBlocked, blockedSnapshot} from './lib/social/blockStore';
+import {filterBlocked, type BlockedRunner} from './lib/social/blockList';
 import {ScreenHeader, EmptyGhostHeader, GhostBar, GhostThumb, GlassEdge, SwipeBack} from './primitives';
 import {
   BG,
@@ -186,6 +189,12 @@ export default function HallOfFameScreen({
   const [total, setTotal] = useState(0);
   /** 카테고리별 최고 순위. 로컬에만 둔다 — 지난달 리더보드를 다시 읽지 않기 위해서다. */
   const [bests, setBests] = useState<RankBests>({});
+  /**
+   * 차단한 러너(App Store 1.2). **스토어를 구독한다** — 프로필 화면에서 차단하고 돌아왔을 때
+   * 이 화면은 이미 마운트돼 있어 저장소를 다시 읽지 않는다. 구독이 없으면
+   * "차단했는데 목록에 그대로"가 되고, 사용자는 기능이 고장 났다고 읽는다.
+   */
+  const [blocked, setBlocked] = useState<BlockedRunner[]>(() => blockedSnapshot());
 
   // 최고 순위는 한 번만 읽는다(로컬 저장소). 실패해도 화면은 그대로 — 없으면 안 보일 뿐.
   useEffect(() => {
@@ -197,6 +206,19 @@ export default function HallOfFameScreen({
       })
       .catch(() => {});
     return () => { alive = false; };
+  }, []);
+
+  // 차단 목록: 마운트마다 저장소를 **정본으로 다시 읽고**, 이후 변경은 구독으로 받는다.
+  // (로컬 저장소라 Firestore 읽기는 0이다.)
+  // **왜 캐시를 믿지 않고 force 로 다시 읽나:** 이 스토어는 모듈 싱글턴이라 계정을 바꿔도
+  // 메모리에 남는다. 그대로 두면 **A 가 차단한 사람이 B 화면에서도 안 보인다** — 남의
+  // 판단이 내 화면을 바꾸는 것이고, 이 저장소가 S-1·C 로 두 번 겪은 종류의 사고다.
+  // 계정별 키 분리는 accountScope 가 하므로, 여기서 다시 읽으면 항상 내 목록이 된다.
+  useEffect(() => {
+    let alive = true;
+    void ensureBlockedLoaded(AsyncStorage, true).then(list => { if (alive) setBlocked(list); });
+    const off = subscribeBlocked(list => { if (alive) setBlocked(list); });
+    return () => { alive = false; off(); };
   }, []);
 
   // 카테고리/달 변화 시 리더보드 + 내 순위를 로드한다(발행은 App 클라우드 동기가 담당).
@@ -255,7 +277,13 @@ export default function HallOfFameScreen({
 
   const myUid = myEntry?.uid ?? null;
   // 표본이 모자라면 top 이 비어 카드가 통째로 빠진다 — 3명이 신는 걸 유행이라 부르지 않는다.
-  const trends = useMemo(() => shoeTrends(entries, 5), [entries]);
+  /**
+   * 화면에 실제로 그리는 목록 = 차단을 걷어낸 것. **파생값 하나로 만든다** —
+   * 목록만 거르고 「이번 달 많이 신는 러닝화」 집계를 안 거르면, 차단한 사람의 신발이
+   * 통계로 되돌아온다(한 화면 안에서 차단이 반쯤만 듣는 셈이다).
+   */
+  const visibleEntries = useMemo(() => filterBlocked(entries, blocked), [entries, blocked]);
+  const trends = useMemo(() => shoeTrends(visibleEntries, 5), [visibleEntries]);
 
   const renderRow = (e: LeaderboardEntry, highlight: boolean) => {
     const tColor = TIER_COLORS[e.rankTier] ?? TIER_COLORS.bronze;
@@ -465,9 +493,9 @@ export default function HallOfFameScreen({
               <GhostRankRow key={i} opacity={o} alt={i % 2 === 1} />
             ))}
           </View>
-        ) : lbAvailable && entries.length > 0 ? (
+        ) : lbAvailable && visibleEntries.length > 0 ? (
           <View style={{gap: rv(8)}} testID="hof-leaderboard">
-            {entries.map(e => renderRow(e, e.uid === myUid))}
+            {visibleEntries.map(e => renderRow(e, e.uid === myUid))}
           </View>
         ) : (
           // 빈 상태 — 중앙 아이콘+텍스트 폐지 → 전역 표준 EmptyGhostHeader + 고스트 행

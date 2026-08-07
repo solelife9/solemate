@@ -200,6 +200,38 @@ service cloud.firestore {
             || request.resource.data.source in ['not_found', 'manual_add']);
     }
 
+    // ── 부적절한 프로필 신고 (App Store 1.2 · 2026-08-07) ──────────────────────
+    // 2026-08-03 에 공개 프로필·월간 랭킹을 열면서 이 앱에 **다른 사람이 만든 콘텐츠**
+    // (닉네임·러닝화 이름·칭호)가 화면에 뜨기 시작했다. 심사지침 1.2 는 그런 앱에
+    // **신고 수단·차단 수단·조치 절차**를 함께 요구한다. 차단은 로컬(서버에 차단 관계를
+    // 만들지 않는다 — `lib/social/blockList.ts` 머리말), 신고가 이 컬렉션이다.
+    //
+    // 위 두 신호 컬렉션과 같은 규약을 따른다:
+    //  · **create 만.** 읽기를 열면 "누가 누구를 신고했는지"가 서로에게 보인다 —
+    //    그 자체가 사고다. 운영은 콘솔에서 본다.
+    //  · **수정·삭제 금지.** 지울 수 있는 신고는 신고가 아니다.
+    //  · **자유 입력 텍스트를 받지 않는다.** 사유는 아는 값만 — 자유 서술을 받으면
+    //    그게 또 하나의 UGC 가 되고, 무엇이 들어올지 모르는 것을 서버에 쌓게 된다.
+    //
+    // 신고자 uid 는 **받는다**(search_misses 와 반대). 같은 사람의 반복 신고와 여러 사람의
+    // 신고를 구분하지 못하면 조치를 정할 수 없고 악의적 신고도 막을 수 없다 — 목적에
+    // 필요한 최소값이라 받고, 처리방침 제2조에 고지했다.
+    // 사칭 방지: reporterUid 는 **반드시 본인**이어야 한다(남의 이름으로 신고 불가).
+    match /reports/{docId} {
+      allow read, update, delete: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['targetUid', 'reporterUid', 'reason', 'createdAt'])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.targetUid is string
+        && request.resource.data.targetUid.size() > 0
+        && request.resource.data.targetUid.size() <= 128
+        // 자기 자신 신고는 조치 대상이 될 수 없고 집계만 더럽힌다.
+        && request.resource.data.targetUid != request.auth.uid
+        && request.resource.data.reason in
+             ['inappropriate_nickname', 'impersonation', 'offensive_content', 'spam', 'other']
+        && request.resource.data.createdAt is number;
+    }
+
     // ── 그 외 전부 거부 ──────────────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

@@ -99,6 +99,10 @@ export const USER_KEYS: readonly string[] = [
   'social_visibility_v1',      // lib/publicProfile.ts VISIBILITY_KEY
   'social_published_sig_v1',   // lib/publicProfile.ts PUBLISHED_SIG_KEY
   'leaderboard_published_v1',  // App.tsx — 회수 대상이 있는지 표시
+  // 차단 목록(App Store 1.2 · 2026-08-07). **누락되면 A 가 차단한 사람이 B 화면에서도
+  // 안 보인다** — 남의 판단이 내 화면을 바꾸는 것이고, 반대로 B 의 차단이 A 에게 새면
+  // "차단했는데 다시 보인다"가 된다. 어느 방향이든 사고다.
+  'blocked_uids_v1',           // lib/social/blockList.ts BLOCKED_UIDS_KEY
   // ── 클라우드 델타 동기 상태 (2026-08-07) ─────────────────────────────────
   // 커서는 '어디까지 받았나'라 계정에 딸린다. 누락되면 A 의 커서가 남아 B 의 델타
   // 조회가 0건을 돌려주고 **B 는 빈 앱을 본다**(재설치 전엔 복구 안 됨).

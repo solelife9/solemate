@@ -11,7 +11,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import { View, ScrollView, Pressable, StyleSheet, Image, Share, Linking, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { showToast } from './lib/toast';
 import { showDialog } from './lib/dialog';
+// 차단 해제(App Store 1.2) — 차단은 남의 프로필에서 하고, **푸는 곳은 여기**다.
+// 푸는 곳이 없으면 차단은 되돌릴 수 없는 조작이 되고, 프로필 화면의 안내 문구
+// ("설정에서 언제든 해제할 수 있어요")가 거짓말이 된다.
+import { ensureBlockedLoaded, subscribeBlocked, unblock as unblockRunner, blockedSnapshot } from './lib/social/blockStore';
+import type { BlockedRunner } from './lib/social/blockList';
 import {Text} from './lib/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -794,6 +801,58 @@ function ProfileScreen({
   // 화가 난 사용자는 4단계를 밟지 않는다. 스토어 리뷰에 쓴다. 문의는 리뷰의 배수관이고,
   // 그 입구가 잠겨 있었다. 법적 문서(읽을 일이 드문 것)와 문의(급할 때 찾는 것)는 접근
   // 비용이 같아선 안 된다.
+  // ── 차단한 러너 (App Store 1.2) ──────────────────────────────────────────
+  // 목록이 보통 0~3명이라 별도 화면을 세우지 않고 다이얼로그로 처리한다 — 화면을 하나
+  // 늘리면 라우팅 사다리(App.tsx)를 건드려야 하고, 그만큼 얻는 게 없다.
+  // 이름을 함께 저장해 뒀기에 목록이 읽을 수 있다(uid 만 뜨면 해제 기능은 있으나 마나다).
+  const [blockedRunners, setBlockedRunners] = useState<BlockedRunner[]>(() => blockedSnapshot());
+  useEffect(() => {
+    let alive = true;
+    void ensureBlockedLoaded(AsyncStorage, true).then(l => { if (alive) setBlockedRunners(l); });
+    const off = subscribeBlocked(l => { if (alive) setBlockedRunners(l); });
+    return () => { alive = false; off(); };
+  }, []);
+
+  const openBlockedList = () => {
+    if (!blockedRunners.length) {
+      showDialog('차단한 러너', '아직 차단한 러너가 없어요.\n순위에서 러너를 열면 ⋯ 에서 차단할 수 있어요.');
+      return;
+    }
+    showDialog(
+      '차단한 러너',
+      '차단을 풀면 순위와 프로필에 다시 보여요.',
+      [
+        ...blockedRunners.map(b => ({
+          text: `${b.name || '러너'} 차단 해제`,
+          onPress: () => {
+            void unblockRunner(AsyncStorage, b.uid).then(() => {
+              showToast({ message: `${b.name || '러너'} 님의 차단을 풀었어요.` });
+            });
+          },
+        })),
+        { text: '닫기', style: 'cancel' as const },
+      ],
+    );
+  };
+
+  const blockedRow = (
+    <Pressable
+      testID="settings-blocked-runners"
+      onPress={openBlockedList}
+      accessibilityRole="button"
+      accessibilityLabel={`차단한 러너 ${blockedRunners.length}명`}
+      style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
+      <View style={s.settingIcon}><Ionicons name="person-remove-outline" size={ri(ICON.inline)} color={T2} /></View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={s.settingLabel}>차단한 러너</Text>
+        <Text style={s.cloudSub}>
+          {blockedRunners.length ? `${blockedRunners.length}명 — 순위·프로필에서 숨겨져요` : '차단한 러너가 없어요'}
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} />
+    </Pressable>
+  );
+
   const supportRow = (
     <Pressable
       testID="support-contact"
@@ -1500,6 +1559,8 @@ function ProfileScreen({
             {/* 문의하기 — 로그인 여부와 무관하게 항상 이 자리(L-08). 계정 상태가 어떻든
                 "도움이 필요할 때 누를 것"은 한 곳에 고정돼 있어야 찾을 수 있다. */}
             <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }}>
+              {/* 차단 해제 — 프로필 화면의 "설정에서 언제든 해제할 수 있어요"가 가리키는 곳. */}
+              {blockedRow}
               {supportRow}
             </View>
             {/* 법적 문서 — 로그아웃 시엔 상시 노출(스토어 심사·신뢰), 로그인 시엔 위 계정
