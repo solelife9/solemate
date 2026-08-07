@@ -98,8 +98,17 @@ export function computeStepSpm(samples: StepSample[], nowMs: number): number {
 
 /**
  * 러닝 전체 평균 케이던스(spm) = 총 걸음수 ÷ 이동 시간(분). 기록 저장용 표준 지표 —
- * 롤링 spm(라이브 표시용)과 달리 마지막 순간의 속도에 좌우되지 않는다. 걸음은 이동 중에만
- * 쌓이므로 분모는 일시정지를 제외한 이동 시간이 맞다. 비정상 입력(0/음수/NaN)은 0.
+ * 롤링 spm(라이브 표시용)과 달리 마지막 순간의 속도에 좌우되지 않는다.
+ *
+ * ⚠️ **분자를 무엇으로 줄지가 이 함수의 전부다.**
+ * 예전 주석은 "걸음은 이동 중에만 쌓이므로 분모는 이동 시간이 맞다"고 적혀 있었는데,
+ * 앞 절이 **사실이 아니다** — OS 만보계는 일시정지 중 걸어도 계속 센다. 그 전제 위에서
+ * 호출부가 '러닝 전체 누적'을 분자로 넘겼고, 30분@170spm 뒤 10분 걸어서 물 마시면
+ * **200 spm 대**가 저장됐다(2026-08-07 감사).
+ *
+ * 그래서 호출부는 **이동 중에만 쌓은 걸음**(RunEngine 의 movingStepsRef, 스냅샷의
+ * movingSteps)을 넘겨야 한다. 분자와 분모가 같은 구간을 덮는지는 이 함수가 알 수 없으니
+ * 호출부의 계약이다. 비정상 입력(0/음수/NaN)은 0.
  */
 export function averageSpm(totalSteps: number, movingSec: number): number {
   if (!Number.isFinite(totalSteps) || !Number.isFinite(movingSec)) return 0;

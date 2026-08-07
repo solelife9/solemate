@@ -233,6 +233,25 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   // 쓰고 **구독 시점 기준 누적값**을 주므로 구간 조회와 의미가 같다 — 아래 소비처는 그대로 둔다.
   const stepWatch=useRef<{remove?:()=>void}|null>(null);
   const stepsRef=useRef(0);
+  // ── 평균 케이던스의 분자 (2026-08-07) ─────────────────────────────────────
+  //
+  // 완주 시 평균 케이던스 = 걸음수 ÷ **이동 시간**. 그런데 분자로 쓰던 OS 만보계
+  // 누적은 **일시정지 중 걸은 것까지 센다**(만보계는 앱의 일시정지를 모른다).
+  // 30분@170spm 뒤 10분 걸어서 물 마시면 200 spm 대가 저장됐고, 크래시 복구 런은
+  // 반대로 걸음 기준점만 리셋돼 24 spm 이 나왔다. 분자와 분모가 다른 구간을 덮었다.
+  //
+  // **'이동 걸음을 더하는' 대신 '일시정지 걸음을 뺀다.'** 더하는 방식은 마지막 폴
+  // 주기(2.5s)의 걸음이 항상 누락된다 — 그 시간은 분모에 들어가는데 분자엔 안 들어와
+  // 짧은 러닝일수록 과소 보고된다(통합 테스트가 15초 러닝에서 170→140 으로 잡아냈다).
+  // 빼는 방식은 완주 시점에 누적을 그대로 읽으므로 그 누락이 구조적으로 없다.
+  //
+  //   분자 = 이전 구간 이동걸음(복구 시드) + max(0, 이번 구간 누적 − 일시정지 중 걸음)
+  /** 크래시 복구 이전 구간에서 이미 쌓은 이동 걸음(스냅샷에서 이어받는다). */
+  const movingBaseRef=useRef(resume?.movingSteps??0);
+  /** 이번 구간에서 **일시정지 중** 쌓인 걸음(분자에서 뺀다). */
+  const pausedStepsRef=useRef(0);
+  /** 직전 폴에서 본 누적 걸음(델타 계산용). 만보계 누적은 러닝 시작 기준이라 0 에서 시작. */
+  const lastPollStepsRef=useRef(0);
   // 폴링 시작 시각 — 종료 시 총 걸음수(러닝 전체)를 조회해 평균 케이던스를 산출하는 기준점.
   const stepT0Ref=useRef<Date|null>(null);
   // 기압 고도계(iOS Barometer.relativeAltitude) — GPS 고도(노이즈 큼)보다 정확한 고도 상승.
@@ -654,6 +673,9 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     if(seed){
       runTracker.start({goalKm,goalMin,pacePlan,indoor,autoPause:autoPauseOn,shoe:{id:shoe.id,name:shoe.name},
         t0:Date.now()-seed.elapsed*1000,seedDist:seed.dist,
+        // 이동 걸음 누적을 이어받는다(2026-08-07). 안 이으면 분자는 0 에서 다시 시작하는데
+        // 분모(ft)는 런 전체를 덮어 복구 런의 평균 케이던스가 무너진다(실측 24 spm).
+        movingSteps:seed.movingSteps??0,
         seedPts:seed.pts as any,seedLocation:seed.location});
       // 크래시 전 통과한 km 만큼 스플릿 슬롯을 채워, 재개 후의 km 경계부터 실측이 기록되게
       // 한다(이전 구간 페이스는 스냅샷에 없어 복원 불가 — 0 으로 둠). 안내 km 도 시드한다.
@@ -662,6 +684,9 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       setKm(seed.dist);setElapsed(seed.elapsed);setCadence(seed.cadence);setAccuracyM(null);
       setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
       cadenceState.current=initStepCadence();cadRef.current=0;
+      movingBaseRef.current=seed.movingSteps??0;
+      pausedStepsRef.current=0;
+      lastPollStepsRef.current=0; // 재개 후 만보계 누적도 0 부터 다시 센다
       locationRef.current=seed.location;locationFetched.current=!!seed.location;
       announcedKm.current=Math.floor(seed.dist);
       announcedHalf.current=Math.floor(seed.dist*2);
@@ -741,6 +766,16 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
             // 최신값을 돌려준다(신선도가 거짓말이 되지 않는다).
             const stepSignalTrustworthy=Platform.OS!=='android'||AppState.currentState==='active';
             if(stepSignalTrustworthy) runTracker.feedSteps(steps,Date.now());
+            // **일시정지 중** 걸음만 따로 센다(분자에서 뺀다).
+            // 신뢰도(stepSignalTrustworthy)는 여기에 걸지 않는다 — 그건 정지 게이트의
+            // 신선도 문제일 뿐이고, 화면이 꺼져 있던 동안의 걸음도 진짜 달린 걸음이다.
+            if(runTracker.pausedFlag()){
+              const d=steps-lastPollStepsRef.current;
+              if(d>0)pausedStepsRef.current+=d;
+            }
+            lastPollStepsRef.current=steps;
+            // 스냅샷에 실을 이동 걸음을 갱신한다(복구 런이 이어받는 값).
+            runTracker.setMeta({movingSteps:movingBaseRef.current+Math.max(0,steps-pausedStepsRef.current)});
             if(runTracker.pausedFlag())return; // 케이던스 표시 계산만 일시정지 중 생략(기존 동작)
             const c=feedStepCount(cadenceState.current,steps,Date.now());
             cadenceState.current=c.state;
@@ -920,12 +955,18 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     // (구 fire-and-forget 은 검토 화면 체류 시간에 기대던 암묵 대기 — 이제 명시 await).
     setFinKm(fk);setFinTime(ft);
     let cadFin=cadRef.current;
+    // 분자 = **이동 중에만** 쌓은 걸음, 분모 = 이동 시간(ft). 같은 구간을 덮어야 한다.
+    // 예전엔 분자가 러닝 전체 누적이라 일시정지 중 걸은 걸음이 그대로 들어갔고
+    // (30분@170 + 10분 걷기 → 203 spm), 복구 런은 기준점만 리셋돼 반대로 무너졌다
+    // (30분 뛰고 크래시 → 5분 더 → 24 spm).
     if(stepT0Ref.current&&ft>0){
       try{
         const total=Platform.OS==='android'
           ? stepsRef.current
           : ((await Pedometer.getStepCountAsync(stepT0Ref.current,new Date()))?.steps??0);
-        const avg=averageSpm(total,ft);
+        // 이번 구간의 이동 걸음 = 누적 − 일시정지 중 걸음. 여기에 복구 시드를 더한다.
+        const moving=movingBaseRef.current+Math.max(0,total-pausedStepsRef.current);
+        const avg=averageSpm(moving,ft);
         if(avg>0)cadFin=avg;
       }catch{/* 조회 실패 — 롤링 폴백 유지 */}
     }

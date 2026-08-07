@@ -141,6 +141,8 @@ export interface RunTrackerConfig {
    * stalledMs 를 이어받을 때 이것도 같이 줘야 경과 시간이 복구 직후 튀지 않는다.
    */
   pedFillMs?: number;
+  /** 복구 시드 — 이동 중에만 쌓인 누적 걸음수(기본 0). 복구 런의 평균 케이던스에 쓴다. */
+  movingSteps?: number;
   /**
    * 크래시 복구 '이어 달리기' 시드 — 직전 스냅샷의 누적 거리(km). 기본 0.
    * 새 fix는 여기서부터 누적된다. (t0 는 호출자가 now − elapsed 로 줘 경과시간을 잇는다.)
@@ -222,6 +224,8 @@ class RunTracker {
   // GPS 死구간(stall) 누적 시간 — 임계 초과 무신호는 거리가 안 쌓이므로 elapsed 에서 뺀다
   // (백그라운드 throttle/터널에서 '거리 0 + 시간만 증가 → 페이스 왜곡' 방지). 임계(8s)까지는
   // 정상 fix 간격이라 세지 않고, 그 *초과분*만 누적해 타이머가 뒤로 튀지 않게 한다.
+  /** 이동 중에만 쌓인 누적 걸음수(스냅샷 영속용 — 컨테이너가 setMeta 로 갱신). */
+  private movingSteps = 0;
   private stalledMs = 0;
   /**
    * 死구간 중 **만보계로 거리를 되찾은** 시간(ms). stalledMs 에서 이만큼은 도로 인정한다.
@@ -317,6 +321,7 @@ class RunTracker {
     // 복구 직후 경과 시간이 갑자기 줄지 않는다(구 스냅샷엔 없으므로 기본 0).
     this.pedFillMs = config.pedFillMs ?? 0;
     this.pedFillAtMs = 0;
+    this.movingSteps = config.movingSteps ?? 0;
     this.isPaused = false;
     this.autoPausedFlag = false;
     this.pausedMs = 0;
@@ -392,9 +397,13 @@ class RunTracker {
   }
 
   // ── meta the engine doesn't compute but persists (set by the UI) ──
-  setMeta(meta: {cadence?: number; location?: string}) {
+  setMeta(meta: {cadence?: number; location?: string; movingSteps?: number}) {
     if (typeof meta.cadence === 'number') this.cadence = meta.cadence;
     if (typeof meta.location === 'string') this.location = meta.location;
+    // 이동 중에만 쌓인 걸음수 — 스냅샷에 실어 복구 런의 케이던스가 이어지게 한다.
+    if (typeof meta.movingSteps === 'number' && meta.movingSteps >= 0) {
+      this.movingSteps = Math.floor(meta.movingSteps);
+    }
   }
 
   /** 트랙 랩 상태를 엔진에 실어 스냅샷에 영속되게 한다(컨테이너가 랩 변화 시 호출). null=비트랙. */
@@ -968,6 +977,7 @@ class RunTracker {
       goalMin: this.goalMin,
       pacePlan: this.pacePlan,
       cadence: this.cadence,
+      movingSteps: this.movingSteps,
       location: this.location,
       track: this.trackMeta,
       savedAt: now,
