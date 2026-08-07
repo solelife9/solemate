@@ -27,6 +27,8 @@ export interface MergeableRun {
   run_date?: string;
   source?: string;
   updatedAt?: number;
+  /** 러닝을 실제로 시작한 시각(epoch ms). 2026-08-07 신설 — 있으면 역산보다 우선한다. */
+  start_ms?: number;
   route?: string;
   location?: string;
   cadence?: number;
@@ -42,23 +44,41 @@ export interface RunWindow {
 }
 
 /**
- * 런의 시간창을 구한다.
+ * 런의 시간창을 구한다. **런의 시작 시각이 필요한 모든 곳이 이 함수를 쓴다.**
  *
- * 저장된 런에는 시작 시각 필드가 없다. 대신 `updatedAt`(저장 시각 ≈ 종료 시각)에서
- * duration 을 빼 역산한다 — 실측 검증: 폰 런의 역산 시작이 HR 백필에 등록된 실제 시작과
- * 80ms 차이였다(1935초 러닝에서 0.004%).
+ * 우선순위:
+ *   1) 호출부가 명시한 시작(워치 페이로드의 startMs) — 가장 확실하다
+ *   2) 레코드의 `start_ms` — 2026-08-07 부터 저장한다
+ *   3) `updatedAt − duration` 역산 — **구 레코드 전용 폴백**
  *
- * 명시적 시작(워치 페이로드의 startMs)이 있으면 그쪽이 우선이다.
+ * ⚠️ 3번은 원래 정확하지 않다. `updatedAt` 은 **저장 시각**이고 `duration` 은 **이동
+ * 시간**이라(일시정지·死구간이 빠져 있다) 둘의 차이가 진짜 시작이 아니다.
+ * 10분 쉬어간 40분 러닝이면 창이 통째로 10분 밀리고, 완주 검토 화면에 오래 머물면
+ * 그만큼 더 밀린다. 예전 주석은 "80ms 차이였다"는 실측 하나를 근거로 들었는데,
+ * 그건 **일시정지가 없던 러닝**이었다 — 오차의 원인이 바로 일시정지라 그 표본으로는
+ * 검증되지 않는다.
+ *
+ * 그 오차가 세 곳을 동시에 오염시켰다: HealthKit 심박 창 · 48시간 심박 스윕(정확한
+ * 라이브 트랙을 밀린 트랙으로 덮어썼다) · 폰↔워치 병합 창(겹침이 0 이 돼 이중 차감).
+ * 역산을 더 정교하게 만드는 대신 **앱이 이미 아는 값을 레코드에 적는 것**으로 고쳤다.
  */
 export function runWindow(run: MergeableRun, explicitStartMs?: number): RunWindow | null {
   const dur = Number(run.duration);
   if (!Number.isFinite(dur) || dur <= 0) return null;
+  const durMs = dur * 1000;
   if (typeof explicitStartMs === 'number' && Number.isFinite(explicitStartMs) && explicitStartMs > 0) {
-    return {startMs: explicitStartMs, endMs: explicitStartMs + dur * 1000};
+    return {startMs: explicitStartMs, endMs: explicitStartMs + durMs};
+  }
+  const stored = Number(run.start_ms);
+  if (Number.isFinite(stored) && stored > 0) {
+    // 저장된 시작 + 이동 시간. 끝은 updatedAt(저장 시각)이 있으면 그쪽이 더 정확하다 —
+    // 일시정지가 있으면 실제 종료는 start + duration 보다 뒤다.
+    const end = Number(run.updatedAt);
+    return {startMs: stored, endMs: Number.isFinite(end) && end > stored ? end : stored + durMs};
   }
   const end = Number(run.updatedAt);
   if (!Number.isFinite(end) || end <= 0) return null;
-  return {startMs: end - dur * 1000, endMs: end};
+  return {startMs: end - durMs, endMs: end};
 }
 
 /**

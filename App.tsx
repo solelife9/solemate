@@ -88,7 +88,7 @@ import {
 } from './lib/stats';
 import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, effectiveMaxKm, raiseHighWater, lowerHighWater, detectMileageDrops} from './lib/shoe';
 // 한 러닝은 한 기록 — 폰·워치 중복 저장 병합(신발 이중 차감 차단).
-import {findMergeTarget, mergeRuns} from './lib/runMerge';
+import {findMergeTarget, mergeRuns, runWindow} from './lib/runMerge';
 // 상승 고도는 폰이 한 벌 규칙으로 계산한다(워치는 원자료만 보낸다).
 import {elevationGainFrom} from './lib/elevation';
 import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
@@ -1238,7 +1238,7 @@ function Main(){
   //   1) 사이드키(route_/time_) 영속 + 캐시에 즉시 durable 기록(크래시-세이프티) — 네트워크 무관.
   //   2) 낙관적 setRuns. 영속/동기는 부팅캐시 + cloudSync(Firestore)가 담당한다.
   // localId(genRunId)가 런의 영구 id다 — 서버 재키잉이 없으므로 머지 키가 안정적이다.
-  async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number,elevationM?:number,calories?:number){
+  async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number,elevationM?:number,calories?:number,opts?:{startMs?:number}){
     const timeStr=nowTimeLabel();
     const stampedAt=syncNowMs(); // AUDIT 3 D-2 — 서버 보정 시계(병합 LWW 기준)
     const localId=genRunId(stampedAt);
@@ -1249,6 +1249,10 @@ function Main(){
       duration:duration||0, cadence:cadence||0, route:route||'', location:location||'',
       heart_rate:heart_rate||0, elevation_m:elevationM||0, calories:calories||0,
       run_time:timeStr, updatedAt:stampedAt,
+      // 실제 시작 시각(2026-08-07). 여태 저장 안 해서 소비처들이 updatedAt−duration 으로
+      // 역산했는데, duration 은 **이동 시간**이라 일시정지만큼 창이 통째로 밀렸다.
+      // 앱은 이 값을 이미 알고 있다 — 그냥 적는다. 모르면(수동 입력 등) 필드를 비운다.
+      ...(opts?.startMs && opts.startMs>0 ? {start_ms:opts.startMs} : {}),
     };
     // ── 1) 로컬 우선 영속화(크래시-세이프티) — 사이드키 + 캐시 즉시 durable 기록 ──
     // 사이드키(route/time)는 보조 데이터다 — setItem 이 실패해도 삼켜서 런 자체(캐시+상태)는
@@ -2018,7 +2022,7 @@ function Main(){
       // 측정 모드에선 두 건이 나란히 남으므로 어느 쪽이 워치인지 메모로 구분해 준다
       // (정상 모드에선 병합돼 한 건이라 메모가 필요 없다).
       const watchMemo=MERGE_PHONE_WATCH_RUNS?'':'⌚️ 워치 기록 (측정 모드 — 폰 기록과 비교용)';
-      const newId=await ctx.addRun(shoeId,p.km,date,watchMemo,'watch',Math.round(p.durationS),Math.round(p.cadence),routeStr,'',Math.round(p.avgBpm),elevM,Math.round(p.kcal));
+      const newId=await ctx.addRun(shoeId,p.km,date,watchMemo,'watch',Math.round(p.durationS),Math.round(p.cadence),routeStr,'',Math.round(p.avgBpm),elevM,Math.round(p.kcal),{startMs:p.startMs});
       // 워치 런 계측(2026-08-04 출시 운영 감사 L-11). 이전엔 이 경로에 계측이 없어
       // **워치 사용량이 통째로 보이지 않았다** — device:'watch' 값이 프로덕션에서 한 번도
       // 전송된 적이 없었다(테스트 파일에만 존재). 워치는 가장 많은 시간을 쏟은 영역 중
@@ -2107,9 +2111,12 @@ function Main(){
           return end>0 && now-end<48*3600*1000 && (Number(r.duration)||0)>30;
         }).slice(0,10);
         for(const r of recent){
-          const end=Number((r as {updatedAt?:number}).updatedAt)||0;
-          const start=end-(Number(r.duration)||0)*1000;
-          await hkBackfillHeartRate(String(r.id),start,end);
+          // 창 계산은 runWindow 한 곳에서만 한다(2026-08-07). 예전엔 여기서 직접
+          // updatedAt−duration 을 했는데, 그 창이 일시정지만큼 밀린 채로 **정확한
+          // 라이브 심박 트랙을 덮어쓰고** 있었다(백필이 richer-wins 라 표본이 많으면 이긴다).
+          const win=runWindow(r as any);
+          if(!win)continue;
+          await hkBackfillHeartRate(String(r.id),win.startMs,win.endMs);
           // 트랙은 있는데 레코드 평균이 빈 런(이전 버전에서 백필된 기록 포함) 소급 보정.
           await repairAvgBpm(String(r.id));
         }
@@ -2876,7 +2883,7 @@ function Main(){
               try{await AsyncStorage.setItem('route_'+watchDup.id,route);}catch{/* 비치명적 */}
             }
           }
-          const newId=watchDup?watchDup.id:await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal);
+          const newId=watchDup?watchDup.id:await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal,{startMs});
           // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.
           // 거리·페이스·PB 는 이미 랩 시계열(paceTrack=lapsToTrack)로 정본이라 별도 계산 불필요.
           if(trackMeta&&trackMeta.laps>0){

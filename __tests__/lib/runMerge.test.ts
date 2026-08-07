@@ -50,11 +50,18 @@ const PHONE: MergeableRun = {
 const WATCH_START = 1785239020917;
 
 describe('시간창 — 저장된 런에서 시작 시각을 되살린다', () => {
-  it('updatedAt 에서 duration 을 빼 역산한다', () => {
+  it('start_ms 가 없는 구 레코드는 updatedAt 에서 duration 을 빼 역산한다', () => {
     const w = runWindow(PHONE)!;
     expect(w.endMs).toBe(PHONE.updatedAt);
     expect(w.startMs).toBe(PHONE.updatedAt! - PHONE.duration! * 1000);
-    // 실측 검증: 역산 시작이 HR 백필에 등록된 실제 시작(1785239209974)과 80ms 차이.
+    // 실측: 역산 시작이 HR 백필에 등록된 실제 시작(1785239209974)과 80ms 차이였다.
+    //
+    // ⚠️ 이 수치를 "역산이 정확하다"는 근거로 쓰면 안 된다(2026-08-07 감사).
+    // 이 러닝은 **일시정지가 없었다.** 역산 오차의 원인이 바로 일시정지(duration 은
+    // 이동 시간이라 멈춘 시간이 빠져 있다)라, 이 표본으로는 그 오차가 검증되지 않는다.
+    // 실제로 10분 쉬어간 러닝이면 창이 10분 밀리고, 그게 심박 창·병합 창을 오염시켰다.
+    // 그래서 이제 시작 시각을 레코드에 저장한다 — 아래 'runWindow 시작 시각 우선순위'.
+    // 이 테스트는 그 **구 레코드 폴백**이 살아 있는지만 지킨다.
     expect(Math.abs(w.startMs - 1785239209974)).toBeLessThan(200);
   });
 
@@ -220,5 +227,66 @@ describe('도착 순서가 결과를 바꾸지 않는다', () => {
     const b = mergeRuns(WATCH, PHONE, 'phone');
     expect(a.km).toBe(b.km); // 권한 자체는 대칭이지만…
     expect(a.km).not.toBe(mergeRuns(PHONE, WATCH, 'watch').km); // …'watch' 와는 다른 값이다
+  });
+});
+
+// ============================================================================
+// 시작 시각은 저장한다 — 역산은 구 레코드 폴백일 뿐이다 (2026-08-07 감사)
+//
+// 저장된 런에 시작 시각이 없어서 소비처들이 `updatedAt − duration` 으로 역산했다.
+// 그런데 updatedAt 은 **저장 시각**이고 duration 은 **이동 시간**이다(일시정지·死구간
+// 제외). 둘의 차이는 진짜 시작이 아니다 — 10분 쉬어간 러닝이면 창이 10분 밀리고,
+// 완주 검토 화면에 오래 머물면 그만큼 더 밀린다.
+//
+// 그 오차가 세 곳을 동시에 오염시켰다:
+//   · HealthKit 심박 창      → 앞부분 심박 누락 + 러닝 후 회복 심박 포함
+//   · 48시간 심박 스윕       → **정확한 라이브 트랙을 밀린 트랙으로 덮어쓴다**(richer-wins)
+//   · 폰↔워치 병합 창        → 겹침이 0 이 돼 같은 러닝이 두 건(신발 이중 차감)
+//
+// 예전 주석은 "역산이 실제 시작과 80ms 차이"라는 실측을 근거로 들었는데, 그건
+// **일시정지가 없던 러닝**이었다. 오차의 원인이 바로 일시정지라 그 표본으로는 검증되지
+// 않는다. 그래서 역산을 정교화하는 대신 **앱이 이미 아는 값을 적는 것**으로 고쳤다.
+// ============================================================================
+describe('runWindow — 시작 시각 우선순위', () => {
+  const base = {id: 'r1', duration: 1800, updatedAt: 10_000_000};
+
+  test('저장된 start_ms 가 역산을 이긴다', () => {
+    // 일시정지 10분이 있던 러닝: 저장 시각은 시작 + 40분이지만 duration 은 30분이다.
+    const startMs = 10_000_000 - 40 * 60 * 1000;
+    const w = runWindow({...base, start_ms: startMs});
+    expect(w?.startMs).toBe(startMs);
+    // 역산이었다면 10분 늦은 값이 나왔을 것이다.
+    expect(w?.startMs).toBeLessThan(base.updatedAt - base.duration * 1000);
+  });
+
+  test('끝은 저장 시각을 쓴다 — 일시정지가 있으면 start+duration 보다 뒤다', () => {
+    const startMs = 10_000_000 - 40 * 60 * 1000;
+    const w = runWindow({...base, start_ms: startMs});
+    expect(w?.endMs).toBe(base.updatedAt);
+    expect(w?.endMs).toBeGreaterThan(startMs + base.duration * 1000);
+  });
+
+  test('명시적 시작(워치 payload)이 저장값보다도 우선한다', () => {
+    const w = runWindow({...base, start_ms: 1}, 555_000);
+    expect(w?.startMs).toBe(555_000);
+  });
+
+  test('구 레코드는 예전처럼 역산한다 — 하위호환', () => {
+    const w = runWindow(base);
+    expect(w?.startMs).toBe(base.updatedAt - base.duration * 1000);
+    expect(w?.endMs).toBe(base.updatedAt);
+  });
+
+  test('일시정지가 길면 역산 창과 실제 창이 겹치지 않을 수 있다(이 결함의 크기)', () => {
+    const startMs = 10_000_000 - 90 * 60 * 1000; // 30분 뛰고 60분 쉬다 저장
+    const real = runWindow({...base, start_ms: startMs});
+    const guessed = runWindow(base);
+    // 두 창이 아예 안 겹친다 → 병합이 실패하고 신발이 두 번 닳는다.
+    expect(real!.endMs).toBeGreaterThan(guessed!.startMs);
+    expect(real!.startMs).toBeLessThan(guessed!.startMs);
+    const overlap = Math.min(real!.endMs, guessed!.endMs) - Math.max(real!.startMs, guessed!.startMs);
+    const shorter = Math.min(real!.endMs - real!.startMs, guessed!.endMs - guessed!.startMs);
+    expect(overlap / shorter).toBeGreaterThan(0); // 겹치긴 하지만
+    expect(real!.endMs - real!.startMs).toBeGreaterThan(shorter * 2); // 창 길이가 2배 이상 다르다
   });
 });
