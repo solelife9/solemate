@@ -105,3 +105,38 @@ describe('룰러 폐기 후의 거리 입력 경로', () => {
     expect(onStart).toHaveBeenCalledWith(expect.objectContaining({km: 21.1}));
   });
 });
+
+// ============================================================================
+// 실시간 심박이 없는 기기에서는 코칭을 제공하지 않는다 (2026-08-07 감사)
+//
+// 안드로이드에는 러닝 **중** 심박 경로가 없다(watchSession 은 iOS 전용). 그런데 이 화면은
+// 심박 가이드 목표존을 그대로 제공하고 있었다. 갤럭시워치 사용자가 Z2 를 걸고 달리면
+// 라이브 심박 '--', 존 코칭 0회, 존 이탈 햅틱 0회 — 설정만 하고 아무 일도 안 일어난다.
+//
+// 러닝이 끝난 뒤 Health Connect 에서 심박을 채우는 것은 그대로 동작한다. 그건 **기록**이고
+// 이건 **코칭**이다. 둘을 같은 스위치로 묶어 두면 둘 다 거짓말이 된다.
+// ============================================================================
+describe('심박 가이드 — 실시간 심박 가용성', () => {
+  const health = require('../lib/health');
+  const orig = health.LIVE_HR_SUPPORTED;
+  const setLiveHr = (v: boolean) =>
+    Object.defineProperty(health, 'LIVE_HR_SUPPORTED', {value: v, configurable: true});
+  afterEach(() => setLiveHr(orig));
+
+  test('실시간 심박이 있으면 존 선택 칩이 보인다', () => {
+    setLiveHr(true);
+    const root = render(<RunGoalScreen />);
+    pressTestID(root, 'goal-hr-row');
+    expect(zoneChips(root).size).toBe(4);
+  });
+
+  test('실시간 심박이 없으면 칩 대신 이유를 말한다 — 있는 척하지 않는다', () => {
+    setLiveHr(false);
+    const root = render(<RunGoalScreen />);
+    pressTestID(root, 'goal-hr-row');
+    // 고를 수 없는 설정을 내놓지 않는다.
+    expect(zoneChips(root).size).toBe(0);
+    // 대신 왜 안 되는지, 무엇은 되는지 말한다.
+    expect(textOf(root)).toContain('실시간 심박을 받을 수 없어요');
+  });
+});

@@ -45,6 +45,7 @@ import { buildPacePlan } from './lib/pacePlan';
 // 추정치 개인화(심사 P2 #74, Truth only) — 일률 5분/km·64kcal/km 대신 최근 이력의
 // 거리가중 평균 페이스·km당 칼로리로 예상. 이력 없으면 기존 기본값 폴백(회귀 0).
 import { estimateForGoal, estimateForDuration, buildPaceProfile, type EstimateRunLike } from './lib/goalEstimate';
+import { HEALTH_STORE_NAME, LIVE_HR_SUPPORTED } from './lib/health';
 
 // runs 기본값 — 렌더마다 새 []를 만들면 useMemo 의존이 매번 갈려 추정이 재계산되므로
 // 모듈 상수 한 개로 고정한다(미배선 시에도 참조 동일성 유지).
@@ -208,6 +209,10 @@ export default function RunGoalScreen({
   // 심박 가이드 접힘(재구성 2026-07-25): 상시 4칩+힌트(겹 2)가 접힌 한 줄 요약으로.
   // 설정값은 접혀 있어도 유지·적용된다(targetZone 은 startRun 에 항상 실린다).
   const [zoneOpen, setZoneOpen] = useState(false);
+  // 러닝 **중** 실시간 심박이 가능한 플랫폼인가(근거는 lib/health.LIVE_HR_SUPPORTED).
+  // 끝난 뒤 심박을 채우는 것은 안드로이드에서도 동작한다 — 그건 **기록**이고 이건
+  // **코칭**이다. 둘을 같은 스위치로 묶어 두면 둘 다 거짓말이 된다.
+  const liveHrAvailable = LIVE_HR_SUPPORTED;
   const reduceMotion = useReduceMotion();
   const toggleZoneOpen = () => {
     // 접힘/펼침은 레이아웃 전환 — 시스템 '동작 줄이기' 존중(DESIGN §6.7).
@@ -374,7 +379,14 @@ export default function RunGoalScreen({
           </Text>
           <Text style={[s.zoneChevron, zoneOpen && s.zoneChevronOpen]}>›</Text>
         </Pressable>
-        {zoneOpen && (
+        {zoneOpen && !liveHrAvailable && (
+          // 있는 척하지 않는다 — 왜 안 되는지와, 무엇은 되는지를 한 줄로 말한다.
+          <Text style={s.zoneHint}>
+            이 기기에선 러닝 중 실시간 심박을 받을 수 없어요. 러닝이 끝나면 심박 기록은
+            {' '}{HEALTH_STORE_NAME}에서 채워집니다.
+          </Text>
+        )}
+        {zoneOpen && liveHrAvailable && (
           <View accessibilityRole="radiogroup" accessibilityLabel="심박 가이드">
             <View style={s.zoneChips}>
               {ZONE_OPTS.map(o => {

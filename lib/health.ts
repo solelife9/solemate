@@ -18,6 +18,22 @@ import * as android from './healthConnect';
 
 const isAndroid = Platform.OS === 'android';
 
+/**
+ * 러닝 **중** 실시간 심박을 받을 수 있는 플랫폼인가(동기 — 화면 분기용).
+ *
+ * 지금은 애플워치(iOS)뿐이다. 안드로이드에는 실시간 경로가 아예 없다 —
+ * Health Connect 는 센서가 아니라 **저장소**라 러닝이 끝난 뒤에야 읽는다.
+ *
+ * 왜 상수로 두나(2026-08-07 감사): 러닝 목표 화면이 심박 가이드 목표존을 플랫폼 구분
+ * 없이 제공하고 있었다. 갤럭시워치 사용자가 Z2 를 걸고 달리면 라이브 심박 '--',
+ * 존 코칭 0회, 존 이탈 햅틱 0회 — 설정만 하고 아무 일도 안 일어난다.
+ *
+ * `watchSession.available` 을 쓰면 안 된다. 그건 **네이티브 모듈 존재**를 뜻해서
+ * 테스트·시뮬 환경에서 false 가 되고, 아이폰에 워치를 나중에 페어링하는 경우도
+ * 못 잡는다. 여기서 묻는 건 "이 플랫폼이 원리적으로 가능한가"이고 그건 OS 로 갈린다.
+ */
+export const LIVE_HR_SUPPORTED = !isAndroid;
+
 /** 이 기기에서 건강 창고를 쓸 수 있는가(동기 — 화면 분기용). */
 export const hkAvailable = (): boolean => (isAndroid ? android.hcAvailable() : ios.hkAvailable());
 
