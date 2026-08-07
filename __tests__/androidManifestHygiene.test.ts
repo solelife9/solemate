@@ -82,6 +82,38 @@ describe('안드로이드 매니페스트 — 라이브러리가 끌고 온 권�
     }
   });
 
+  // 매니페스트가 인텐트를 선언해 놓고 **받는 쪽이 없으면** 시스템이 앱을 열었을 때 그냥
+  // 홈이 뜬다. 헬스 커넥트 설정에서 "왜 내 심박을 읽나"를 눌렀는데 러닝 홈이 열리는 것이고,
+  // Play 건강 데이터 정책은 그 자리에서 근거(처리방침)를 보여줄 것을 요구한다.
+  // 2026-08-07 까지 정확히 그 상태였다 — 선언만 있고 응답이 없었다.
+  it('Health Connect 근거 인텐트를 선언했으면 받는 쪽도 있어야 한다', () => {
+    // 선언 쪽
+    expect(manifest).toContain('androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE');
+    expect(manifest).toContain('android.intent.action.VIEW_PERMISSION_USAGE');
+    // 받는 쪽
+    const activity = readFileSync(
+      join(ROOT, 'android', 'app', 'src', 'main', 'java', 'com', 'keego', 'app', 'MainActivity.kt'),
+      'utf8',
+    );
+    expect(activity).toContain('androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE');
+    expect(activity).toContain('android.intent.action.VIEW_PERMISSION_USAGE');
+    // 콜드스타트(onCreate)와 이미 떠 있는 경우(onNewIntent) 둘 다 처리해야 한다.
+    expect(activity).toContain('override fun onCreate');
+    expect(activity).toContain('override fun onNewIntent');
+  });
+
+  // 근거로 여는 주소가 앱이 쓰는 공개 처리방침과 달라지면, 사용자는 옛 문서를 보게 된다.
+  it('근거로 여는 처리방침 주소가 앱의 PRIVACY_URL 과 같다', () => {
+    const activity = readFileSync(
+      join(ROOT, 'android', 'app', 'src', 'main', 'java', 'com', 'keego', 'app', 'MainActivity.kt'),
+      'utf8',
+    );
+    const links = readFileSync(join(ROOT, 'lib', 'legalLinks.ts'), 'utf8');
+    const m = links.match(/PRIVACY_URL\s*=\s*'([^']+)'/);
+    expect(m).toBeTruthy();
+    expect(activity).toContain(m![1]);
+  });
+
   // 기능 권한까지 같이 날아가면 화면off 러닝·심박이 죽는다. 제거가 과했는지 본다.
   it('기능 권한은 그대로 남아 있다 — 제거가 과하지 않았다', () => {
     for (const p of [
