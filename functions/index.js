@@ -27,6 +27,13 @@
 //   AUTH_RATE_WINDOW_MS     윈도 길이 ms(기본 60000).
 //
 // region: asia-northeast3(서울) — 한국 사용자 지연 최소화.
+//
+// 런타임: **Node 22**(firebase.json `functions.runtime`). Node 20 은 2026-04-30 지원
+// 종료·2026-10-30 폐기라 그 뒤에는 배포 자체가 막힌다 — 출시 두 달 뒤 핫픽스를 못 올리는
+// 상황이 된다. package.json 의 engines 는 처음부터 22 였고 firebase.json 만 20 으로
+// 남아 어긋나 있었다(배포에는 firebase.json 이 이긴다).
+// ⚠️ 런타임만 바꾸면 CLI 가 `No changes detected` 로 건너뛴다 — 소스가 함께 바뀌어야
+//    실제로 반영된다(2026-08-07 에 이걸로 한 번 속았다).
 // ============================================================================
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');

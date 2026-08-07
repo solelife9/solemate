@@ -1,7 +1,8 @@
 {
   "functions": {
     "source": "functions",
-    "runtime": "nodejs20"
+    "//": "Node 20 은 2026-04-30 지원 종료·2026-10-30 폐기다. 그 뒤에는 배포 자체가 막힌다 — 출시하고 두 달 뒤 핫픽스를 못 올리는 상황이 되므로 미리 올린다. functions/package.json 의 engines 는 이미 22 였고 여기만 20 으로 남아 어긋나 있었다(이 파일이 이긴다).",
+    "runtime": "nodejs22"
   },
   "firestore": {
     "rules": "firestore.rules",
