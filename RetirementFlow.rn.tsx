@@ -18,7 +18,7 @@
 // 은퇴 확정은 스텝 2 → 3 전환에서 단 한 번 일어난다.
 // ============================================================================
 import React, {useMemo, useRef, useState} from 'react';
-import { rf, rs, ri, rv } from './lib/responsive';
+import { rs, ri, rv, leading } from './lib/responsive';
 import {View, ScrollView, Pressable, StyleSheet, useWindowDimensions} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -35,7 +35,7 @@ import {
   DISPLAY,
   SPACE,
   RADIUS,
-  withAlpha, TYPE,
+  withAlpha, TYPE, LEADING,
   GLASS, MOTION,
   ICON,
   RING_ACCENT,
@@ -639,7 +639,9 @@ const s = StyleSheet.create({
     fontSize: TYPE.display.fontSize,
     fontWeight: '700',
     letterSpacing: -0.6,
-    lineHeight: rf(40),
+    // 행간은 **글자 배율까지** 반영해 계산한다(2026-08-07). rf 는 화면 폭만 보므로
+    // 숫자를 적어 두면 OS 글자 크기 1.5× 에서 글자만 커지고 상자는 그대로라 잘린다.
+    lineHeight: leading(33, LEADING.display),
   },
   stepTitle: {
     color: T1,
@@ -653,7 +655,7 @@ const s = StyleSheet.create({
     fontFamily: FONT,
     fontSize: TYPE.heading.fontSize,
     fontWeight: '500',
-    lineHeight: rf(25),
+    lineHeight: leading(18, LEADING.ui),
   },
 
   // ── 보관 완료(스텝 4) ────────────────────────────────────────────────────────
@@ -711,7 +713,7 @@ const s = StyleSheet.create({
     fontFamily: FONT,
     fontSize: TYPE.heading.fontSize,
     fontWeight: '500',
-    lineHeight: rf(25),
+    lineHeight: leading(18, LEADING.ui),
     textAlign: 'center',
   },
   ledeStrong: {color: T1, fontWeight: '700'},
@@ -720,7 +722,7 @@ const s = StyleSheet.create({
     color: T3,
     fontFamily: FONT,
     fontSize: TYPE.label.fontSize,
-    lineHeight: rf(20),
+    lineHeight: leading(14, LEADING.ui),
     marginTop: SPACE.xs,
   },
 

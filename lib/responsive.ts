@@ -116,6 +116,30 @@ export const rf = (size: number): number => {
 /** 반응형 아이콘 크기 — 폰트와 동일 절제 스케일. */
 export const ri = (size: number): number => rf(size);
 
+/**
+ * 행간(lineHeight)을 **글자 크기와 함께 커지도록** 계산한다.
+ *
+ * 왜 필요한가(2026-08-07 감사): RN 은 `fontSize` 를 OS 글자 크기 배율로 곱해 그리지만
+ * **`lineHeight` 는 곱하지 않는다.** 그래서 `fontSize: rf(33), lineHeight: rf(40)` 처럼
+ * 숫자를 나란히 적어 두면, 사용자가 글자 크기를 1.5× 로 키운 순간
+ * **49.5pt 짜리 글자가 40pt 상자**에 들어가 위아래가 잘린다. 접근성 설정을 켠 사용자
+ * 에게만, 그리고 하필 큰 글자에서 터진다.
+ *
+ * rf() 는 **화면 폭**만 반영한다(그건 그것대로 맞다) — 글자 배율은 별개 축이라 여기서
+ * 곱한다. 배율은 lib/text 의 상한과 같은 값으로 자른다: 상한을 넘겨 곱하면 실제로는
+ * 그만큼 커지지 않는 글자에 대해 상자만 과하게 벌어진다.
+ *
+ * @param size  디자인 기준 글자 크기(rf 를 적용하지 않은 원본 값)
+ * @param ratio 행간 비율 — theme 의 LEADING(display 1.22 / ui 1.3 / body 1.45)
+ * @param cap   글자 배율 상한. 히어로 텍스트는 1.2 를 쓴다(lib/text FONT_SCALE_CAP_HERO)
+ */
+export const leading = (size: number, ratio: number, cap = 1.5): number => {
+  // TEST 분기를 두지 않는다 — jest 의 PixelRatio 목이 기본 1 을 주므로 동작이 같고,
+  // 가드를 두면 이 함수의 핵심(배율을 따라가는가)을 테스트할 수 없게 된다.
+  const scale = Math.min(PixelRatio.getFontScale?.() || 1, cap);
+  return Math.round(rf(size) * ratio * scale);
+};
+
 /** 화면 정보(경계 분기용). isSmall=작은 폰(SE급), isLarge=큰 폰(Pro Max급).
  *  필드는 Dimensions 변경 시 제자리 갱신된다 — 구조분해로 떠 두지 말고 매번 읽을 것. */
 export const screen = {

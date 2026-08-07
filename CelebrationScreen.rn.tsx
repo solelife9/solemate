@@ -8,12 +8,12 @@
 // 색은 호출부가 넘긴 tierColor/rarityColor(=theme TIER_COLORS / 희귀도색)만 사용.
 // ============================================================================
 import React, {useEffect, useRef} from 'react';
-import { rf, rs, ri, rv } from './lib/responsive';
+import { rs, ri, rv, leading } from './lib/responsive';
 import {View, Pressable, ScrollView, StyleSheet, Animated} from 'react-native';
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {BG, T1, T3, FONT, DISPLAY, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE, MOTION} from './theme';
+import {BG, T1, T3, FONT, DISPLAY, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE, MOTION, LEADING} from './theme';
 import {success, impactHeavy} from './lib/haptics';
 import {Button, useReduceMotion} from './primitives';
 
@@ -328,9 +328,9 @@ const st = StyleSheet.create({
   ring: {position: 'absolute', width: rs(148), height: rs(148), borderRadius: rs(148) / 2, borderCurve: 'continuous', borderWidth: 1},
 
   rankfrom: {fontSize: TYPE.body.fontSize, fontWeight: '500', color: T3, marginBottom: rv(2), fontFamily: FONT, textAlign: 'center'},
-  name: {fontSize: TYPE.display.fontSize, fontWeight: '700', color: T1, letterSpacing: -0.6, lineHeight: rf(38), textAlign: 'center', fontFamily: DISPLAY},
+  name: {fontSize: TYPE.display.fontSize, fontWeight: '700', color: T1, letterSpacing: -0.6, lineHeight: leading(33, LEADING.display), textAlign: 'center', fontFamily: DISPLAY},
   meta: {fontSize: TYPE.label.fontSize, fontWeight: '500', color: T3, fontFamily: FONT},
-  desc: {fontSize: TYPE.body.fontSize, color: withAlpha(T1, 0.72), lineHeight: rf(24), marginTop: rv(18), maxWidth: rs(300), textAlign: 'center', fontFamily: FONT},
+  desc: {fontSize: TYPE.body.fontSize, color: withAlpha(T1, 0.72), lineHeight: leading(16, LEADING.body), marginTop: rv(18), maxWidth: rs(300), textAlign: 'center', fontFamily: FONT},
   b: {color: T1, fontWeight: '700'},
 
   actions: {alignSelf: 'stretch'},
