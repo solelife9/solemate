@@ -46,7 +46,7 @@ function PopIn({skip, children, style}: {skip: boolean; children: React.ReactNod
   const a = useRef(new Animated.Value(skip ? 1 : 0)).current;
   useEffect(() => {
     if (skip) { a.setValue(1); return; }
-    const anim = Animated.spring(a, {toValue: 1, friction: 5, tension: 120, useNativeDriver: false});
+    const anim = Animated.spring(a, {toValue: 1, friction: 5, tension: 120, useNativeDriver: true});
     anim.start();
     return () => anim.stop();
   }, [a, skip]);
@@ -66,7 +66,7 @@ function Enter({skip, delay = 0, children, style, testID}: {skip: boolean; delay
   const a = useRef(new Animated.Value(skip ? 1 : 0)).current;
   useEffect(() => {
     if (skip) { a.setValue(1); return; }
-    const anim = Animated.timing(a, {toValue: 1, duration: MOTION.rise.dur, delay, easing: MOTION.ease.out, useNativeDriver: false});
+    const anim = Animated.timing(a, {toValue: 1, duration: MOTION.rise.dur, delay, easing: MOTION.ease.out, useNativeDriver: true});
     anim.start();
     return () => anim.stop();
   }, [a, delay, skip]);

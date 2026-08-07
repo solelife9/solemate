@@ -211,8 +211,10 @@ export function ShoeCard({
     if (reduceMotion) { centerIn.setValue(1); return; }
     const anim = Animated.timing(centerIn, {
       toValue: 1, duration: 500, delay: 150,
-      // JS 드라이버 — 링 스윕과 동일(테스트 렌더러 호환 + 코드베이스 관례).
-      easing: MOTION.ease.out, useNativeDriver: false,
+      // 네이티브 드라이버 — opacity·translateY 만 움직인다(2026-08-07). 위 링 스윕은
+      // strokeDashoffset(SVG 속성)이라 JS 드라이버가 **필수**지만, 이건 아니다.
+      // 둘을 같은 관례로 묶어 두면 안 그래도 되는 것까지 JS 스레드에 얹힌다.
+      easing: MOTION.ease.out, useNativeDriver: true,
     });
     anim.start();
     return () => anim.stop();

@@ -506,7 +506,10 @@ export function Ring({
       duration,
       delay,
       easing: easing ?? MOTION.ease.quad,
-      useNativeDriver: false, // strokeDashoffset = JS 드라이버
+      // strokeDashoffset(SVG 속성)은 **네이티브 드라이버가 지원하지 않는다** — 여기는
+      // JS 드라이버가 필수다. transform·opacity 만 쓰는 애니메이션과 구분할 것
+      // (2026-08-07 에 그 구분 없이 관례로 묶여 있던 곳들을 네이티브로 돌렸다).
+      useNativeDriver: false,
     });
     a.start(({finished}) => {
       if (finished) sweepEndRef.current?.();
@@ -1409,6 +1412,10 @@ export function SwipeBack({onBack, enabled = true, children}: {
   const widthRef = useRef(width); widthRef.current = width;
   const blockRef = useRef(false); // SwipeBackExclude 영역 터치 중이면 true
   const springHome = () =>
+    // ⚠️ SwipeBack 의 x 는 PanResponder 가 setValue 로 직접 몰고, 화면 전체 translateX 를
+    // 움직인다. 네이티브 드라이버로 돌리면 이 저장소에서 가장 큰 체감 이득이 나올 자리지만
+    // (안드로이드 JS 스레드 부하), 제스처 값과 JS 읽기가 얽혀 있어 실기기 확인 없이 바꾸면
+    // 제스처가 끊길 위험이 있다. **실기기 검증 항목으로 남긴다**(2026-08-07).
     Animated.spring(x, {toValue: 0, useNativeDriver: false, speed: 20, bounciness: 4}).start();
   const pan = useRef(
     PanResponder.create({

@@ -161,7 +161,7 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
   // (MOTION.dur.sheet · ease.inout, 나이키 문법 시그니처). JS 드라이버 = 코드베이스 관례.
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(anim, {toValue: 1, duration: MOTION.dur.sheet, easing: MOTION.ease.inout, useNativeDriver: false}).start();
+    Animated.timing(anim, {toValue: 1, duration: MOTION.dur.sheet, easing: MOTION.ease.inout, useNativeDriver: true}).start();
   }, [anim]);
   const close = () => {
     Animated.timing(anim, {toValue: 0, duration: MOTION.dur.sheet, easing: MOTION.ease.inout, useNativeDriver: false}).start(() => onClose());

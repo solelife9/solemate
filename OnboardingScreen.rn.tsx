@@ -92,9 +92,11 @@ function Rise({delay = 0, children, style}: {delay?: number; children: React.Rea
       a.setValue(1);
       return;
     }
-    // JS 드라이버: 단발 진입이라 성능 영향 미미 + jest 에 NativeAnimated 모듈이 없다.
-    // 시간·커브는 전역 Rise 표준(MOTION.rise)과 동일 — 로컬 구현은 reduce-motion 대응 때문에만 유지.
-    const anim = Animated.timing(a, {toValue: 1, duration: MOTION.rise.dur, delay, easing: MOTION.ease.out, useNativeDriver: false});
+    // 네이티브 드라이버 — opacity·translateY 만 움직이므로 UI 스레드에서 돈다(2026-08-07).
+    // 예전 주석은 "jest 에 NativeAnimated 모듈이 없다"였는데 **낡은 전제였다**(전환 후
+    // 전체 스위트 그린). 안드로이드는 JS 스레드 부하가 iOS 보다 크고, 이 저장소는 이미
+    // 갤럭시 S10e 에서 UI 병목을 실측한 이력이 있다 — 테스트 편의로 JS 드라이버를 쓸 이유가 없다.
+    const anim = Animated.timing(a, {toValue: 1, duration: MOTION.rise.dur, delay, easing: MOTION.ease.out, useNativeDriver: true});
     anim.start();
     return () => anim.stop();
   }, [a, delay, rm]);
