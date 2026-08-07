@@ -898,7 +898,7 @@ function ProfileScreen({
     </>
   );
   return (
-    <View style={s.screen}>
+    <View style={s.screen} testID="profile-screen">
       <AmbientBackdrop />
       <Rise style={{ flex: 1 }}>
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: GUTTER, paddingBottom: TABBAR_CLEARANCE, gap: rv(16) }}>

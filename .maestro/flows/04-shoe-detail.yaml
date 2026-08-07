@@ -1,0 +1,49 @@
+# 신발 상세 — 이 앱의 차별점(shoe-first)이 실제로 열리는가.
+#
+# 뒤로가기도 함께 본다: 신발 상세는 App.tsx 가 아니라 **ShoesScreen 내부 state** 라
+# 오늘 붙인 백스택(lib/backStack)이 실제로 걸려 있는지 확인하는 유일한 경로다.
+# (02-back-navigation 은 기록 상세 = HistoryScreen 쪽을 본다.)
+appId: com.keego.app
+name: 04 신발 상세 — 열리고, 뒤로가기로 닫힌다
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
+
+- tapOn:
+    id: "tab-shoes"
+- extendedWaitUntil:
+    visible:
+      id: "shoes-screen"
+    timeout: 15000
+
+# 신발이 하나도 없는 계정이면 열 상세가 없다 — 만들지 않고 건너뛴다(비파괴 원칙).
+- runFlow:
+    when:
+      visible:
+        id: "shoe-card"
+    commands:
+      - tapOn:
+          id: "shoe-card"
+          index: 0
+      - extendedWaitUntil:
+          visible:
+            id: "shoe-detail-screen"
+          timeout: 15000
+
+      # 상세 → 목록. ShoesScreen 내부 state 를 백스택이 닫아야 한다.
+      - pressKey: Back
+      - extendedWaitUntil:
+          visible:
+            id: "shoes-screen"
+          timeout: 10000
+      - assertNotVisible:
+          id: "shoe-detail-screen"
+
+- tapOn:
+    id: "tab-home"
+- assertVisible:
+    id: "home-screen"

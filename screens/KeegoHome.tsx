@@ -309,6 +309,7 @@ export function ShoeCard({
           <Pressable
             style={({pressed}) => [styles.runBtn, pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity}]}
             onPress={() => onStartRun?.(shoe)}
+            testID="home-start-run"
             accessibilityRole="button" accessibilityLabel="러닝 시작"
             accessibilityHint="목표를 정하는 화면으로 넘어가요"
           >

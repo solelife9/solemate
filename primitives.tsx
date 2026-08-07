@@ -1461,11 +1461,13 @@ export function ShoeGlyph({size = 46, color = withAlpha(T1, 0.32)}: {size?: numb
   );
 }
 
-const TABS: {icon: string; label: string; shoe?: boolean; flip?: boolean}[] = [
-  {icon: 'home', label: '홈'},
-  {icon: 'shoe', label: '러닝화', shoe: true},
-  {icon: 'time', label: '기록'},
-  {icon: 'person', label: '마이'},
+// key = E2E 선택자의 안정 키. label 은 사용자 카피라 언제든 바뀔 수 있어 선택자로 쓰면
+// 카피 수정 때마다 E2E 가 깨진다(.maestro/ 흐름이 tab-* 로 잡는다).
+const TABS: {key: string; icon: string; label: string; shoe?: boolean; flip?: boolean}[] = [
+  {key: 'home', icon: 'home', label: '홈'},
+  {key: 'shoes', icon: 'shoe', label: '러닝화', shoe: true},
+  {key: 'history', icon: 'time', label: '기록'},
+  {key: 'profile', icon: 'person', label: '마이'},
 ];
 
 // 탭바는 화면마다 별도 인스턴스로 마운트된다(각 화면이 자기 TabBar 를 active 고정으로 렌더).
@@ -1584,6 +1586,7 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
               key={i}
               onPress={() => onTab(i)}
               onLayout={onSlot(i)}
+              testID={`tab-${tab.key}`}
               accessibilityRole="tab"
               accessibilityLabel={tab.label}
               accessibilityState={{selected: on}}

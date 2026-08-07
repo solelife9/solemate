@@ -66,7 +66,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
   const signingIn = busy !== null;
 
   return (
-    <View style={[st.screen, {paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24}]}>
+    <View style={[st.screen, {paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24}]} testID="login-screen">
       {/* 브랜드 히어로 — 정본 KeegoWordmark(파파야) 하나만. 일회성 'K' 배지는 폐기
           (앱 어디에도 없는 발명 자산이었고 워드마크도 흰색이라 첫 화면이 오프캐논이었다). */}
       <View style={st.hero}>

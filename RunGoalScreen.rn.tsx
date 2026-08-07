@@ -447,6 +447,7 @@ export default function RunGoalScreen({
 
         <Button
           label="러닝 시작"
+          testID="goal-start-run"
           onPress={startRun}
           // startRun 이 직접 tap() 을 울리므로 공용 버튼 햅틱은 끈다(중복 방지).
           haptic={false}

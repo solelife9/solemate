@@ -269,7 +269,7 @@ function ShoeDetail({
   return (
     // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 락커 목록 복귀(iOS pop 제스처 대응).
     <SwipeBack onBack={onBack}>
-    <View style={[s.screen, { paddingTop: insets.top }]}>
+    <View style={[s.screen, { paddingTop: insets.top }]} testID="shoe-detail-screen">
       <AmbientBackdrop />
       {/* 표준 내비 헤더(primitives.ScreenHeader) — 편집/삭제 버튼은 right 슬롯(라벨 보존). */}
       <ScreenHeader
@@ -554,6 +554,7 @@ function ShoeCard({ shoe, onPress, onPlay, unit, pace: _pace, forecast }: { shoe
   return (
     <Pressable
       onPress={onPress}
+      testID="shoe-card"
       accessibilityRole="button"
       // 카드 정보(컨디션·남은 수명·교체 예측)를 label 에 합성한다 — 카드가 하나의
       // 접근성 요소로 붕괴되며 내부 텍스트가 낭독 안 되던 문제(2026-07-05 a11y 감사).
@@ -749,7 +750,7 @@ function ShoesScreen({
   const soonCount = activeShoes.filter(({ sh }) => isSoon(fcOf(sh))).length;
 
   return (
-    <View style={[s.screen, { paddingTop: insets.top }]}>
+    <View style={[s.screen, { paddingTop: insets.top }]} testID="shoes-screen">
       <AmbientBackdrop />
       <View style={s.topbar}>
         <View style={{ flex: 1, minWidth: 0 }}>

@@ -1,0 +1,31 @@
+# 스모크 — 앱이 켜지고 홈이 그려지는가.
+# 이게 깨지면 아래 흐름들의 실패는 전부 의미가 없다. 그래서 번호가 00 이다.
+appId: com.keego.app
+name: 00 스모크 — 부팅 → 홈
+---
+- launchApp:
+    # 상태를 지우지 않는다 — 지우면 로그인이 풀려 게이트에 걸린다(config.yaml 참조).
+    clearState: false
+
+# 부팅 스켈레톤이 걷힐 때까지 기다린다. 콜드 스타트 + Firestore 첫 조회가 있어
+# 기본 대기(5초)로는 모자랄 때가 있다.
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
+
+# 로그인 게이트에 걸렸으면 여기서 조용히 지나가면 안 된다 — 아래 흐름 전부가
+# "화면을 못 찾음"으로 애매하게 실패한다. 원인을 이름으로 못 박는다.
+- assertNotVisible:
+    id: "login-screen"
+
+# 다이얼로그가 떠 있으면 아래 흐름들이 전부 "요소를 못 찾음"으로 애매하게 실패한다
+# (2026-08-07: 미완료 러닝 복구 다이얼로그 하나가 흐름 4개를 무너뜨렸다).
+# 원인을 여기서 이름으로 못 박는다.
+- assertNotVisible:
+    id: "dialog-host"
+
+- assertVisible:
+    id: "home-start-run"
+- assertVisible:
+    id: "tab-home"

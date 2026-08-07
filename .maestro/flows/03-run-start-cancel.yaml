@@ -1,0 +1,51 @@
+# 러닝 시작 흐름 — 목표 화면까지 밟고 되돌아온다.
+#
+# ⚠️ **카운트다운에는 들어가지 않는다. 일부러 그렇게 만들었다.**
+# 처음엔 카운트다운까지 들어갔다가 '취소'를 누르는 흐름이었는데, 실기기에서 돌려보니
+# **카운트다운(3초)보다 UI 자동화 왕복이 느려서 그대로 러닝에 진입했다** —
+# 0.00km · 25초짜리 유령 기록이 남았고, 그 복구 다이얼로그가 나머지 흐름 4개를
+# 전부 막았다(2026-08-07 실측).
+#
+# 그래서 규칙으로 굳힌다: **E2E 는 3초짜리 타이머와 경주하지 않는다.** 이기더라도
+# 기기가 느린 날 지고, 지는 날엔 유령 기록이 남는다. 이 앱은 가짜 기록이 프로필의
+# 「1km 최고」를 차지했던 사고를 이미 겪었다(lib/vehicleDetect.ts).
+# 카운트다운·러닝 화면의 검증은 기기 없이 도는 단위 테스트가 맡는다
+# (__tests__/lib/backStack.test.ts 가 뒤로가기 처리를, App 스위트가 사다리를).
+#
+# 여기서 덮는 것: 홈 CTA → 목표 화면(App.tsx 사다리의 goal 분기) → 뒤로가기로 복귀.
+appId: com.keego.app
+name: 03 러닝 시작 — 목표 화면까지 갔다가 되돌아온다(기록 무생성)
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
+
+# 이전 실행이 남긴 미완료 러닝 다이얼로그가 떠 있으면 흐름 전체가 막힌다.
+# 떠 있으면 안 되는 게 정상이므로 **넘기지 않고 실패시킨다** — 조용히 버리면
+# 진짜 유실 사고도 같이 지나간다.
+- assertNotVisible:
+    id: "dialog-host"
+
+- tapOn:
+    id: "home-start-run"
+- extendedWaitUntil:
+    visible:
+      id: "goal-start-run"
+    timeout: 15000
+
+# 위치 권한 안내(첫 GPS 런 직전 1회)가 뜨면 목표 화면이 아니라 그게 먼저 온다.
+# OS 권한 다이얼로그는 흐름이 건드리지 않는다 — 이미 허용된 기기를 전제한다.
+- assertNotVisible:
+    id: "location-prime-screen"
+
+# 뒤로가기로 목표 화면을 닫는다(App.tsx 사다리의 goal 분기 뒤로가기 처리).
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000
+- assertNotVisible:
+    id: "goal-start-run"

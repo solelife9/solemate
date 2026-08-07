@@ -511,10 +511,10 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
   return (
     // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 기록 목록 복귀(iOS pop 제스처 대응).
     <SwipeBack onBack={onBack}>
-    <View style={[s.screen, { paddingTop: insets.top }]}>
+    <View style={[s.screen, { paddingTop: insets.top }]} testID="run-detail-screen">
       <AmbientBackdrop />
       <View style={[s.nav, s.navRow]}>
-        <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(ICON.action)} color={T1} /></Pressable>
+        <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn} testID="run-detail-back"><Ionicons name="chevron-back" size={ri(ICON.action)} color={T1} /></Pressable>
         <View style={s.navActions}>
           <Pressable onPress={onShareCard} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유" testID="detail-share">
             <Ionicons name="share-outline" size={ri(ICON.action)} color={ACCENT} />
@@ -893,7 +893,7 @@ function DrumColumn({ items, selectedIndex, onChange }: {
 export function RunCard({ run, shoes, onPress, unit, hideShoe }: { run: Run; shoes: Shoe[]; onPress?: () => void; unit: Unit; /** 신발 상세용 — 신발명 대신 날짜를 제목 자리에(반복 노이즈 제거). */ hideShoe?: boolean }) {
   const shoe = shoes[run.shoe];
   return (
-    <Pressable onPress={onPress} disabled={!onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && !!onPress && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
+    <Pressable onPress={onPress} disabled={!onPress} testID="run-card" accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && !!onPress && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
       <GlassEdge glints={false} radius={RADIUS.lg} />
       <View style={s.runCardTop}>
         <View style={s.flex1min0}>
@@ -1129,7 +1129,7 @@ function HistoryScreen({
   }
 
   return (
-    <View style={[s.screen, { paddingTop: insets.top }]}>
+    <View style={[s.screen, { paddingTop: insets.top }]} testID="history-screen">
       <AmbientBackdrop />
       <View style={[s.header, s.headerRow, s.between]}>
         <Text style={s.title}>기록</Text>

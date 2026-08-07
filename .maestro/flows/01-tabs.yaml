@@ -1,0 +1,39 @@
+# 네 탭이 전부 열리는가.
+# 탭 화면은 '한 번 만들면 유지'(display:none) 구조라, 처음 방문할 때만 마운트 비용을
+# 치른다 — 즉 이 흐름은 네 화면의 **첫 렌더**를 전부 한 번씩 밟는다. 어느 화면이
+# 마운트에서 터지면 여기서 잡힌다.
+appId: com.keego.app
+name: 01 탭 — 네 화면 모두 열린다
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
+
+- tapOn:
+    id: "tab-shoes"
+- extendedWaitUntil:
+    visible:
+      id: "shoes-screen"
+    timeout: 15000
+
+- tapOn:
+    id: "tab-history"
+- extendedWaitUntil:
+    visible:
+      id: "history-screen"
+    timeout: 15000
+
+- tapOn:
+    id: "tab-profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 15000
+
+- tapOn:
+    id: "tab-home"
+- assertVisible:
+    id: "home-screen"

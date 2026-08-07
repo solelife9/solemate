@@ -453,7 +453,7 @@ function HomeScreen({
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[s.screen, { paddingTop: insets.top }]}>
+    <View style={[s.screen, { paddingTop: insets.top }]} testID="home-screen">
       {/* 배경 = 무채 앰비언트만(형제 탭과 동일) — 사진 배경 실험은 실기기 확인 후 제거
           (사용자 확정 2026-07-16: GLASS.fill 이 사진을 못 가려 프로스트가 아니라 반투명 판,
           홈만 스킨이 달라 4탭 조명 문법이 분열됐다). */}

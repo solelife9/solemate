@@ -560,7 +560,7 @@ export default function RunActiveScreen({
           이 잡아 러닝 모드와 동일(스왑 시 링 위치 불변). */}
       <View style={r.top}>
         {cd ? (
-          <Pressable onPress={() => cdCb.current?.onCancel?.()} hitSlop={8} accessibilityRole="button" accessibilityLabel="카운트다운 취소"
+          <Pressable onPress={() => cdCb.current?.onCancel?.()} hitSlop={8} testID="countdown-cancel" accessibilityRole="button" accessibilityLabel="카운트다운 취소"
             style={({ pressed }) => [r.cdCancel, pressed && { opacity: 0.8 }]}>
             <Ionicons name="chevron-back" size={ri(ICON.inline)} color={T2} />
             <Text style={r.cdCancelText}>취소</Text>
