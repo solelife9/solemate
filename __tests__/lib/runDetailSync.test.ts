@@ -173,3 +173,61 @@ describe('isAbsentMarkerFresh — 판정은 항상 "받는 쪽"으로 기운다'
     expect(isAbsentMarkerFresh('9000000', 1_000)).toBe(false);
   });
 });
+
+// ============================================================================
+// 자를 거면 최신부터 자른다 (2026-08-07 감사)
+//
+// 예전엔 호출부가 넘긴 순서 그대로 앞 30개를 잘랐다. 평시엔 addRun 이 앞에 붙여 최신순
+// 이라 맞았지만, **재설치 직후엔 달랐다** — 클라우드 델타 복원(mergePulled)이
+// `orderBy('updatedAt')` **오름차순**으로 배열을 만든다.
+//
+// 그래서 재설치한 장기 사용자는 **가장 오래된 30건의 상세만 복원되고, 최근 러닝의
+// 지도·스플릿·심박은 영영 안 내려왔다**(클라우드엔 있는데 안 읽는다). 하루 1회 게이트라
+// 다음 날도 같은 30건을 다시 훑는다.
+//
+// 호출부에 "정렬해서 넘겨라"라고 맡기지 않는다 — 그게 바로 이 결함이 생긴 방식이다.
+// ============================================================================
+describe('상세 동기 — 잘라낼 때의 순서', () => {
+  test('오래된 순으로 들어와도 최신 것부터 처리한다(재설치 시나리오)', async () => {
+    const port = {
+      pushRunDetail: jest.fn().mockResolvedValue(undefined),
+      getRunDetail: jest.fn().mockResolvedValue(null),
+      deleteRunDetail: jest.fn().mockResolvedValue(undefined),
+    };
+    // 오래된 순(mergePulled 가 만드는 순서)으로 5건을 넘기고 2건만 처리하게 한다.
+    const runs = [1, 2, 3, 4, 5].map(i => ({
+      id: `r${i}`,
+      run_date: `2026-01-0${i}`,
+      updatedAt: 1_700_000_000_000 + i * 1000,
+    }));
+    // 각 런에 로컬 상세가 있게 시드(그래야 push 대상이 된다).
+    for (const r of runs) {
+      await AsyncStorage.setItem('route_' + r.id, JSON.stringify([{lat: 37.5, lon: 127}]));
+    }
+
+    await syncRunDetails(runs, port as never, {max: 2});
+
+    const pushed = port.pushRunDetail.mock.calls.map(c => c[0]);
+    // 가장 최신 둘(r5, r4)이어야 한다 — 예전 동작이면 r1, r2 였다.
+    expect(pushed).toEqual(['r5', 'r4']);
+  });
+
+  test('updatedAt 이 없으면 날짜로 정렬한다', async () => {
+    const port = {
+      pushRunDetail: jest.fn().mockResolvedValue(undefined),
+      getRunDetail: jest.fn().mockResolvedValue(null),
+      deleteRunDetail: jest.fn().mockResolvedValue(undefined),
+    };
+    const runs = [
+      {id: 'old', run_date: '2026-01-01'},
+      {id: 'new', run_date: '2026-06-01'},
+    ];
+    for (const r of runs) {
+      await AsyncStorage.setItem('route_' + r.id, JSON.stringify([{lat: 37.5, lon: 127}]));
+    }
+
+    await syncRunDetails(runs, port as never, {max: 1});
+
+    expect(port.pushRunDetail.mock.calls[0][0]).toBe('new');
+  });
+});

@@ -256,7 +256,7 @@ export interface RunDetailPort {
  * 개별 런의 실패는 삼키고 계속한다. {pushed, restored} 카운트를 돌려준다.
  */
 export async function syncRunDetails(
-  runs: {id: string | number}[],
+  runs: {id: string | number; run_date?: string; updatedAt?: number}[],
   port: RunDetailPort,
   opts?: {max?: number; now?: number},
 ): Promise<{pushed: number; restored: number}> {
@@ -267,7 +267,23 @@ export async function syncRunDetails(
   await flushDetailDeletions(port);
   let pushed = 0;
   let restored = 0;
-  for (const r of runs.slice(0, max)) {
+  // ── 자를 거면 **최신부터** 자른다 (2026-08-07 감사) ─────────────────────────
+  // 예전엔 호출부가 넘긴 순서 그대로 앞 30개를 잘랐다. 평시엔 addRun 이 앞에 붙여
+  // 최신순이라 맞았지만, **재설치 직후엔 달랐다** — 클라우드 델타 복원(mergePulled)이
+  // `orderBy('updatedAt')` **오름차순**으로 배열을 만든다. 그래서 재설치한 장기
+  // 사용자는 **가장 오래된 30건의 상세만 복원되고 최근 러닝의 지도·스플릿·심박은
+  // 영영 안 내려왔다**(클라우드엔 있는데 안 읽는다). 하루 1회 게이트라 다음 날도 같은
+  // 30건을 다시 훑는다.
+  //
+  // 호출부에 "정렬해서 넘겨라"라고 맡기지 않는다 — 그게 바로 이 결함이 생긴 방식이고,
+  // 호출부가 늘어나면 또 빠진다. 자르는 쪽이 순서를 책임진다.
+  const ordered = runs.slice().sort((a, b) => {
+    const au = Number(a?.updatedAt) || 0;
+    const bu = Number(b?.updatedAt) || 0;
+    if (au !== bu) return bu - au;
+    return String(b?.run_date || '').localeCompare(String(a?.run_date || ''));
+  });
+  for (const r of ordered.slice(0, max)) {
     const runId = String(r.id || '');
     if (!runId) continue;
     try {

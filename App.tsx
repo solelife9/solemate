@@ -2188,7 +2188,10 @@ function Main(){
         if(!(await hkReadableWithoutPrompt()))return;
         const last=Number(await AsyncStorage.getItem(HR_SWEEP_AT_KEY))||0;
         if(Date.now()-last<24*3600*1000)return;
-        const candidates=(runsForHrRef.current||[]).filter(r=>(Number(r.duration)||0)>300).slice(0,30);
+        // **최신 30건**을 훑는다. 예전엔 정렬 없이 앞 30개라, 재설치 직후처럼 배열이
+        // 오래된 순으로 만들어진 상태(클라우드 델타 복원)에서는 최근 러닝을 영영
+        // 건드리지 못했다 — 하루 1회 게이트라 다음 날도 같은 30건을 다시 본다.
+        const candidates=sortRunsByDateDesc((runsForHrRef.current||[]).filter(r=>(Number(r.duration)||0)>300)).slice(0,30);
         for(const r of candidates){
           if(!alive)return;
           const id=String(r.id);
