@@ -116,11 +116,29 @@
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 		</dict>
+		<!-- 사진(2026-08-07 추가). **메달·기록증 사진만** 서버로 나간다 — 대회 당일에만
+		     남길 수 있어 재설치·기기교체로 잃으면 다시 만들 수 없기 때문이다
+		     (lib/medalPhotoSync · Firebase Storage `users/{uid}/medals/`).
+		     러닝화·러닝·프로필 사진은 여전히 기기 밖으로 나가지 않는다.
+		     2026-08-02 에 "사진은 수집하지 않는다"로 정정했던 것은 **그때는 사실이었다** —
+		     기능이 바뀌었으니 선언도 바뀐다. Linked=true(계정 uid 아래 저장), 목적은
+		     앱 기능(사용자 본인의 기록 복원), 추적 아님. -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePhotosorVideos</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+		</dict>
 		<!-- 기기 ID = Firebase Analytics 앱 인스턴스 ID + App Check(DeviceCheck) 증명 토큰.
 		     Linked 를 true 로 두는 것은 **보수적 선택**이다: Analytics 인스턴스 ID 자체는
 		     계정과 잇지 않지만(lib/productAnalytics 가 setUserId 를 쓰지 않는다), App Check
-		     토큰은 인증된 요청에 함께 실려 계정과 결부될 여지가 있다. 식별자는 과소 신고보다
-		     과대 신고가 안전하다 — 사진(수집조차 하지 않는 것)을 신고하던 것과는 다른 문제다. -->
+		     토큰은 인증된 요청에 함께 실려 계정과 결부될 여지가 있다. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeDeviceID</string>

@@ -81,6 +81,7 @@ describe('개인정보 신고 — 문서 ↔ 매니페스트', () => {
       NSPrivacyCollectedDataTypeOtherUserContent: '기타 사용자 콘텐츠',
       NSPrivacyCollectedDataTypeSearchHistory: '검색 기록',
       NSPrivacyCollectedDataTypeOtherDataTypes: '기타 데이터 유형',
+      NSPrivacyCollectedDataTypePhotosorVideos: '사진 또는 동영상',
     };
     const types = [...documentedTypes()];
     // 새 유형을 추가했으면 이 매핑에도 한국어 표기를 넣어야 한다(그 자체가 문서화 강제).
@@ -159,15 +160,25 @@ describe('개인정보 신고 — 코드 ↔ 선언', () => {
     });
   }
 
-  test('사진은 업로드 경로가 없는 한 신고하지 않는다 — 과잉 신고도 부정확이다', () => {
-    // 백업 페이로드에 이미지가 없다는 사실이 근거다. 언젠가 사진 백업을 만들면
-    // 이 테스트가 먼저 빨개져서 "신고부터 고쳐라"라고 알려준다.
-    const payloadHasPhoto = /photo|image|base64/i.test(
-      /export interface BackupPayload \{[\s\S]*?\n\}/.exec(read('lib/backup.ts'))?.[0] ?? '',
-    );
-    expect(payloadHasPhoto).toBe(false);
-    expect(declaredTypes().has('NSPrivacyCollectedDataTypePhotosorVideos')).toBe(false);
-    expect(read(DOC)).not.toMatch(/\|\s*\*\*사용자 콘텐츠 - 사진\*\*/);
+  // 2026-08-07 — **이 테스트가 설계대로 발동했다.** 원래 문구는 "언젠가 사진 백업을 만들면
+  // 이 테스트가 먼저 빨개져서 '신고부터 고쳐라'라고 알려준다"였고, 메달·기록증 클라우드
+  // 백업이 들어오자 정확히 그렇게 됐다. 그래서 규칙을 **뒤집는다**: 이제는 업로드 경로가
+  // 있는데 신고가 없는 것이 사고다. 기대값만 고쳐 통과시킨 게 아니라 사실이 바뀐 것이다.
+  test('사진 업로드 경로가 있으면 반드시 신고돼 있다', () => {
+    const uploads = read('lib/photoCloud.ts').includes('uploadAsync');
+    expect(uploads).toBe(true); // 없어졌다면 아래 기대도 함께 뒤집어야 한다
+    expect(declaredTypes().has('NSPrivacyCollectedDataTypePhotosorVideos')).toBe(true);
+    expect(read(DOC)).toMatch(/사용자 콘텐츠 - 사진 또는 동영상/);
+  });
+
+  test('올리는 사진은 메달·기록증뿐이다 — 신고 범위가 코드보다 좁지 않게', () => {
+    // 신고서가 "메달·기록증만"이라고 적었다면 코드도 그것만 올려야 한다. 신발·프로필
+    // 사진까지 올리기 시작하면 신고가 **좁아서** 틀린 것이 된다(과소 신고).
+    const sync = read('lib/medalPhotoSync.ts');
+    expect(sync).toMatch(/medalPhotoUri/);
+    expect(sync).toMatch(/certPhotoUri/);
+    // 다른 사진 종류가 이 경로에 끼어들었는지.
+    expect(sync).not.toMatch(/shoePhoto|profilePhoto|avatar/i);
   });
 
   test('추적(Tracking)은 세 타깃 모두 false 로 유지한다', () => {

@@ -153,10 +153,16 @@ describe('PrivacyInfo.xcprivacy', () => {
     }
   });
 
-  it('사진은 수집으로 선언하지 않는다(기기에만 저장 — 과잉 선언도 부정확)', () => {
-    expect(collectedTypes(read(APP_PRIVACY))).not.toContain(
-      'NSPrivacyCollectedDataTypePhotosorVideos',
-    );
+  // 2026-08-07: 메달·기록증 사진이 실제로 서버(Firebase Storage)로 나가기 시작했다.
+  // 그 전까지는 "사진은 수집하지 않는다"가 사실이었고 이 테스트가 과잉 선언을 막고 있었다.
+  // 기능이 바뀌면 선언도 바뀐다 — 이제 **누락**이 부정확한 신고다.
+  it('사진을 수집으로 선언한다(메달·기록증이 클라우드로 나간다)', () => {
+    expect(collectedTypes(read(APP_PRIVACY))).toContain('NSPrivacyCollectedDataTypePhotosorVideos');
+  });
+
+  it('워치·위젯은 사진을 다루지 않으므로 선언하지 않는다', () => {
+    expect(collectedTypes(read(WATCH_PRIVACY))).not.toContain('NSPrivacyCollectedDataTypePhotosorVideos');
+    expect(collectedTypes(read(WIDGET_PRIVACY))).not.toContain('NSPrivacyCollectedDataTypePhotosorVideos');
   });
 
   it('워치 매니페스트가 심박·위치·운동 데이터를 선언한다', () => {
