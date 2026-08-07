@@ -17,7 +17,7 @@
  * **"다시 들어오면 안 된다"**. 라이브러리를 올릴 때마다 조용히 되살아나는 종류라 못 박는다.
  * @format
  */
-import {readFileSync} from 'fs';
+import {readFileSync, existsSync} from 'fs';
 import {join} from 'path';
 
 const ROOT = join(__dirname, '..');
@@ -112,6 +112,26 @@ describe('안드로이드 매니페스트 — 라이브러리가 끌고 온 권�
     const m = links.match(/PRIVACY_URL\s*=\s*'([^']+)'/);
     expect(m).toBeTruthy();
     expect(activity).toContain(m![1]);
+  });
+
+  // 안드로이드 5.0+ 는 상태바 아이콘을 **알파 채널만** 써서 실루엣으로 그린다.
+  // 지정이 없으면 컬러 앱 아이콘이 뭉개져 **흰 사각형**이 뜬다 — 2026-08-07 까지
+  // 이 앱의 모든 알림(러닝 리마인더·잠금화면 러닝·교체 임박)이 그 상태였다.
+  it('알림 아이콘·강조색이 지정돼 있고 리소스가 실재한다', () => {
+    expect(manifest).toContain('expo.modules.notifications.default_notification_icon');
+    expect(manifest).toContain('expo.modules.notifications.default_notification_color');
+    // 선언만 하고 파일이 없으면 빌드가 깨지거나 조용히 폴백한다.
+    expect(existsSync(join(ROOT, 'android/app/src/main/res/drawable/ic_notification.xml'))).toBe(true);
+    expect(existsSync(join(ROOT, 'android/app/src/main/res/values/notification_colors.xml'))).toBe(true);
+  });
+
+  // 알림 강조색이 브랜드 링 색과 갈라지면 아무도 눈치 못 챈 채 다른 오렌지가 나간다.
+  it('알림 강조색이 theme.ts 의 RING_ACCENT 와 같다', () => {
+    const colors = readFileSync(join(ROOT, 'android/app/src/main/res/values/notification_colors.xml'), 'utf8');
+    const theme = readFileSync(join(ROOT, 'theme.ts'), 'utf8');
+    const ring = theme.match(/RING_ACCENT\s*=\s*'(#[0-9A-Fa-f]{6})'/);
+    expect(ring).toBeTruthy();
+    expect(colors.toUpperCase()).toContain(ring![1].toUpperCase());
   });
 
   // 기능 권한까지 같이 날아가면 화면off 러닝·심박이 죽는다. 제거가 과했는지 본다.

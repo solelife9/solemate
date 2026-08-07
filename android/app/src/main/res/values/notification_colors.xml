@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  알림 강조색 — Keego Ember. theme.ts 의 RING_ACCENT(#FF8000)와 **같은 값**이어야 한다.
+  안드로이드는 이 색으로 상태바 아이콘 배경 원과 알림 헤더의 앱 이름을 칠한다.
+  회귀 가드가 두 값이 갈라지는 것을 잡는다(__tests__/androidManifestHygiene.test.ts).
+-->
+<resources>
+  <color name="notification_accent">#FF8000</color>
+</resources>

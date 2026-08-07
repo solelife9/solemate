@@ -1,0 +1,26 @@
+<!--
+  알림 아이콘 (2026-08-07)
+
+  안드로이드 5.0+ 는 상태바 아이콘을 **실루엣으로만** 그린다 — 알파 채널만 쓰고 색은
+  시스템이 정한다. 그래서 지정이 없으면 컬러 앱 아이콘이 통째로 뭉개져 **흰 사각형**으로
+  뜬다. 지정 전까지 이 앱의 모든 알림(러닝 리마인더·잠금화면 러닝·교체 임박)이 그랬다.
+
+  모양은 브랜드 서명인 **열린 링**이다(DESIGN.md — 러닝 링). 색은 넣지 않는다:
+  넣어도 무시되고, 흰색 단색 실루엣이 이 자리의 정답이다.
+  틈(trimPathEnd)은 링이 '열려 있다'를 24dp 에서도 읽히게 하는 최소값이다 —
+  더 크게 벌리면 작은 크기에서 그냥 끊어진 선으로 보인다.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFF">
+  <path
+      android:pathData="M12,3.5 a8.5,8.5 0 1,1 -0.01,0"
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="3"
+      android:strokeLineCap="round"
+      android:trimPathStart="0.06"
+      android:trimPathEnd="0.94" />
+</vector>
