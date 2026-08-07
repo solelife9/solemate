@@ -159,6 +159,11 @@ function normalizePayload(data: Record<string, unknown>): BackupPayload {
   const base: BackupPayload = {
     shoes: Array.isArray(data.shoes) ? data.shoes : [],
     runs: Array.isArray(data.runs) ? data.runs : [],
+    // 메달도 덩어리에 싣는다(2026-08-07). 예전엔 이 파일 전체에 'medals' 가 **한 번도
+    // 등장하지 않았다** — 메달은 오직 medals 하위 컬렉션(08-01 신설)에만 살았고 폴백이
+    // 없었다. cloudSync 의 메달 병합(mergeCloudData)은 remote.medals 가 항상 undefined 라
+    // 사실상 죽은 코드였다. 하위 컬렉션 조회가 실패하는 기기에선 메달이 통째로 사라진다.
+    medals: Array.isArray(data.medals) ? data.medals : [],
     settings:
       data.settings && typeof data.settings === 'object' && !Array.isArray(data.settings)
         ? (data.settings as Record<string, unknown>)
@@ -173,9 +178,11 @@ function normalizePayload(data: Record<string, unknown>): BackupPayload {
 
 /** BackupPayload 를 firestore 문서로 직렬화. progression 은 있을 때만 포함(하위호환). */
 function payloadToDoc(data: BackupPayload): Record<string, unknown> {
-  const doc: Record<string, unknown> = { shoes: data.shoes, runs: data.runs, settings: data.settings };
-  if (data.progression) doc.progression = data.progression;
-  return doc;
+  const out: Record<string, unknown> = { shoes: data.shoes, runs: data.runs, settings: data.settings };
+  // 메달은 있을 때만 싣는다 — 빈 배열을 매번 써서 무변경 판정을 흔들 이유가 없다.
+  if (Array.isArray(data.medals) && data.medals.length > 0) out.medals = data.medals;
+  if (data.progression) out.progression = data.progression;
+  return out;
 }
 
 /**

@@ -44,7 +44,17 @@ describe('firebaseCloudPort (Firebase 클라우드 포트)', () => {
     await port.push(payload);
 
     const pulled = await port.pull();
-    expect(pulled).toEqual(payload);
+    // medals 는 2026-08-07 에 덩어리에 합류했다 — 없던 백업에서 되읽으면 빈 배열이다
+    // (정규화가 형태를 보장한다). 나머지는 넣은 그대로 돌아와야 한다.
+    expect(pulled).toEqual({...payload, medals: []});
+  });
+
+  test('메달도 덩어리에 실려 왕복한다 — 하위 컬렉션이 유일한 사본이면 안 된다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+    const medals = [{id: 'm1', raceName: '서울마라톤', officialTimeSec: 12345}];
+    await port.push({shoes: [], runs: [], settings: {}, medals});
+    expect((await port.pull())?.medals).toEqual(medals);
   });
 
   test('progression(은퇴 신발 등)이 push→pull 라운드트립에서 보존된다', async () => {

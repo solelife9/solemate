@@ -2219,12 +2219,21 @@ function Main(){
     const sweep=async()=>{
       try{
         if(!alive||!authUser?.uid)return;
+        // ── 경로 목록은 **스윕 여부와 무관하게** 채운다 (2026-08-07 감사) ──────
+        // 예전엔 이 갱신이 24시간 게이트의 **return 뒤쪽**에만 있었다. 그래서 하루가
+        // 안 지난 세션에서는 cloudRouteIdsRef 가 빈 Set 으로 남고, stripSyncedRoutes 가
+        // "덜어낼 런이 하나도 없다"로 판단해 **그 세션의 모든 동기가 경로를 통째로
+        // 싣는다.** 백업 문서 1MiB 방어의 첫 겹이 대부분의 세션에서 잠들어 있었다.
+        // 이건 로컬 마커만 읽는 값싼 조회다 — 게이트 앞에 두는 게 맞다.
+        const ids=((runsForHrRef.current||[]) as {id:string|number}[]).map(r=>r.id);
+        if(alive)cloudRouteIdsRef.current=await runsWithCloudRoute(ids);
+
         const last=Number(await AsyncStorage.getItem(DETAIL_SWEEP_AT_KEY))||0;
         if(Date.now()-last<24*3600*1000)return;
         await syncRunDetails((runsForHrRef.current||[]) as {id:string|number}[],cloudPortRef.current,{max:30});
         await AsyncStorage.setItem(DETAIL_SWEEP_AT_KEY,String(Date.now()));
-        // 스윕 직후 '경로가 사이드카에 올라간 런'을 다시 셈해 둔다 — 다음 클라우드 동기부터
-        // 그 런들의 route 를 본문에서 덜어내 백업 문서가 점진적으로 줄어든다.
+        // 스윕이 새 경로를 올렸으니 목록을 다시 셈한다 — 다음 동기부터 그 런들의
+        // route 가 본문에서 빠진다.
         if(alive)cloudRouteIdsRef.current=await runsWithCloudRoute(((runsForHrRef.current||[]) as {id:string|number}[]).map(r=>r.id));
       }catch{/* 비차단 — 다음 기회 */}
     };
