@@ -1788,7 +1788,7 @@ const inputS = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER,
     color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize,
     paddingHorizontal: rs(14), paddingVertical: rv(12),
-    minHeight: rs(TOUCH_TARGET),
+    minHeight: TOUCH_TARGET,
   },
   // inline: 밑줄형 인라인 에디터(프로필 이름·리캡 메모 문법) — 유리 카드 '안'이나
   // 아이덴티티 행처럼 박스가 이중이 되는 자리 전용. 밑줄 색은 소비처가 style 로

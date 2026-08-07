@@ -230,7 +230,7 @@ const s = StyleSheet.create({
   // 히어로 — 평균 페이스 큰 숫자(NUM·tabular, 거리 탭 bigVal 과 같은 규율의 축소판)
   // 좌우에 − + 버튼(공용 Stepper 버튼 문법: size²·RADIUS.input·CARD_HI, 44pt 터치 타깃).
   heroRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(4)},
-  heroBtn: {width: rs(TOUCH_TARGET), height: rs(TOUCH_TARGET), borderRadius: RADIUS.input, borderCurve: 'continuous', backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
+  heroBtn: {width: TOUCH_TARGET, height: TOUCH_TARGET, borderRadius: RADIUS.input, borderCurve: 'continuous', backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
   heroBtnPressed: {backgroundColor: CARD},
   heroVal: {flexDirection: 'row', alignItems: 'baseline'},
   heroNum: {color: T1, fontFamily: NUM, fontSize: HERO.heroLg, fontWeight: '500', letterSpacing: -1, lineHeight: Math.round(HERO.heroLg * LEADING.display), includeFontPadding: false, fontVariant: ['tabular-nums']},
@@ -254,7 +254,7 @@ const s = StyleSheet.create({
   hint: {color: T3, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(17), marginTop: rv(-4)},
 
   // km별 미세조정 접힘 행 — 터치 타깃 44pt(HIG).
-  foldRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: rs(TOUCH_TARGET), paddingHorizontal: rs(2)},
+  foldRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: TOUCH_TARGET, paddingHorizontal: rs(2)},
   foldLabel: {color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
   foldChevron: {color: T3, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600'},
   foldChevronOpen: {transform: [{rotate: '90deg'}]},

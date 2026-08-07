@@ -507,7 +507,7 @@ const s = StyleSheet.create({
   // 심박 가이드(#7) — 접힌 한 줄(요약+›) 기본, 탭하면 칩+힌트 펼침(2026-07-25 재구성).
   zoneRow: { paddingHorizontal: GUTTER, paddingTop: rv(2), paddingBottom: rv(10) },
   // 접힘 행 — 터치 타깃 44pt(HIG) 확보. 라벨 좌 · 셰브론 우.
-  zoneHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: rs(TOUCH_TARGET) },
+  zoneHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: TOUCH_TARGET },
   zoneLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.3 },
   zoneSummaryVal: { color: T1 },
   zoneChevron: { color: T3, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600' },

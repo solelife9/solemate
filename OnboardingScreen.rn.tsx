@@ -400,7 +400,7 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
               testID="onboarding-skip-intro"
               onPress={goLogin}
               hitSlop={10}
-              style={({pressed}) => [{alignItems: 'center', justifyContent: 'center', minHeight: rs(TOUCH_TARGET), marginTop: rv(8)}, pressed && s.pressed]}
+              style={({pressed}) => [{alignItems: 'center', justifyContent: 'center', minHeight: TOUCH_TARGET, marginTop: rv(8)}, pressed && s.pressed]}
               accessibilityRole="button"
               accessibilityLabel="건너뛰고 시작하기">
               <Text style={{fontFamily: FONT, fontSize: TYPE.body.fontSize, color: T3, fontWeight: '500'}}>
@@ -760,7 +760,7 @@ const s = StyleSheet.create({
   flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: GUTTER, paddingBottom: rv(6)},
   flowHeaderLeft: {flexDirection: 'row', alignItems: 'center', gap: rv(10)},
   // 헤더 버튼(뒤로·건너뛰기) — 터치 타깃 44pt(HIG · theme.TOUCH_TARGET). UX 감사 ⑯.
-  headerBtn: {minHeight: rs(TOUCH_TARGET), minWidth: rs(24), alignItems: 'center', justifyContent: 'center'},
+  headerBtn: {minHeight: TOUCH_TARGET, minWidth: rs(24), alignItems: 'center', justifyContent: 'center'},
   // 인터랙티브 텍스트는 T4(장식/disabled 전용) 금지 — 정보성 최저 톤 T3.
   skip: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, fontWeight: '500'},
   flex1: {flex: 1},
