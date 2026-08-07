@@ -13,14 +13,24 @@
  */
 import * as ImagePicker from 'expo-image-picker';
 import {manipulateAsync} from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system/legacy';
 import {pickPhotoWithPermission, captureCertPhoto} from '../../lib/photo';
 
 const asMock = (fn: unknown) => fn as jest.Mock;
+
+// 축소를 마친 사진은 곧바로 **영구 폴더로 복사**된다(2026-08-07 1단계 — 캐시는 OS 가
+// 예고 없이 비운다). 그래서 반환 URI 는 더 이상 manipulator 의 캐시 경로가 아니다.
+// 이 테스트가 지키는 건 '축소 규칙'이므로, **무엇을 복사했는지**로 그 규칙을 확인한다
+// (파일명에는 타임스탬프·난수가 들어가 그 자체를 단언할 수 없다).
+const copiedFrom = () => asMock(FileSystem.copyAsync).mock.calls[0]?.[0]?.from;
+const isPersisted = (uri?: string) => !!uri && uri.startsWith('file:///documents/keego-photos/');
 
 beforeEach(() => {
   jest.clearAllMocks();
   asMock(ImagePicker.requestMediaLibraryPermissionsAsync).mockResolvedValue({granted: true});
   asMock(ImagePicker.requestCameraPermissionsAsync).mockResolvedValue({granted: true});
+  asMock(FileSystem.copyAsync).mockResolvedValue(undefined);
+  asMock(FileSystem.makeDirectoryAsync).mockResolvedValue(undefined);
 });
 
 test('큰 사진은 긴 변 1600 으로 줄여 저장한다', async () => {
@@ -35,7 +45,9 @@ test('큰 사진은 긴 변 1600 으로 줄여 저장한다', async () => {
 
   const res = await pickPhotoWithPermission();
 
-  expect(res).toEqual({ok: true, uri: 'file:///small.jpg'});
+  expect(res.ok).toBe(true);
+  expect(isPersisted(res.ok ? res.uri : undefined)).toBe(true);
+  expect(copiedFrom()).toBe('file:///small.jpg'); // 줄인 사진을 영속화했다
   const resizeCall = asMock(manipulateAsync).mock.calls[1];
   // 가로가 긴 사진이므로 width 를 1600 으로 맞춘다(세로면 height 기준 — 업스케일 금지).
   expect(resizeCall[1]).toEqual([{resize: {width: 1600}}]);
@@ -50,7 +62,8 @@ test('이미 작은 사진은 리사이즈하지 않는다(업스케일 금지)'
 
   const res = await pickPhotoWithPermission();
 
-  expect(res).toEqual({ok: true, uri: 'file:///upright.jpg'});
+  expect(res.ok).toBe(true);
+  expect(copiedFrom()).toBe('file:///upright.jpg');
   expect(asMock(manipulateAsync)).toHaveBeenCalledTimes(1); // 방향 보정만, 리사이즈 없음
 });
 
@@ -63,7 +76,8 @@ test('축소가 실패해도 사진을 잃지 않는다(원본으로 진행)', a
 
   const res = await pickPhotoWithPermission();
 
-  expect(res).toEqual({ok: true, uri: 'file:///orig.jpg'});
+  expect(res.ok).toBe(true);
+  expect(copiedFrom()).toBe('file:///orig.jpg'); // 원본 그대로, 다만 영구 폴더로
 });
 
 test('기록증은 축소하지 않는다 — OCR 정확도가 메모리보다 우선', async () => {
@@ -74,6 +88,7 @@ test('기록증은 축소하지 않는다 — OCR 정확도가 메모리보다 �
 
   const res = await captureCertPhoto();
 
-  expect(res).toEqual({uri: 'file:///cert.jpg'});
+  expect(isPersisted(res?.uri)).toBe(true);
+  expect(copiedFrom()).toBe('file:///cert.jpg');
   expect(asMock(manipulateAsync)).not.toHaveBeenCalled();
 });

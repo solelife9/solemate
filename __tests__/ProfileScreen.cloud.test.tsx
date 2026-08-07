@@ -402,10 +402,13 @@ test('저장된 계정이 있으면 재마운트 시 로그인 상태·제공자
   expect(textOf(byTestId(root, 'cloud-provider'))).toContain('카카오 계정');
 });
 
-// ── 동기화 범위 고지(2026-07-26 출시 심사 B-05) ───────────────────────────────
-// 왜: '클라우드 연결됨 · 자동 동기화'만 보이면 사진까지 지켜진다고 믿게 된다. 사진은
-// 기기에만 있으므로(클라우드 백업 미구현) 오해가 생기는 바로 그 자리에서 밝혀야 한다.
-test('동기화 상태 줄이 사진은 백업되지 않음을 함께 알린다', async () => {
+// ── 동기화 범위 고지(2026-07-26 출시 심사 B-05 · 2026-08-07 갱신) ─────────────
+// 왜: '클라우드 연결됨 · 자동 동기화'만 보이면 사진까지 지켜진다고 믿게 된다.
+//
+// 2026-08-07 부터 **사진이 두 부류로 갈린다** — 메달·기록증은 다시 찍을 수 없어서
+// 클라우드에 백업하고(lib/medalPhotoSync), 러닝·프로필 사진은 다시 찍을 수 있어서
+// 기기에만 둔다. 고지가 둘을 뭉뚱그리면 어느 쪽으로든 거짓이 된다(Truth only).
+test('동기화 상태 줄이 어떤 사진이 백업되고 어떤 사진이 아닌지 갈라 말한다', async () => {
   await AsyncStorage.clear();
   const port = mockPort(null);
   const root = render({cloudPort: port, backupData: LOCAL});
@@ -413,5 +416,7 @@ test('동기화 상태 줄이 사진은 백업되지 않음을 함께 알린다'
   await press(byTestId(root, 'cloud-account')); // 계정 아코디언 펼치기
 
   expect(hasId(root, 'cloud-sync-scope')).toBe(true);
-  expect(textOf(byTestId(root, 'cloud-sync-status'))).toContain('사진은 기기에만 저장돼요');
+  const notice = textOf(byTestId(root, 'cloud-sync-status'));
+  expect(notice).toContain('메달·기록증 사진은 함께 백업돼요');
+  expect(notice).toContain('러닝 사진과 프로필 사진은 이 기기에만 있어요');
 });

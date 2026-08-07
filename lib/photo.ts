@@ -10,6 +10,101 @@
 
 import * as ImagePicker from 'expo-image-picker';
 import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system/legacy';
+
+// ── 사진 영속화 (2026-08-07 감사) ───────────────────────────────────────────
+//
+// expo-image-picker 와 expo-image-manipulator 가 돌려주는 URI 는 **캐시 디렉터리**를
+// 가리킨다(MediaHandler.swift → cachesDirectory/ImagePicker,
+//  ImageManipulatorUtils.swift → cacheDirectory/ImageManipulator).
+// 그리고 downscale() 이 항상 manipulateAsync 를 태우므로 **모든 사진이 캐시로 재배출된다.**
+//
+// 캐시는 OS 가 저장공간이 빠듯할 때 **예고 없이 비운다.** 즉 앱을 지우지도, 재설치하지도
+// 않았는데 사진이 사라진다. 화면 고지는 "앱을 지우면 복구할 수 없어요"였는데 그보다
+// 훨씬 약한 조건에서 사라지고 있었다.
+//
+// 메달은 더 나빴다: 레코드(대회명·기록·배번호)는 클라우드에서 복원되고 **경로 문자열도
+// 같이 복원되는데 그 경로의 파일은 없다.** 화면이 `photoUri ? <Image> : <메달 아이콘>` 으로
+// 분기하므로 문자열이 비어있지 않아 **폴백 아이콘이 건너뛰어지고 빈 회색 원반**이 떴다.
+//
+// 그래서 이 파일의 **모든 진입점**이 여기를 거친다. 한 곳으로 모으지 않으면 새 진입점이
+// 또 빠진다(이 저장소의 반복 실패 형태다).
+const PHOTO_DIR = FileSystem.documentDirectory
+  ? `${FileSystem.documentDirectory}keego-photos/`
+  : null;
+
+/** 이 URI 가 이미 우리 영구 폴더 안에 있는가(재복사 방지). */
+function isPersisted(uri: string): boolean {
+  return !!PHOTO_DIR && typeof uri === 'string' && uri.startsWith(PHOTO_DIR);
+}
+
+/**
+ * 사진을 앱 **영구 폴더**로 복사하고 새 URI 를 돌려준다.
+ *
+ * 실패하면 **원본 URI 를 그대로 돌려준다** — 사진이 없는 것보다 취약한 사진이 낫고,
+ * 복사 실패로 등록 자체가 막히면 그게 더 나쁘다(비차단 원칙).
+ */
+export async function persistPhoto(uri: string): Promise<string> {
+  if (!uri || !PHOTO_DIR || isPersisted(uri)) return uri;
+  try {
+    await FileSystem.makeDirectoryAsync(PHOTO_DIR, {intermediates: true});
+    // 확장자는 원본을 따르되, 없으면 jpg(모든 경로가 JPEG 로 굽는다).
+    const ext = (uri.split('?')[0].match(/\.(\w{3,4})$/)?.[1] || 'jpg').toLowerCase();
+    const dest = `${PHOTO_DIR}${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    await FileSystem.copyAsync({from: uri, to: dest});
+    return dest;
+  } catch {
+    return uri;
+  }
+}
+
+/**
+ * 클라우드에서 내려받은 사진이 앉을 **결정적** 경로.
+ *
+ * 이름에 난수를 쓰지 않는 이유: 같은 사진을 두 번 받으면 파일이 두 개가 되고, 그러면
+ * 재설치를 반복할수록 기기에 쓰레기가 쌓인다. `medalId-kind` 는 그 사진의 고유 키다.
+ */
+export function cloudPhotoDest(key: string): string | null {
+  if (!PHOTO_DIR || !key) return null;
+  return `${PHOTO_DIR}cloud-${key.replace(/[^\w.-]/g, '_')}.jpg`;
+}
+
+/** 이 URI 가 가리키는 파일이 실제로 있는가. 없는 파일을 <Image> 에 물리면 빈 회색 판이 된다. */
+export async function photoExists(uri: string | null | undefined): Promise<boolean> {
+  if (!uri || typeof uri !== 'string') return false;
+  // 원격 URL 은 파일 시스템 질문의 대상이 아니다 — 있다고 본다.
+  if (/^https?:/i.test(uri)) return true;
+  try {
+    const info = await FileSystem.getInfoAsync(uri);
+    return !!info?.exists;
+  } catch {
+    return false;
+  }
+}
+
+/** 영속 폴더를 준비한다(다운로드 전에 필요 — 폴더가 없으면 파일을 쓸 수 없다). */
+export async function ensurePhotoDir(): Promise<boolean> {
+  if (!PHOTO_DIR) return false;
+  try {
+    await FileSystem.makeDirectoryAsync(PHOTO_DIR, {intermediates: true});
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 영속화된 사진 파일을 지운다(레코드에서 사진을 뗄 때). 우리 폴더 밖 URI 는 건드리지
+ * 않는다 — 사용자의 사진앱 원본을 지우면 안 된다. 실패는 삼킨다(고아 파일 1개 < 크래시).
+ */
+export async function deletePersistedPhoto(uri: string | null | undefined): Promise<void> {
+  if (!uri || !isPersisted(uri)) return;
+  try {
+    await FileSystem.deleteAsync(uri, {idempotent: true});
+  } catch {
+    /* 고아 파일이 남는 것은 감수한다 */
+  }
+}
 
 /** 선택된 신발 사진(로컬 URI). */
 export interface PickedPhoto {
@@ -68,7 +163,7 @@ export async function pickPhotoWithPermission(): Promise<PhotoPick> {
 
   if (res.canceled) return {ok: false, reason: 'cancelled'};
   const asset = res.assets && res.assets[0];
-  return asset ? {ok: true, uri: await downscale(asset.uri)} : {ok: false, reason: 'cancelled'};
+  return asset ? {ok: true, uri: await persistPhoto(await downscale(asset.uri))} : {ok: false, reason: 'cancelled'};
 }
 
 /**
@@ -106,7 +201,7 @@ export async function capturePhotoWithPermission(
   if (res.canceled) return {ok: false, reason: 'cancelled'};
   const a = res.assets && res.assets[0];
   if (!a) return {ok: false, reason: 'cancelled'};
-  return {ok: true, uri: opts?.shrink === false ? a.uri : await downscale(a.uri)};
+  return {ok: true, uri: await persistPhoto(opts?.shrink === false ? a.uri : await downscale(a.uri))};
 }
 
 /**
@@ -123,7 +218,7 @@ export async function captureCertPhoto(): Promise<PickedPhoto | null> {
   const res = await ImagePicker.launchCameraAsync({mediaTypes: ['images'], allowsEditing: false, quality: 0.8});
   if (res.canceled) return null;
   const a = res.assets && res.assets[0];
-  return a ? {uri: a.uri} : null;
+  return a ? {uri: await persistPhoto(a.uri)} : null;
 }
 
 /**
@@ -139,7 +234,7 @@ export async function pickPhotoFrom(source: 'camera' | 'library'): Promise<Picke
     const res = await ImagePicker.launchCameraAsync({mediaTypes: ['images'], allowsEditing: true, quality: 0.7});
     if (res.canceled) return null;
     const a = res.assets && res.assets[0];
-    return a ? {uri: await downscale(a.uri)} : null;
+    return a ? {uri: await persistPhoto(await downscale(a.uri))} : null;
   }
   return pickShoePhoto();
 }

@@ -28,10 +28,24 @@ export interface Medal {
   paceSec?: number;
   /** 배번호 — 조회 키(상세에 작게). */
   bib?: string;
-  /** 메달 사진(원형 크롭). */
+  /**
+   * 메달 사진(원형 크롭) — **이 기기의 로컬 파일 경로**.
+   *
+   * ⚠️ 이 값은 동기화를 타고 다른 기기로 넘어가지만 **그 기기에는 그 파일이 없다.**
+   * 그래서 화면은 이 문자열이 비어있지 않다는 이유로 폴백 아이콘을 건너뛰고
+   * 빈 회색 원반을 그렸다(2026-08-07 감사). 진짜 정본은 아래 `medalPhotoPath` 이고,
+   * 로컬 파일이 없으면 거기서 내려받아 이 필드를 다시 채운다(lib/medalPhotoSync).
+   */
   medalPhotoUri?: string;
-  /** 기록증 사진(OCR 원본 보관). */
+  /** 기록증 사진(OCR 원본 보관) — 위와 같은 규약. */
   certPhotoUri?: string;
+  /**
+   * 메달 사진의 **클라우드 경로**(Firebase Storage). 기기를 넘어 살아남는 정본.
+   * 대회 메달은 그날 그 자리에서만 찍을 수 있어 다시 만들 수 없다 — 그래서 백업한다.
+   */
+  medalPhotoPath?: string;
+  /** 기록증 사진의 클라우드 경로. */
+  certPhotoPath?: string;
   /** 연결된 러닝 id — 상세에서 그 러닝으로 이동. */
   runId?: string;
   /** 생성 시각 ISO(정렬 안정성). */
@@ -105,6 +119,8 @@ export function normalizeMedals(raw: unknown): Medal[] {
       bib: typeof o.bib === 'string' ? o.bib : undefined,
       medalPhotoUri: typeof o.medalPhotoUri === 'string' ? o.medalPhotoUri : undefined,
       certPhotoUri: typeof o.certPhotoUri === 'string' ? o.certPhotoUri : undefined,
+      medalPhotoPath: typeof o.medalPhotoPath === 'string' ? o.medalPhotoPath : undefined,
+      certPhotoPath: typeof o.certPhotoPath === 'string' ? o.certPhotoPath : undefined,
       runId: typeof o.runId === 'string' ? o.runId : undefined,
       createdAt: typeof o.createdAt === 'string' ? o.createdAt : '',
       ...(o.deleted === true ? {deleted: true} : {}),

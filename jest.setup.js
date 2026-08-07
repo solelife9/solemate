@@ -110,8 +110,19 @@ jest.mock('expo-image-manipulator', () => ({
 jest.mock('expo-file-system/legacy', () => ({
   __esModule: true,
   cacheDirectory: 'file:///cache/',
+  // 사진 영속화(2026-08-07) — 캐시는 OS 가 예고 없이 비운다. 앱 사진은 여기로 복사한다.
+  documentDirectory: 'file:///documents/',
   EncodingType: {Base64: 'base64', UTF8: 'utf8'},
   writeAsStringAsync: jest.fn(() => Promise.resolve()),
+  makeDirectoryAsync: jest.fn(() => Promise.resolve()),
+  copyAsync: jest.fn(() => Promise.resolve()),
+  deleteAsync: jest.fn(() => Promise.resolve()),
+  getInfoAsync: jest.fn(() => Promise.resolve({exists: true})),
+  // 메달·기록증 클라우드 백업(2026-08-07) — Firebase Storage REST 를 이 두 함수로 탄다
+  // (새 네이티브 의존성 0). 기본: 전송 성공.
+  FileSystemUploadType: {BINARY_CONTENT: 0, MULTIPART: 1},
+  uploadAsync: jest.fn(() => Promise.resolve({status: 200, body: '{}'})),
+  downloadAsync: jest.fn((_url, dest) => Promise.resolve({status: 200, uri: dest})),
 }));
 jest.mock('expo-media-library/legacy', () => ({
   __esModule: true,
@@ -321,6 +332,14 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
+// ── @react-native-firebase/app (modular) ────────────────────────────────────
+// getApp().options 만 쓴다 — 사진 백업(lib/photoCloud)이 버킷 이름을 여기서 읽는다
+// (하드코딩하면 프로젝트를 옮길 때 조용히 틀린다).
+jest.mock('@react-native-firebase/app', () => ({
+  __esModule: true,
+  getApp: jest.fn(() => ({options: {storageBucket: 'test-bucket.firebasestorage.app'}})),
+}));
+
 // ── @react-native-firebase/auth (modular) ───────────────────────────────────
 // In-memory auth: signInAnonymously / signInWithCredential set a currentUser
 // that getAuth().currentUser reads back; signOut clears it. No native bridge.
@@ -329,7 +348,13 @@ jest.mock('@react-native-firebase/auth', () => {
   const state = {current: null};
   const authInstance = {
     get currentUser() {
-      return state.current;
+      // 실제 User 는 getIdToken() 을 갖는다 — Storage REST(lib/photoCloud)가 그걸로
+      // 인증하므로 목에도 있어야 한다. 목이 만든 유저마다 붙이지 않고 여기서 한 번 덧댄다.
+      const u = state.current;
+      if (u && typeof u.getIdToken !== 'function') {
+        u.getIdToken = () => Promise.resolve(`id-token:${u.uid}`);
+      }
+      return u;
     },
   };
   return {

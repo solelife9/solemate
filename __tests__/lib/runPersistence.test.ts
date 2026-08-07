@@ -512,7 +512,9 @@ describe('스냅샷 필드가 조용히 사라지지 않는다', () => {
   });
 
   test('구 스냅샷(신규 필드 없음)도 안전하게 복원된다 — 하위호환', async () => {
-    const {movingSteps, runId, elevGainM, ...legacy} = SNAP as any;
+    // 신규 3필드를 떼어낸 '옛 스냅샷'을 만든다(구조분해 omit — 뽑은 값 자체는 쓰지 않는다).
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const {movingSteps: _ms, runId: _rid, elevGainM: _eg, ...legacy} = SNAP as any;
     await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(legacy));
     const loaded = (await loadSnapshot()) as RunSnapshot;
     expect(loaded).toBeTruthy();

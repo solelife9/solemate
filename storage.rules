@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// ============================================================================
+// storage.rules — 메달·기록증 사진 보관함의 접근 규칙
+//
+// 규칙의 전제: 경로의 **첫 두 세그먼트가 `users/{uid}`** 다(lib/photoCloud.ts
+// medalPhotoPath). 경로 규약이 바뀌면 이 규칙이 조용히 어긋나므로, 코드 쪽에
+// 회귀 가드를 뒀다(__tests__/lib/photoCloud.test.ts).
+//
+// 원칙:
+//  · 남의 사진은 **읽지도 쓰지도** 못한다. 공개 다운로드 토큰은 발급하지 않으며
+//    클라이언트도 쓰지 않는다(항상 ID 토큰으로 인증해 읽는다).
+//  · 이미지만, 8MB 까지. 앱은 1600px JPEG(200~400KB)만 올리므로 이 상한은
+//    "무언가 잘못됐다"를 막는 방어선이지 정상 동작의 제약이 아니다.
+//  · 그 밖의 모든 경로는 **명시적으로 거부**한다 — 규칙 파일에 없는 경로가
+//    기본 허용으로 새는 일을 막는다.
+// ============================================================================
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /users/{uid}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 8 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

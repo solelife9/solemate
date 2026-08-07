@@ -19,10 +19,24 @@ import MedalShareCard, {type MedalShareModel} from './MedalShareCard';
 import {shareMedalCard, type SvgCapturable} from './lib/shareCard';
 
 function MedalDisc({photoUri, size = 84}: {photoUri?: string; size?: number}) {
+  // ── 파일이 없으면 메달 아이콘으로 돌아간다 (2026-08-07 감사) ────────────────
+  // 예전엔 `photoUri ? <Image> : <아이콘>` 이 전부였다. 그런데 메달 레코드는 클라우드에서
+  // 복원되면서 **사진 경로 문자열도 같이 복원된다** — 그 경로의 파일은 다른 기기에
+  // 없는데도. 문자열이 비어있지 않으니 폴백 아이콘이 건너뛰어지고 **빈 회색 원반**이 떴다.
+  // (사진이 캐시에 살던 시절엔 같은 기기에서도 OS 가 지우면 그렇게 됐다.)
+  // 로드 실패를 잡아 아이콘으로 되돌린다 — 빈 원반보다 메달이 낫다.
+  const [failed, setFailed] = useState(false);
+  useEffect(() => { setFailed(false); }, [photoUri]);
+  const showPhoto = !!photoUri && !failed;
   return (
     <View style={[m.disc, {width: size, height: size, borderRadius: size / 2}]}>
-      {photoUri ? (
-        <Image source={{uri: photoUri}} style={{width: '100%', height: '100%'}} resizeMode="cover" />
+      {showPhoto ? (
+        <Image
+          source={{uri: photoUri}}
+          style={{width: '100%', height: '100%'}}
+          resizeMode="cover"
+          onError={() => setFailed(true)}
+        />
       ) : (
         <Ionicons name="medal" size={size * 0.42} color={HALL_GOLD} />
       )}

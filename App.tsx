@@ -38,6 +38,9 @@ import FindShoesScreen from './FindShoesScreen.rn';
 import RaceMedalScreen from './RaceMedalScreen.rn';
 // 마라톤 메달 아카이브 — 완주 감지(위치+날짜) → 대회 기록 흐름 → 아카이브(로컬 우선).
 import {loadMedals, saveMedals, normalizeMedals, sortMedals, liveMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
+import {planPhotoJobs, syncMedalPhotos} from './lib/medalPhotoSync';
+import {deleteAllPhotos, deleteCloudPhoto} from './lib/photoCloud';
+import {deletePersistedPhoto} from './lib/photo';
 import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistance} from './data/raceEvents';
 import {syncRemoteRaces} from './lib/raceCatalogRemote';
 import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
@@ -1854,6 +1857,47 @@ function Main(){
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[authUser?.uid,cloudDataSig]);
 
+  // ── 메달·기록증 사진 백업(2026-08-07 민우님 확정) ────────────────────────────
+  // 레코드(대회명·기록·배번호)는 Firestore 에서 복원되는데 **사진만 안 돌아왔다.** 그래서
+  // 재설치·기기교체 뒤 아카이브에 목록은 다 있고 사진만 빈 회색 원반이 됐다. 대회 메달은
+  // 그날 그 자리에서만 찍을 수 있어 다시 만들 수 없는 데이터라 백업한다(신발·프로필 사진은
+  // 다시 찍을 수 있으므로 대상이 아니다 — 저장 비용을 재현 불가능한 것에만 쓴다).
+  //
+  // 이미 끝난 슬롯은 세션 내에서 다시 묻지 않는다(photoSettledRef). 안 그러면 medals 가
+  // 바뀔 때마다 모든 메달에 파일 존재 확인 I/O 가 다시 돈다 — 결과는 같고 비용만 든다.
+  const photoSettledRef=useRef<Set<string>>(new Set());
+  const photoSyncBusyRef=useRef(false);
+  useEffect(()=>{
+    const uid=authUser?.uid;
+    if(!cloudEnabled||!uid||bootState!=='ready'||photoSyncBusyRef.current) return;
+    const {uploads,downloads}=planPhotoJobs(medals,uid);
+    const pending=[...uploads,...downloads].filter(j=>!photoSettledRef.current.has(`${j.medalId}-${j.kind}`));
+    if(pending.length===0) return;
+    photoSyncBusyRef.current=true;
+    void (async()=>{
+      try{
+        const res=await syncMedalPhotos(medals,uid,syncNowMs());
+        for(const j of pending) photoSettledRef.current.add(`${j.medalId}-${j.kind}`);
+        if(res.medals!==medals){
+          // 함수형 updater — 이 await 동안 사용자가 메달을 더 추가했을 수 있다. 통째 교체하면
+          // 그 추가분이 사라진다(applyBackupPayload 가 같은 이유로 updater 를 쓴다).
+          setMedals(prev=>{
+            const byId=new Map(res.medals.map(m=>[m.id,m]));
+            const merged=prev.map(m=>byId.get(m.id)??m);
+            void saveMedals(merged);
+            return merged;
+          });
+          // 경로가 새로 박혔으면 그 사실이 다른 기기로 가야 한다(내려받기는 로컬 사정이라 제외).
+          if(res.dirty) void runCloudSyncRef.current({force:true});
+        }
+      }catch(e){recordError(e,'medal photo sync');}
+      finally{photoSyncBusyRef.current=false;}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[authUser?.uid,bootState,medals]);
+  // 계정이 바뀌면 '이미 확인함' 기억을 버린다 — 남의 계정 판정을 물려받으면 안 된다.
+  useEffect(()=>{photoSettledRef.current=new Set();},[authUser?.uid]);
+
   // 앱 이탈/복귀 시 동기 — 디바운스(1.2s)·부팅만으로는 못 메우는 빈틈을 닫는다.
   //   · 'background'(앱 이탈 직전): 직전 로컬 변경을 즉시 flush. 런 저장 후 곧장 화면을 끄거나
   //     앱을 종료해 1.2s 디바운스 창을 놓쳐도, 이탈 직전 push 가 한 번 걸린다(Firestore 오프라인
@@ -1880,6 +1924,10 @@ function Main(){
   // '데이터 파괴 금지' 불변식의 정당한 예외다(되돌릴 수 없음을 화면에서 분명히 고지).
   const handleDeleteAccount=async()=>{
     const gone=authUser?.uid;
+    // 사진은 Firestore 가 아니라 Storage 에 산다 — deleteAccount 는 그걸 모른다. **계정 삭제
+    // 전에** 지운다: 계정이 사라지면 인증 토큰도 사라져 그 사진에 더는 손댈 수 없고, 그러면
+    // 파기되지 않은 사진이 서버에 영원히 남는다.
+    if(gone){try{await deleteAllPhotos(gone);}catch(e){recordError(e,'storage: purge photos');}}
     await cloudPortRef.current.deleteAccount();
     // 초기화 실패는 이전 계정 데이터가 남는다는 뜻 — 조용히 넘기면 안 된다.
     //
@@ -3106,6 +3154,15 @@ function Main(){
           {text:'취소',style:'cancel'},
           {text:'삭제',style:'destructive',onPress:()=>{
             const now=Date.now();
+            // 사진도 함께 파기한다 — 클라우드에서도, 기기에서도. 사용자가 지운 사진이 서버에
+            // 남아 있으면 그건 삭제가 아니다(처리방침 위반). 실패는 삼킨다(삭제 자체는 진행).
+            const gone=medals.find(m=>m.id===id);
+            if(gone){
+              if(gone.medalPhotoPath) void deleteCloudPhoto(gone.medalPhotoPath);
+              if(gone.certPhotoPath) void deleteCloudPhoto(gone.certPhotoPath);
+              void deletePersistedPhoto(gone.medalPhotoUri);
+              void deletePersistedPhoto(gone.certPhotoUri);
+            }
             setMedals(cur=>cur.map(m=>m.id===id?{...m,deleted:true,updatedAt:now}:m));
             void removeMedalStore(id,now);
             showToast({message:'메달 삭제됨'});

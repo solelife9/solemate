@@ -1503,7 +1503,7 @@ function ProfileScreen({
                           별도 화면·배너 대신 오해가 생기는 바로 그 자리에 한 줄로 적는다.
                           실패/진행 중에는 그 상태가 우선이므로 숨긴다. */}
                       {!syncing && !syncFailed && (
-                        <Text style={s.cloudSub} testID="cloud-sync-scope">사진은 기기에만 저장돼요 · 앱을 지우면 복구할 수 없어요</Text>
+                        <Text style={s.cloudSub} testID="cloud-sync-scope">메달·기록증 사진은 함께 백업돼요 · 러닝 사진과 프로필 사진은 이 기기에만 있어요</Text>
                       )}
                     </View>
                     {syncFailed && !syncing && <Ionicons name="refresh" size={ri(ICON.inline)} color={DANGER} />}
