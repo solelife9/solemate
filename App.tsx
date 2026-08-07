@@ -150,6 +150,7 @@ import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeM
 import {publishMyRanking,unpublishMyRanking} from './lib/progression/firestoreRankingStore';
 import {LEADERBOARD_PUBLISH_ENABLED, SOCIAL_PROFILE_PUBLISH_ENABLED, MERGE_PHONE_WATCH_RUNS} from './lib/featureFlags';
 import {genRunId, genShoeId} from './lib/genId';
+import {applyRunEdit} from './lib/runEdit';
 import {showToast} from './lib/toast';
 import {withTimeout} from './lib/withTimeout';
 // 러닝의 '시작 시각'을 저장 날짜로 쓰기 위해(Q-6). 엔진은 t0 를 이미 들고 있다.
@@ -1309,12 +1310,14 @@ function Main(){
   async function editRun(id:string,fields:{shoe_id?:string;km?:number;run_date?:string;duration?:number}){
     const sid=String(id);
     const editedAt=syncNowMs(); // AUDIT 3 D-2
-    setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,...fields},editedAt):r));
+    // 파생값(칼로리)은 입력을 따라가고, 측정값(스플릿·케이던스·고도·경로)은 손대지
+    // 않는다. 그 규칙은 lib/runEdit 에 한 곳으로 모아 뒀다 — 근거는 그 파일 머리말.
+    setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt(applyRunEdit(r,fields,weightKg),editedAt):r));
     // 부팅캐시 즉시 갱신(#9): 캐시는 800ms 디바운스라 편집 후 그 안에 종료/크래시되면 편집이
     // 유실(옛 값으로 부팅)된다. persistRunToCache 는 id 로 upsert(교체)하므로 편집본을 즉시 durable
     // 하게 박아 둔다(addRun 과 같은 크래시-세이프티 패턴). 영속/동기는 이후 cloudSync 가 담당.
     const target=runs.find(r=>String(r.id)===sid);
-    if(target) await persistRunToCache(stampUpdatedAt({...target,...fields},editedAt));
+    if(target) await persistRunToCache(stampUpdatedAt(applyRunEdit(target,fields,weightKg),editedAt));
   }
 
   // 러닝 메모/사진 저장(리캡 — 2026-07-05). 메모는 런 레코드 필드로(동기됨),
