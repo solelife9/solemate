@@ -200,7 +200,7 @@ runRecap              → RunRecapScreen
 
 **기타**: `react-native-tts ^4.1.1` · `expo-audio` · `expo-notifications ~56.0.22` · `expo-keep-awake` · `expo-crypto` · `@react-native-ml-kit/text-recognition ^2.0.0`(기록증 OCR) · `@react-native-async-storage/async-storage ^3.1.1` · `react-native-nitro-modules ^0.36.1`
 
-**빌드/툴**: TypeScript ~6.0.3 · ESLint ^8.19 (`--max-warnings 338`) · Jest ^29.6.3 · patch-package ^8 · Node ≥22.11
+**빌드/툴**: TypeScript ~6.0.3 · ESLint ^8.19 (`--max-warnings 338`) · Jest ^29.6.3 · patch-package ^8 · **Node ≥24**(2026-08-07 정정)
 
 ### 3.2 외부 API / 서비스
 

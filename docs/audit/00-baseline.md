@@ -360,7 +360,7 @@ Android 하드웨어 뒤로가기가 이 사다리에 붙어 있지 않다 → A
 - **센서/위치**: `expo-location ~56.0.22` · `expo-sensors ~56.0.0` · `expo-task-manager ~56.0.23` · `react-native-sensors ^7.3.6` · `@kingstinct/react-native-healthkit ^14.0.2`
 - **미디어/UI**: `react-native-maps ^1.27.2` · `react-native-svg ^15.15.4` · `react-native-vector-icons ^10.3.0` · `@react-native-community/blur ^4.4.1` · `react-native-safe-area-context ^5.7.0` · `expo-camera`/`image-picker`/`image-manipulator`/`media-library`/`file-system`/`asset`
 - **기타**: `react-native-tts ^4.1.1` · `expo-audio` · `expo-notifications ~56.0.22` · `expo-keep-awake` · `expo-crypto` · `@react-native-ml-kit/text-recognition ^2.0.0` · `@react-native-async-storage/async-storage ^3.1.1` · `react-native-nitro-modules ^0.36.1`
-- **코어**: RN `0.85.3` · React `19.2.3` · TS `~6.0.3` · Node `≥22.11`
+- **코어**: RN `0.85.3` · React `19.2.3` · TS `~6.0.3` · Node `≥24`(2026-08-07 정정 — 22 는 테스트가 매달린다)
   ⚠️ `CLAUDE.md`는 "RN 0.85.2 · TS 5.8"이라 적어 실제와 다르다.
 
 **외부 API/서비스**

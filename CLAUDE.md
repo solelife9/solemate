@@ -10,7 +10,7 @@
 ## 프로젝트
 Keego(= keep going) — React Native 러닝/신발 관리 앱. 차별점 = **러닝화 내구도 관리 + shoe-first**(신발 고르고 바로 러닝 → 자동 거리 차감). 경쟁: Nike Run Club·Strava.
 **스택(package.json 실측 기준, 2026-07-30 갱신):** RN **0.85.3** · React **19.2.3** · TS **~6.0.3** ·
-Expo 모듈 **~56** · Node ≥22.11. 저장: AsyncStorage(로컬-퍼스트) + **Firestore(정본, `@react-native-firebase` v24)**.
+Expo 모듈 **~56** · **Node ≥24**(2026-08-07 정정 — 22 는 테스트가 매달린다). 저장: AsyncStorage(로컬-퍼스트) + **Firestore(정본, `@react-native-firebase` v24)**.
 - **라우터 라이브러리는 없다.** React Navigation 은 쓰지 않는다(死deps 로 제거됐고 회귀 가드가 있다 —
   `__tests__/crosscut.polish.test.tsx`). 라우팅 = `App.tsx` 렌더 함수 상단의 **early-return 사다리**이며
   그 순서가 곧 z-order 다. 화면을 추가하려면 그 사다리에 조건을 끼워 넣는다.

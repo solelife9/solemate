@@ -109,7 +109,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          # ⚠️ 여기에도 버전을 적지 않는다 — `.nvmrc` 가 단일 소스다(위 잡의 주석과 같은 이유).
+          # 2026-08-07 까지 이 줄만 '22' 로 박혀 있었다. 규칙 잡은 App 스위트를 돌리지 않아
+          # 우연히 초록이었지만, **Node 22 에서는 앱 테스트가 매달린다**(실측 22.11·22.20 ✗ /
+          # 24.11·26.3 ✓). 두 잡이 다른 Node 를 쓰는 상태 자체가 다음 사고의 씨앗이다.
+          node-version-file: .nvmrc
           cache: npm
 
       # firebase-tools 15+ 의 에뮬레이터는 JDK 21+ 를 요구한다.

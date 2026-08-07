@@ -17,6 +17,9 @@
 // ============================================================================
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+/** 이 스위트가 바꾸기 전의 플랫폼. afterEach 가 여기로 되돌린다. */
+const ORIGINAL_OS = require('react-native').Platform.OS;
+
 const RUN_START = 1_700_000_000_000;
 const RUN_END = RUN_START + 30 * 60 * 1000; // 30분 러닝
 
@@ -60,6 +63,16 @@ beforeEach(async () => {
 afterEach(() => {
   jest.dontMock('react-native-health-connect');
   jest.resetModules();
+  // ⚠️ **Platform.OS 를 반드시 되돌린다**(2026-08-07). boot() 이 'android' 로 바꾸는데,
+  // jest 는 `--runInBand` 에서 모든 스위트를 **한 프로세스**로 돌린다. 되돌리지 않으면
+  // 이 파일 뒤에 오는 모든 스위트가 안드로이드라고 믿는 채로 실행된다 — 이 저장소에는
+  // Platform 으로 갈리는 코드가 많아(햅틱·권한·거리 모듈) 조용히 다른 경로를 검증하게 된다.
+  //
+  // 실제로 Node 24 전체 실행에서 이 스위트가 **다른 순서로 배치되자** 4건이 깨졌다.
+  // 단독 실행은 통과했다 — 전형적인 순서 의존 오염이고, 원인은 'Node 버전'이 아니라
+  // 이 정리 누락이었다(자세한 조사는 docs/audit/08-followup 참조).
+  const rn = require('react-native');
+  rn.Platform.OS = ORIGINAL_OS;
 });
 
 describe('hcBackfillHeartRate — 구간 레코드', () => {
