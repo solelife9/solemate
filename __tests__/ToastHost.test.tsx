@@ -113,3 +113,40 @@ describe('undo 액션', () => {
     expect(getCurrentToast()).toBeNull();
   });
 });
+
+// ============================================================================
+// 실행취소가 VoiceOver 로 도달 가능해야 한다 (2026-08-07 감사)
+//
+// 예전엔 `accessible` 이 **토스트 바 전체**에 걸려 있었다. iOS 는 그 속성이 붙은 뷰의
+// 서브트리를 하나의 요소로 접어 버리므로, 안에 있는 '실행취소' Pressable 에
+// **포커스도 활성화도 되지 않는다.**
+//
+// 실행취소는 파괴적 액션(신발·기록 삭제)의 **유일한 복구 경로**다. VoiceOver 사용자에겐
+// 그게 통째로 사라진 상태였다. 접기는 메시지에만 걸고 버튼은 형제로 남긴다.
+// ============================================================================
+describe('토스트 접근성 — 실행취소 도달', () => {
+  test('바 전체를 하나의 요소로 접지 않는다 — 버튼이 형제로 남는다', () => {
+    const fs = require('fs') as typeof import('fs');
+    const path = require('path') as typeof import('path');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'ToastHost.tsx'), 'utf8');
+
+    // accessibilityLiveRegion 바로 뒤에 accessible 이 붙는 형태(= 바 전체 접기)를 금지한다.
+    expect(src).not.toMatch(/accessibilityLiveRegion="polite"\s*\n\s*accessible\b/);
+  });
+
+  test('실행취소 버튼이 자체 역할·라벨을 가진다', () => {
+    const r = render();
+    ReactTestRenderer.act(() => {
+      showToast({message: '러닝 기록 삭제됨', actionLabel: TOAST_UNDO_LABEL, onAction: () => {}, durationMs: 0});
+    });
+    // 라벨로 직접 찾을 수 있어야 한다 = 스크린리더가 개별 요소로 본다.
+    const btn = r.root.findAll(
+      n => n.props?.accessibilityRole === 'button' && n.props?.accessibilityLabel === TOAST_UNDO_LABEL,
+    );
+    // findAll 은 합성/호스트 노드를 함께 세므로 개수가 아니라 **존재**를 본다.
+    expect(btn.length).toBeGreaterThan(0);
+    // 그리고 그 버튼을 감싸는 조상 중 accessible 로 접힌 것이 없어야 한다.
+    const collapsed = r.root.findAll(n => n.props?.accessible === true && n.props?.accessibilityLiveRegion);
+    expect(collapsed.length).toBe(0);
+  });
+});

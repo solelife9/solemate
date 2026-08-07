@@ -108,10 +108,18 @@ export default function ToastHost() {
           styles.bar,
           {opacity, transform: [{translateY}]},
         ]}
-        accessibilityLiveRegion="polite"
-        accessible
-        accessibilityLabel={toast.message}>
-        <Text style={styles.message} numberOfLines={2}>
+        accessibilityLiveRegion="polite">
+        {/* 메시지만 하나의 접근성 요소로 묶는다.
+            ⚠️ `accessible` 을 **바 전체**에 걸면 안 된다(2026-08-07 감사). iOS 는 그 속성이
+            붙은 뷰의 서브트리를 하나로 접어 버려서, 아래 '실행취소' Pressable 에
+            **포커스도 활성화도 되지 않는다.** 실행취소는 파괴적 액션의 유일한 복구
+            경로이고(신발·기록 삭제), VoiceOver 사용자에겐 그게 통째로 사라진다.
+            그래서 접기는 텍스트에만 걸고 버튼은 형제로 남긴다. */}
+        <Text
+          style={styles.message}
+          numberOfLines={2}
+          accessible
+          accessibilityLabel={toast.message}>
           {toast.message}
         </Text>
         {hasAction && (
