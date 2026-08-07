@@ -164,6 +164,13 @@ export async function showRunNotification(
         sound: null,
         priority: 'default',
         color: '#FF8000', // Keego Ember — 알림 아이콘 틴트(BRAND.md §4)
+        // ⚠️ **채널 id 를 반드시 넘긴다**(2026-08-07 감사). 위에서 채널을 만들어 놓고
+        // 여기에 안 넘기면 expo-notifications 가 그 채널을 못 찾아
+        // `expo_notifications_fallback_notification_channel` 로 보낸다
+        // (BaseNotificationBuilder). 그러면 위에서 정한 소리 없음·진동 없음·배지 없음·
+        // importance 3 이 **전부 무시되고**, 사용자 알림 설정에도 '러닝 중 기록' 이 아니라
+        // 정체불명 채널명으로 보인다. 3초마다 갱신되는 알림이라 영향이 크다.
+        channelId: CHANNEL_ID,
       },
       trigger: null, // 즉시
     });

@@ -1379,8 +1379,8 @@ function ProfileScreen({
                 )}
                 <Text style={s.panelHint}>
                   {restHR > 0
-                    ? '심박 존을 더 정확하게 — Apple 건강에서 자동으로 가져와요'
-                    : '나이로 심박 존을 계산해요. Apple 건강을 연동하면 더 정확해져요'}
+                    ? `심박 존을 더 정확하게 — ${HEALTH_STORE_NAME}에서 자동으로 가져와요`
+                    : `나이로 심박 존을 계산해요. ${HEALTH_STORE_NAME}을 연동하면 더 정확해져요`}
                 </Text>
               </View>
             )}

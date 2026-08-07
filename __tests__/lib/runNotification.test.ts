@@ -69,3 +69,64 @@ describe('buildRunNotificationText — 잠금화면 두 줄', () => {
     expect(buildRunNotificationText({...base, km: NaN}).title).toBe('0.00km · 18:30');
   });
 });
+
+// ============================================================================
+// 발송 경로 (2026-08-07 감사)
+//
+// 이 파일은 여태 **문구(buildRunNotificationText)만** 검사했다. 그래서 실제로 알림을
+// 띄우는 showRunNotification 의 배선 결함이 그대로 살아 있었다:
+//
+//   채널을 만들어 놓고 scheduleNotificationAsync 에 channelId 를 안 넘겼다.
+//   → expo-notifications 가 그 채널을 못 찾아 폴백 채널로 보낸다.
+//   → 소리 없음·진동 없음·배지 없음·importance 3 이 **전부 무시**되고,
+//     사용자 알림 설정에도 '러닝 중 기록'이 아니라 정체불명 채널명으로 보인다.
+//     3초마다 갱신되는 알림이라 영향이 크다.
+// ============================================================================
+describe('러닝 알림 발송', () => {
+  /**
+   * 모듈을 리셋한 뒤 **그 다음에** 플랫폼을 세팅한다.
+   * jest.resetModules() 는 react-native 도 새로 물어오므로, 리셋 전에 잡아둔 Platform
+   * 참조에 값을 넣으면 테스트 대상이 보는 인스턴스와 달라진다(여기서 한 번 밟았다).
+   */
+  const bootAndroid = () => {
+    jest.resetModules();
+    const api = {
+      setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
+      scheduleNotificationAsync: jest.fn().mockResolvedValue('id'),
+      dismissNotificationAsync: jest.fn().mockResolvedValue(undefined),
+    };
+    jest.doMock('expo-notifications', () => api);
+    const rn = require('react-native');
+    rn.Platform.OS = 'android';
+    return {api, rn};
+  };
+
+  afterEach(() => {
+    jest.dontMock('expo-notifications');
+    jest.resetModules();
+  });
+
+  test('만든 채널로 보낸다 — channelId 를 빠뜨리면 폴백 채널로 샌다', async () => {
+    const {api} = bootAndroid();
+    const {showRunNotification} = require('../../lib/runNotification');
+
+    await showRunNotification({km: 5.2, elapsedSec: 1800, avgPaceSecPerKm: 346, paused: false});
+
+    expect(api.setNotificationChannelAsync).toHaveBeenCalledTimes(1);
+    const createdChannel = api.setNotificationChannelAsync.mock.calls[0][0];
+    expect(api.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+    const content = api.scheduleNotificationAsync.mock.calls[0][0].content;
+    // 핵심: 보낸 채널이 **방금 만든 그 채널**이어야 한다.
+    expect(content.channelId).toBe(createdChannel);
+  });
+
+  test('안드로이드가 아니면 아무것도 하지 않는다', async () => {
+    const {api, rn} = bootAndroid();
+    rn.Platform.OS = 'ios';
+    const {showRunNotification} = require('../../lib/runNotification');
+
+    await showRunNotification({km: 1, elapsedSec: 60, avgPaceSecPerKm: null, paused: false});
+
+    expect(api.scheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+});
