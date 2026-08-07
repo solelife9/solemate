@@ -75,8 +75,24 @@ export function zoneBoundaries(maxHR: number, restHR?: number): Record<HRZone, n
 export type HRSample = { t: number; bpm: number };
 
 /**
+ * 표본 사이 간격을 인정할 최대 폭(초).
+ *
+ * 왜 필요한가(2026-08-07 감사): 계단 적분에는 상한이 없었다. 워치 배터리가 죽었다가
+ * 25분 뒤 되살아나면 **그 25분이 통째로 직전 표본의 존에 적립된다.** 그 사이 무슨 일이
+ * 있었는지 우리는 모르는데, 모르는 시간을 특정 존에 몰아주면 "Z2 에서 40분"처럼
+ * 있지도 않은 훈련이 기록된다(Truth only 위반).
+ *
+ * 60초: 워치 심박 스트림이 보통 1~5초 간격이고 백필도 분 단위를 넘지 않는다. 넉넉히
+ * 잡아 **정상 구간은 하나도 자르지 않으면서** 신호 공백만 걸러낸다. 공백은 어느 존에도
+ * 넣지 않는다 — 빈칸이 틀린 숫자보다 낫다.
+ */
+export const MAX_ZONE_GAP_S = 60;
+
+/**
  * 심박 시계열 → 존별 누적 시간(초). 인접 두 표본 사이 구간(Δt)을 앞 표본의 존에 귀속한다
  * (계단 적분). 비유효 표본·역행 시간·미분류(존 0)는 건너뛴다. 반환은 Z1–Z5 누적초.
+ *
+ * `MAX_ZONE_GAP_S` 를 넘는 간격은 **신호 공백**으로 보고 버린다(위 상수 주석 참조).
  */
 export function timeInZones(track: HRSample[], maxHR: number, restHR?: number): Record<HRZone, number> {
   const out: Record<HRZone, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -84,17 +100,49 @@ export function timeInZones(track: HRSample[], maxHR: number, restHR?: number): 
   for (let i = 1; i < pts.length; i++) {
     const dt = pts[i].t - pts[i - 1].t;
     if (!(dt > 0)) continue; // 역행/정체 구간은 무시
+    if (dt > MAX_ZONE_GAP_S) continue; // 신호 공백 — 모르는 시간을 존에 몰아주지 않는다
     const z = zoneOf(pts[i - 1].bpm, maxHR, restHR);
     if (z !== 0) out[z] += dt; // z!==0 으로 0|HRZone → HRZone 타입 narrowing
   }
   return out;
 }
 
-/** 시계열 평균/최대 심박(유효 표본만). 표본 없으면 {avg:0,max:0}. */
+/**
+ * 시계열 평균/최대 심박(유효 표본만). 표본 없으면 {avg:0,max:0}.
+ *
+ * **평균은 시간가중이다**(2026-08-07). 예전엔 시간을 아예 안 보는 산술평균이라, 표본이
+ * 고르지 않으면(백필로 앞부분만 촘촘한 경우가 흔하다) 촘촘한 구간이 과대 대표됐다.
+ * 바로 옆의 존 구간시간은 시간 적분인데 평균만 표본 개수 기준이라 **같은 카드의 두
+ * 숫자가 서로 다른 러닝을 말했다.**
+ *
+ * ── 왜 존은 계단인데 평균은 사다리꼴인가 ──────────────────────────────────
+ * 존은 **범주형**이다. "다음 표본이 달라졌다고 말하기 전까지 그 존에 있었다"가 맞는
+ * 해석이라 앞 표본 값으로 채운다(계단 적분).
+ * 평균은 **연속량**이다. 140→160 으로 변해간 1초 구간의 대표값은 140 이 아니라 150 이다
+ * (사다리꼴). 계단으로 평균을 내면 마지막 표본이 통째로 빠지고 값이 아래로 치우친다.
+ * 서로 다른 게 맞고, 공유해야 하는 건 **간격 상한**이다 — 같은 구간을 덮어야 비교가
+ * 성립하므로 존과 같은 MAX_ZONE_GAP_S 를 쓴다.
+ *
+ * 쓸 만한 간격이 하나도 없으면(표본 1개 등) 산술평균으로 떨어진다 — 없는 값보다 낫다.
+ */
 export function hrSummary(track: HRSample[]): { avg: number; max: number } {
-  const bpms = (Array.isArray(track) ? track : []).map(p => p && p.bpm).filter((b): b is number => Number.isFinite(b) && b > 0);
+  const pts = (Array.isArray(track) ? track : []).filter(
+    p => p && Number.isFinite(p.t) && Number.isFinite(p.bpm) && p.bpm > 0,
+  );
+  const bpms = pts.map(p => p.bpm);
   if (bpms.length === 0) return { avg: 0, max: 0 };
-  const avg = Math.round(bpms.reduce((a, b) => a + b, 0) / bpms.length);
+  let weighted = 0;
+  let totalS = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const dt = pts[i].t - pts[i - 1].t;
+    if (!(dt > 0) || dt > MAX_ZONE_GAP_S) continue;
+    // 사다리꼴 — 구간 양 끝의 평균을 그 구간의 대표값으로 본다(위 주석 참조).
+    weighted += ((pts[i - 1].bpm + pts[i].bpm) / 2) * dt;
+    totalS += dt;
+  }
+  const avg = totalS > 0
+    ? Math.round(weighted / totalS)
+    : Math.round(bpms.reduce((a, b) => a + b, 0) / bpms.length);
   // reduce 로 최댓값 — Math.max(...bpms) 는 초대형 트랙(>~10만 표본)에서 스택 초과(RangeError).
   return { avg, max: Math.round(bpms.reduce((m, b) => (b > m ? b : m), 0)) };
 }
