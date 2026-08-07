@@ -61,6 +61,11 @@ function trustedAltitude(fix: RawFix): number | null {
 // 3000: 구 인터벌과 같은 주기(복구 정확도 불변). 15000: 경로 모양의 최대 손실 구간 —
 // 거리·시간은 스칼라가 3초 주기로 지키므로 이 값이 커져도 기록의 정확도는 그대로다.
 const STATE_WRITE_MS = 3000;
+/**
+ * 기압계 고도를 '신선하다'고 볼 최대 지연(ms). 구독 주기가 1초라 5초면 넉넉하다.
+ * 지나면 GPS 고도로 폴백한다 — 오래된 기압값을 계속 쓰면 실제 오르내림을 놓친다.
+ */
+const BARO_FRESH_MS = 5000;
 // 스냅샷 저장 연속 실패가 이 횟수를 넘으면 '백업 안 됨'을 사용자에게 알린다. 1~2회는
 // 일시적일 수 있어 즉시 경고하지 않는다(3회 ≈ 9초 이상 지속 실패).
 const SNAPSHOT_FAIL_ALERT_AT = 3;
@@ -146,6 +151,8 @@ export interface RunTrackerConfig {
   movingSteps?: number;
   /** 복구 시드 — 이 러닝의 저장 id(스냅샷에서 이어받는다). 없으면 새로 만든다. */
   runId?: string;
+  /** 복구 시드 — 누적 고도 상승(m). 없으면 0(예전 동작: 복구 런은 고도를 잃었다). */
+  seedElevGainM?: number;
   /**
    * 크래시 복구 '이어 달리기' 시드 — 직전 스냅샷의 누적 거리(km). 기본 0.
    * 새 fix는 여기서부터 누적된다. (t0 는 호출자가 now − elapsed 로 줘 경과시간을 잇는다.)
@@ -232,6 +239,18 @@ class RunTracker {
    * 저장을 멱등하게 만드는 열쇠다(스냅샷 주석 참조).
    */
   private runId = '';
+  /**
+   * 기압계가 보고한 최신 고도(m)와 그 시각. **GAP(경사보정페이스)의 정본**이다.
+   *
+   * 왜 필요한가(2026-08-07 감사): 화면의 '상승 고도'는 기압계를 쓰는데(iOS, ±0.5m)
+   * GAP 시계열은 **raw GPS 고도**를 쌓고 있었다. 같은 러닝 안에서 두 개의 고도 진실이
+   * 공존한 것이다. 08-05 아이폰 런의 GAP 은 1,814m 를 만든 바로 그 신호로 계산됐다.
+   *
+   * 기압계는 상대 고도(구독 시작 기준)를 주는데 GAP 은 **차이**만 쓰므로(경사 = Δe/Δd)
+   * 절대값이 아니어도 된다 — 오히려 훨씬 매끄럽다.
+   */
+  private baroAltM: number | null = null;
+  private baroAtMs = 0;
   /** 이동 중에만 쌓인 누적 걸음수(스냅샷 영속용 — 컨테이너가 setMeta 로 갱신). */
   private movingSteps = 0;
   private stalledMs = 0;
@@ -329,6 +348,8 @@ class RunTracker {
     // 복구 직후 경과 시간이 갑자기 줄지 않는다(구 스냅샷엔 없으므로 기본 0).
     this.pedFillMs = config.pedFillMs ?? 0;
     this.pedFillAtMs = 0;
+    this.baroAltM = null;
+    this.baroAtMs = 0;
     this.movingSteps = config.movingSteps ?? 0;
     // 복구면 스냅샷의 id 를 이어받는다 — 그래야 '이어 달리기' 저장이 원래 런과 같은 줄이 된다.
     this.runId = config.runId || genRunId(this.now());
@@ -356,6 +377,10 @@ class RunTracker {
     // ── 크래시 복구 '이어 달리기' 시드 ──────────────────────────────────
     // seed* 가 없으면(일반 시작) 위 초기화 그대로 — fresh-run 경로는 바이트 동일하다.
     if (config.seedDist && config.seedDist > 0) this.dist = config.seedDist;
+    // 고도도 잇는다 — 거리·시간만 잇고 고도를 0 으로 두면 복구 런의 상승분이 사라진다.
+    if (config.seedElevGainM && config.seedElevGainM > 0) {
+      this.elev = {...this.elev, gain: config.seedElevGainM};
+    }
     if (config.seedPts && config.seedPts.length > 0) {
       // 경로 폴리라인만 잇는다. lastGood 는 비워 둔 채(=null) 둬, 재개 후 첫 fix 가
       // 새 앵커가 되도록 한다 — 공백을 가로지르는 허위 거리 누적을 막는다.
@@ -407,6 +432,22 @@ class RunTracker {
   }
 
   // ── meta the engine doesn't compute but persists (set by the UI) ──
+  /**
+   * 기압계 고도 표본을 먹인다(iOS 컨테이너가 구독해서 전달). GAP 시계열이 이 값을
+   * 우선 쓴다 — 화면의 상승 고도와 **같은 소스**여야 한다.
+   */
+  feedBaroAltitude(relativeM: number, atMs?: number) {
+    if (!Number.isFinite(relativeM)) return;
+    this.baroAltM = relativeM;
+    this.baroAtMs = atMs ?? this.now();
+  }
+
+  /** 지금 쓸 만큼 신선한 기압계 고도(없으면 null). */
+  private freshBaroAlt(atMs: number): number | null {
+    if (this.baroAltM == null) return null;
+    return atMs - this.baroAtMs <= BARO_FRESH_MS ? this.baroAltM : null;
+  }
+
   /** 이 러닝의 저장 id(시작 시 확정). 저장 경로가 멱등하려면 이 값을 써야 한다. */
   getRunId(): string {
     return this.runId;
@@ -652,7 +693,10 @@ class RunTracker {
           this.paceTrack.push({d: this.dist, t: tNow});
           // 같은 점의 raw GPS 고도를 GAP 시계열에 적립(고도 없는 fix 는 건너뜀 — 거리 기준
           // 매칭이라 빠져도 인접 구간 경사는 옳게 계산된다).
-          const alt = trustedAltitude(fix);
+          // **기압계가 있으면 그쪽이 정본이다** — 화면의 상승 고도와 같은 소스를 써야
+          // 한 러닝 안에서 두 개의 고도 진실이 생기지 않는다(2026-08-07 감사).
+          // 없으면 예전처럼 GPS 고도(수직 정확도 게이트 통과분)를 쓴다.
+          const alt = this.freshBaroAlt(ts) ?? trustedAltitude(fix);
           if (alt != null) {
             this.gapTrack.push({d: this.dist, t: tNow, e: alt});
           }
@@ -994,6 +1038,7 @@ class RunTracker {
       cadence: this.cadence,
       movingSteps: this.movingSteps,
       runId: this.runId,
+      elevGainM: this.elev.gain,
       location: this.location,
       track: this.trackMeta,
       savedAt: now,

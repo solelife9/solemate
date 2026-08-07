@@ -1171,3 +1171,63 @@ describe('러닝 저장 id', () => {
     expect(JSON.parse(raw as string).runId).toBe(id);
   });
 });
+
+// ============================================================================
+// 고도 — 한 러닝에 진실은 하나여야 한다 (2026-08-07 감사)
+//
+// 화면의 '상승 고도'는 기압계를 쓰는데(iOS, ±0.5m) GAP(경사보정페이스) 시계열은
+// **raw GPS 고도**를 쌓고 있었다. 같은 러닝 안에서 두 개의 고도 진실이 공존했고,
+// 08-05 아이폰 런의 GAP 은 1,814m 를 만든 바로 그 신호로 계산됐다.
+//
+// 그리고 스냅샷에 고도가 없어 **크래시 복구 런은 고도가 0 에서 다시 시작했다** —
+// 거리·시간은 잇는데 고도만 잃는 비대칭이었다(칼로리·GAP 에도 흘러간다).
+// ============================================================================
+describe('GAP 시계열의 고도 소스', () => {
+  const fixAlt = (lat: number, ts: number, altitude: number): RawFix => ({
+    coords: {latitude: lat, longitude: LON, accuracy: 5, altitude, altitudeAccuracy: 5},
+    timestamp: ts,
+  });
+
+  test('기압계가 신선하면 그 값을 쓴다 — 화면과 같은 소스', () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    let ts = 100000;
+    for (let i = 0; i < 3; i++) { set((ts += 2000)); t.ingestFix(fixAlt(37.5, ts, 500)); }
+    // GPS 는 500m 라고 하는데 기압계는 12m 라고 한다.
+    set((ts += 3000));
+    t.feedBaroAltitude(12, ts);
+    t.ingestFix(fixAlt(37.5008, ts, 500));
+    t.stop();
+
+    const gap = t.getGapTrack();
+    expect(gap.length).toBeGreaterThan(0);
+    // 마지막 점은 기압계 값이어야 한다(GPS 500 이 아니라).
+    expect(gap[gap.length - 1].e).toBe(12);
+  });
+
+  test('기압계가 스테일하면 GPS 로 폴백한다 — 오래된 값을 계속 쓰지 않는다', () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    let ts = 100000;
+    t.feedBaroAltitude(12, ts); // 아주 오래된 표본
+    for (let i = 0; i < 3; i++) { set((ts += 2000)); t.ingestFix(fixAlt(37.5, ts, 500)); }
+    set((ts += 60000)); // 1분 뒤 — 기압계는 그동안 소식이 없다
+    t.ingestFix(fixAlt(37.5008, ts, 500));
+    t.stop();
+
+    const gap = t.getGapTrack();
+    expect(gap[gap.length - 1].e).toBe(500);
+  });
+
+  test('복구는 고도 상승을 이어받는다 — 0 에서 다시 시작하지 않는다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000, seedElevGainM: 74});
+    expect(t.getElevationGain()).toBe(74);
+  });
+
+  test('시드가 없으면 0 — 새 러닝은 예전과 같다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    expect(t.getElevationGain()).toBe(0);
+  });
+});

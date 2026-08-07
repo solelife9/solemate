@@ -62,6 +62,14 @@ export interface RunSnapshot {
    * 구 스냅샷엔 없다 — 없으면 예전처럼 저장 시점에 만든다.
    */
   runId?: string;
+  /**
+   * 누적 고도 상승(m). 2026-08-07 신설.
+   *
+   * 여태 스냅샷에 없어서 **크래시 복구 런은 고도가 0 에서 다시 시작했다.** 30분 뛰다
+   * 죽고 이어 달리면 앞의 상승분이 통째로 사라진다 — 거리·시간은 잇는데 고도만 잃는
+   * 비대칭이었다. 그리고 그 값은 칼로리·경사보정페이스에도 흘러간다.
+   */
+  elevGainM?: number;
   cadence: number; // last spm reading (>= 0)
   /**
    * **이동 중에만** 쌓인 누적 걸음수(>= 0). 2026-08-07 신설.
@@ -166,6 +174,7 @@ export function sanitizeRunState(raw: unknown): Omit<RunSnapshot, 'pts'> | null 
     // 복원이 통째로 버려서, 복구 런의 케이던스와 저장 id 가 그대로 사라졌다).
     movingSteps: Math.floor(nonNeg(r.movingSteps)),
     runId: typeof r.runId === 'string' && r.runId ? r.runId : undefined,
+    elevGainM: nonNeg(r.elevGainM),
     location: typeof r.location === 'string' ? r.location : '',
     track: sanitizeTrackMeta(r.track),
     savedAt: nonNeg(r.savedAt),

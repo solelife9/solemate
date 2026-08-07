@@ -61,6 +61,7 @@ const SNAP: RunSnapshot = {
   // sanitize 양쪽을 같이 고쳐야 한다. 픽스처에 넣어 왕복을 실제로 검증한다.
   movingSteps: 5100,   // 이동 중에만 쌓인 걸음(복구 런 평균 케이던스의 분자)
   runId: 'run_1700000000000_abc1234', // 이 러닝의 저장 id(저장 멱등의 열쇠)
+  elevGainM: 74,       // 누적 고도 상승(복구 런이 이어받아야 하는 값)
   location: '서울',
   track: null,
   savedAt: 1_700_000_745_000,
@@ -507,15 +508,17 @@ describe('스냅샷 필드가 조용히 사라지지 않는다', () => {
     expect(loaded.elapsed).toBe(SNAP.elapsed);
     expect(loaded.movingSteps).toBe(SNAP.movingSteps);
     expect(loaded.runId).toBe(SNAP.runId);
+    expect(loaded.elevGainM).toBe(SNAP.elevGainM);
   });
 
   test('구 스냅샷(신규 필드 없음)도 안전하게 복원된다 — 하위호환', async () => {
-    const {movingSteps, runId, ...legacy} = SNAP as any;
+    const {movingSteps, runId, elevGainM, ...legacy} = SNAP as any;
     await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(legacy));
     const loaded = (await loadSnapshot()) as RunSnapshot;
     expect(loaded).toBeTruthy();
     expect(loaded.dist).toBe(SNAP.dist);
     expect(loaded.movingSteps).toBe(0);   // 없으면 0 = 예전과 같은 동작
     expect(loaded.runId).toBeUndefined(); // 없으면 저장 시점에 만든다
+    expect(loaded.elevGainM).toBe(0);     // 없으면 0 = 예전과 같은 동작
   });
 });

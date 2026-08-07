@@ -91,9 +91,10 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   const [cadence,setCadence]=useState(resume?resume.cadence:0);
   // 마지막 fix 정확도(m, null=fix 이전). 실제 GPS 신호 강도(gpsLevel) 산출에 쓴다.
   const [accuracyM,setAccuracyM]=useState<number|null>(null);
-  // 누적 고도 상승(m) — 엔진 state(elevGainM)에서 흘러온다. 복구 런은 스냅샷에 고도가
-  // 없어 0에서 시작(엔진 미작동). finElev는 정지 시 최종값을 고정한다.
-  const [elevGain,setElevGain]=useState(0);
+  // 누적 고도 상승(m) — 엔진 state(elevGainM)에서 흘러온다. 복구 런은 스냅샷의 값을
+  // 이어받는다(2026-08-07 — 예전엔 0에서 다시 시작해 앞의 상승분을 잃었다).
+  // finElev는 정지 시 최종값을 고정한다.
+  const [elevGain,setElevGain]=useState(resume?.elevGainM??0);
   const [finElev,setFinElev]=useState(0);
   // 심박(bpm). 아이폰 단독은 미측정 → 0('--'). Apple Watch 컴패니언(watchSession)이
   // WatchConnectivity로 보내는 실시간 심박을 구독해 채운다(워치 없으면 0 유지).
@@ -678,6 +679,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
         movingSteps:seed.movingSteps??0,
         // 저장 id 를 이어받는다 — '이어 달리기'가 원래 런과 같은 줄로 저장되게(멱등).
         runId:seed.runId,
+        // 고도도 잇는다 — 거리·시간만 잇고 0 에서 시작하면 앞의 상승분이 사라진다.
+        seedElevGainM:seed.elevGainM??0,
         seedPts:seed.pts as any,seedLocation:seed.location});
       // 크래시 전 통과한 km 만큼 스플릿 슬롯을 채워, 재개 후의 km 경계부터 실측이 기록되게
       // 한다(이전 구간 페이스는 스냅샷에 없어 복원 불가 — 0 으로 둠). 안내 km 도 시드한다.
@@ -799,6 +802,9 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
           if(typeof rel!=='number'||!Number.isFinite(rel))return; // Android 등 미제공
           // 시각을 함께 넘긴다 — 상승률 상한(사람이 낼 수 없는 상승 거부)이 이걸로 작동한다.
           baroElev.current=feedAltitude(baroElev.current,rel,Date.now());
+          // 엔진에도 같은 값을 넘긴다 — GAP 시계열이 화면과 **같은 고도 소스**를 쓰게
+          // (2026-08-07). 예전엔 GAP 만 raw GPS 고도라 한 러닝에 두 진실이 있었다.
+          runTracker.feedBaroAltitude(rel,Date.now());
           baroAvail.current=true;
           setElevGain(Math.round(baroElev.current.gain));
         });
