@@ -18,6 +18,7 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Text as RNText} from 'react-native';
+import {Linking} from 'react-native';
 import ErrorBoundary from '../ErrorBoundary';
 import {
   EVENTS,
@@ -270,5 +271,42 @@ describe('L-03 ErrorBoundary — 반복 크래시에서 나갈 문', () => {
     // 두 버튼 모두 남아 있다(재시도를 없애지는 않는다 — 우선순위만 뒤집는다).
     expect(tree.root.findAllByProps({testID: 'error-support'}).length).toBeGreaterThan(0);
     expect(tree.root.findAllByProps({testID: 'error-retry'}).length).toBeGreaterThan(0);
+  });
+
+  // ── L-04(크래시 쪽) 2026-08-08 ────────────────────────────────────────────
+  // 마이 탭 문의는 진단 정보를 프리필하는데 **크래시 화면만 빠져 있었다.** 크래시 신고에서
+  // 더 중요하다 — 버전·기기 없는 제보는 재현이 사실상 불가능해 왕복이 한 번 늘고,
+  // 화면이 깨진 사용자는 그 왕복을 기다려 주지 않는다.
+  it('문의 메일에 진단 정보를 우리가 채운다(사용자에게 시키지 않는다)', () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true as never);
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    act(() => {
+      tree = ReactTestRenderer.create(
+        <ErrorBoundary>
+          <Boom />
+        </ErrorBoundary>,
+      );
+    });
+    const btn = tree.root
+      .findAllByProps({testID: 'error-support'})
+      .find(n => typeof n.props.onPress === 'function');
+    act(() => {
+      btn!.props.onPress();
+    });
+
+    expect(openURL).toHaveBeenCalled();
+    const url = decodeURIComponent(String(openURL.mock.calls[0][0]));
+    expect(url.startsWith('mailto:')).toBe(true);
+    expect(url).toContain('앱 버전:');
+    expect(url).toContain(require('../package.json').version);
+    expect(url).toContain('기기:');
+    expect(url).toContain('오류: Error');   // 종류만 — 메시지 본문은 넣지 않는다
+    expect(url).toContain('재시도: 0회');
+
+    // 사용자 데이터·오류 메시지 본문은 실리지 않는다(적기로 선택하지 않은 것을 미리
+    // 채우면 수집이 아니라 유출에 가깝다 — 마이 탭 문의와 같은 규약).
+    expect(url).not.toContain('child exploded');
+
+    openURL.mockRestore();
   });
 });
