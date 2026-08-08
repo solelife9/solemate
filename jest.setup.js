@@ -478,9 +478,17 @@ jest.mock('@react-native-firebase/firestore', () => {
     if (lim) rows = rows.slice(0, lim.n);
     return rows;
   };
+  // ⚠️ **싱글턴이다.** 실제 getFirestore() 는 앱당 같은 인스턴스를 돌려주는데, 예전 목은
+  // 호출마다 새 객체를 만들었다 — 목이 실제보다 관대하면 그 위의 테스트는 아무것도 지키지
+  // 못한다. 인스턴스에 붙는 설정(settings)을 검증하려면 특히 같은 객체여야 한다.
+  const dbSingleton = {
+    __db: true,
+    // Firestore 인스턴스 메서드. 실제 RNFB 는 첫 작업 전에만 받아 준다(그 뒤엔 던진다).
+    settings: jest.fn(() => Promise.resolve()),
+  };
   return {
     __esModule: true,
-    getFirestore: jest.fn(() => ({__db: true})),
+    getFirestore: jest.fn(() => dbSingleton),
     // 하위 컬렉션 지원(런 상세 백업 — userBackups/{uid}/runDetails/{runId}): 세그먼트 가변.
     doc: jest.fn((_db, ...segs) => ({__path: segs.join('/')})),
     collection: jest.fn((_db, ...segs) => ({__collection: segs.join('/')})),

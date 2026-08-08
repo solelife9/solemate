@@ -1,3 +1,7 @@
+// ⚠️ **이 import 가 가장 먼저다.** Firestore 오프라인 영속을 명시적으로 켜는데(감사 D-6),
+// 설정은 첫 Firestore 사용보다 먼저 접수돼야 한다. 아래 import 중 여럿이 모듈 로드
+// 시점에 Firestore 를 건드릴 수 있으므로 순서를 바꾸지 말 것.
+import './lib/firestoreSettings';
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import {
   View, StatusBar, Linking, AppState, InteractionManager, BackHandler,
