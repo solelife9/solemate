@@ -33,6 +33,7 @@ import { buildShareCardModel } from './lib/shareCard';
 import { exportGpx } from './lib/gpx';
 import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './lib/inputMask';
 import { useBackClose } from './lib/backStack';
+import { loadDistanceRef, distanceRefLine } from './lib/distanceRef';
 import ShareCardPicker from './ShareCardPicker';
 
 // ── manual-run / edit form helpers ──────────────────────────────────────────
@@ -363,6 +364,18 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
       .catch(() => { if (alive) setTrackMeta(null); });
     return () => { alive = false; };
   }, [run.id]);
+  // 폰↔워치 거리 대조 — 워치가 기록자였던 러닝에만 있다(2026-08-09).
+  // 무엇이 쟀는지 알려주는 것은 정직한 정보이고, 나이키·가민도 한다("Recorded with").
+  // 차이가 1% 미만이면 줄 자체가 안 나온다(절제 — distanceRefLine 이 판단한다).
+  const [distRefLine, setDistRefLine] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (!run.id) { setDistRefLine(null); return; }
+    loadDistanceRef(String(run.id))
+      .then(r => { if (alive) setDistRefLine(distanceRefLine(r)); })
+      .catch(() => { if (alive) setDistRefLine(null); });
+    return () => { alive = false; };
+  }, [run.id]);
   // 랩별 스플릿 — 누적 랩시각을 구간(랩)시간으로 환산하고 랩거리로 km당 페이스를 낸다.
   const lapRows = useMemo(() => {
     if (!trackMeta) return [] as { lap: number; split: number; paceSec: number }[];
@@ -563,6 +576,14 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
             items={stats.map((x) => ({ value: x.v, unit: x.u ? ` ${x.u}` : undefined, label: x.l }))}
           />
         </View>
+        {/* 무엇이 쟀는가 — 폰+워치 동시 러닝에서만 뜬다(2026-08-09).
+            거리는 워치가 정본이지만 폰도 자기 값을 쟀다. 두 값이 1% 넘게 갈리면 그 사실을
+            숨기지 않는다 — 무엇이 쟀는지 알려주는 건 나이키·가민도 하는 정직한 정보이고
+            (Recorded with), 우리에겐 폰 GPS 정확도를 고칠 유일한 실측 근거다.
+            차이가 없거나 폰 단독 러닝이면 줄 자체가 나오지 않는다(절제). */}
+        {!!distRefLine && (
+          <Text style={s.distRefLine} testID="run-detail-distref">{distRefLine}</Text>
+        )}
         {/* 이 러닝의 성격 — 트레이닝 부하 + 경사 보정 페이스를 한 카드 2행으로(간결화 A1,
             2026-07-26). 둘 다 '제목+설명 / 우측 큰 숫자'라는 같은 골격이라, 같은 모양의
             카드가 연달아 오면 위계가 아니라 반복으로 읽혔다. 각 행은 데이터가 있을 때만
@@ -1378,6 +1399,11 @@ const s = StyleSheet.create({
   labelT1w6: {color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   labelT3w6: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   capT3mt3: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3)},
+  // 측정 출처 한 줄 — 보조 정보라 T3·캡션으로 눌러 둔다(숫자 위계를 건드리지 않는다).
+  distRefLine: {
+    color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize,
+    marginTop: rv(10), textAlign: 'center',
+  },
   capT3mt8: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(8)},
   capT3w5: {fontSize: TYPE.caption.fontSize, color: T3, fontWeight: '500'},
   capAccent: {color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700'},

@@ -23,6 +23,7 @@ import DialogHost from './DialogHost';
 import {installCrashHandler, setCrashUser, recordError, reportIssue, setCrashCollectionEnabled} from './lib/crashlytics';
 import {devSeedShoes, devSeedRuns} from './lib/devSeed';
 import {calibrateStride} from './lib/strideLength';
+import {saveDistanceRef} from './lib/distanceRef';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
 import HistoryScreen, {PeriodSummary, PeriodChart} from './HistoryScreen.rn';
@@ -3100,6 +3101,14 @@ function Main(){
           const newId=watchDup?watchDup.id:await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM??undefined,cal,{startMs,id:runTracker.getRunId(),
             // 최대 심박은 **추정하지 않는다** — 방금 측정한 시계열에서 뽑는다.
             heartRateMax:hrTrack&&hrTrack.length>0?hrSummary(hrTrack).max:0});
+          // 폰↔워치 거리 대조 — 워치가 기록자였던 러닝에만 남는다(민우님 지적, 2026-08-09).
+          // 저장 거리는 워치 값인데 폰도 자기 거리를 계속 쟀다. 그 값을 여기서 안 남기면
+          // **폰 GPS 가 얼마나 정확한지 영영 못 잰다** — 워치는 뚜껑이 아니라 기준선이어야
+          // 한다. 몇 번만 같이 뛰면 "폰이 워치보다 N% 짧다"가 실측으로 나오고, 그게 GPS
+          // 계수를 고칠 유일한 근거다(2026-07-11 +9% 교정도 같은 방식이었다).
+          void saveDistanceRef(String(newId),{
+            savedKm:km, phoneKm:runTracker.getPhoneDistanceKm(), source:runTracker.getDistanceSource(),
+          });
           // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.
           // 거리·페이스·PB 는 이미 랩 시계열(paceTrack=lapsToTrack)로 정본이라 별도 계산 불필요.
           if(trackMeta&&trackMeta.laps>0){
