@@ -1319,7 +1319,7 @@
       "heel": 25,
       "forefoot": 25
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "discontinued": false,
     "searchAliases": [
       "알트라",
@@ -1526,7 +1526,7 @@
       "heel": 25,
       "forefoot": 25
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -1650,7 +1650,7 @@
       "heel": 35,
       "forefoot": 35
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "discontinued": false,
     "searchAliases": [
       "알트라",
@@ -1835,7 +1835,7 @@
       "heel": 30,
       "forefoot": 30
     },
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -8069,7 +8069,7 @@
     "drop": null,
     "plate": null,
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -8097,7 +8097,7 @@
       "heel": 38.5,
       "forefoot": 26.5
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
