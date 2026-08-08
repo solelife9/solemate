@@ -13,17 +13,15 @@
 
 ```bash
 npm run e2e             # 안드로이드 실기기, 전체(번호 순)
-npm run e2e -- ios      # 아이폰 시뮬레이터, 전체
+npm run e2e -- ios      # 아이폰 — ⚠️ 현재 실행 불가(아래 한계 참조)
 npm run e2e -- 02       # 이름에 '02' 가 든 흐름만
 npm run e2e -- ios 02   # 둘 다
 ```
 
 - **안드로이드**: USB 로 기기를 연결하고 **화면을 켜서 잠금을 풀어 둔다.**
-- **아이폰**: 시뮬레이터를 부팅해 두고, 앱이 설치·**로그인**돼 있어야 한다.
-
-  ```bash
-  xcrun simctl boot 'iPhone 17 Pro' && open -a Simulator
-  ```
+- **아이폰**: ⚠️ **현재 실행 불가.** 시뮬레이터도 실기기도 막혀 있다
+  (아래 '알려진 한계' — ML Kit + Maestro 실기기 미지원). 흐름 파일은 준비돼 있고,
+  둘 중 하나가 풀리는 날 그대로 돌아간다.
 
 ## 도구 선택 — 왜 Maestro 인가
 
@@ -140,15 +138,48 @@ Xcode 26 은 Rosetta 시뮬레이터를 제거했으므로 애플 실리콘 맥�
 
 (전형적인 아키텍처 불일치 메시지다. 앱이 낡아서가 아니다.)
 
-**따라서 iOS E2E 는 실기기에서 돌린다.** Maestro 는 `--device <udid>` 로 실기기를
-지원한다(xctestrunner 드라이버를 자동 설치). 필요한 것:
-1. 아이폰을 USB 로 연결(`xcrun devicectl list devices` 가 `available` 로 보여야 한다)
-2. **오늘자 testID 가 들어간 기기 빌드**를 설치 — TestFlight 빌드는 testID 이전이라 안 된다
+### ⚠️ 그리고 **실기기로도 못 돌린다** — Maestro `test` 가 실기기를 안 잡는다
 
-시뮬레이터를 되살리고 싶다면 방법은 하나뿐이다: ML Kit 을 iOS 에서 걷어내고 OCR 을
-Apple 기본 프레임워크(`Vision` 의 `VNRecognizeTextRequest`)로 바꾸는 것. 온디바이스이고
-의존성 0이며 한국어를 지원한다 — CLAUDE.md 의 "먼저 OS/플랫폼이 제공하는 것을 찾는다"에
-정확히 해당한다. **다만 지금 범위 밖이라 손대지 않았다**(OCR 정확도 재검증이 따라온다).
+위 제약을 확인하고 "그럼 실기기로 하면 되겠다"고 갔다가 두 번째 벽을 만났다.
+**막다른 길이라는 것 자체가 결론이므로 적어 둔다.**
+
+Maestro 2.8.0 의 iOS 기기 목록에는 **시뮬레이터만** 들어간다:
+
+```
+$ maestro list-devices
+iOS
+  iPhone-17-Pro   iOS-26-5        ← 시뮬레이터
+  ...                             ← 연결된 실기기는 없다
+```
+
+`maestro test` 는 이 목록을 쓰므로 실기기를 지정해도 거절한다:
+
+```
+$ maestro --platform ios --device 00008130-… test .maestro/flows/00-smoke.yaml
+Device 00008130-… was requested, but it is not connected.
+```
+
+헷갈리는 점: **`maestro hierarchy` 는 실기기를 잡는다**("Detected connected iPhone!" 을
+찍고 드라이버까지 빌드한다). 두 명령이 서로 다른 기기 탐색 경로를 쓴다. 그래서
+"기기가 붙어 있는데 왜 test 만 안 되지?"로 시간을 버리기 쉽다.
+
+### 정리 — iOS E2E 를 열려면
+
+두 벽이 겹쳐 있고, **하나만 치우면 열린다**:
+
+| 경로 | 막은 것 | 치우는 방법 |
+|---|---|---|
+| 시뮬레이터 | ML Kit(arm64 시뮬 슬라이스 없음) | **ML Kit → Apple Vision OCR 교체** |
+| 실기기 | Maestro `test` 가 실기기 미지원 | Maestro 업스트림 · 또는 Detox(네이티브 러너 필요) · 또는 Maestro Cloud(유료) |
+
+**첫 번째가 현실적이다.** `VNRecognizeTextRequest` 는 온디바이스·의존성 0·한국어 지원이라
+CLAUDE.md 의 "먼저 OS/플랫폼이 제공하는 것을 찾는다"에 정확히 해당하고, 덤으로 앱 용량이
+약 20MB 줄고 시뮬레이터 개발이 통째로 되살아난다.
+**다만 OCR 정확도 재검증이 따라오는 별건이라 여기서는 손대지 않았다.**
+
+그때까지 `.maestro/` 흐름은 **안드로이드에서만** 돈다. 흐름 자체는 플랫폼 중립이라
+(`subflows/back.yaml` 이 분기를 흡수한다) 위 둘 중 하나가 풀리는 날 그대로 돌아간다 —
+고칠 것이 없다.
 
 ### 삼성 오동작 방지 필터
 근접센서가 가려지면(폰이 엎어져 있거나 무언가 덮여 있으면) 삼성이 터치를 통째로 막고,

@@ -28,15 +28,20 @@ for a in "$@"; do
 done
 
 if [ "$PLATFORM" = "ios" ]; then
-  # 부팅된 시뮬레이터를 쓴다. 없으면 켜라고 알린다 — 아무거나 골라 켜면
-  # 로그인 안 된 시뮬레이터를 잡아서 전부 실패한다(아래 '한계' 참조).
-  DEVICE="${KEEGO_E2E_DEVICE:-$(xcrun simctl list devices booted -j 2>/dev/null \
-    | python3 -c 'import json,sys;d=json.load(sys.stdin)["devices"];print(next((x["udid"] for v in d.values() for x in v),""))')}"
-  if [ -z "$DEVICE" ]; then
-    echo "✗ 부팅된 iOS 시뮬레이터가 없다." >&2
-    echo "  xcrun simctl boot 'iPhone 17 Pro' && open -a Simulator" >&2
+  # ⚠️ **iOS 는 현재 실행할 수 없다.** 두 벽이 겹쳐 있다(2026-08-08 실측, docs/e2e.md):
+  #   · 시뮬레이터 — ML Kit 이 arm64 시뮬 슬라이스를 안 줘서 앱 자체가 안 올라간다
+  #   · 실기기     — Maestro 2.8 의 `test` 가 실기기를 목록에 넣지 않는다
+  #                  (`hierarchy` 는 잡는데 `test` 는 "not connected" 로 거절한다)
+  # 흐름은 플랫폼 중립이라 둘 중 하나가 풀리면 그대로 돈다 — 고칠 것이 없다.
+  # 그래서 여기서 **일찍, 이유를 붙여** 멈춘다. 6개가 줄줄이 실패하는 것보다 낫다.
+  if [ -z "${KEEGO_E2E_IOS_FORCE:-}" ]; then
+    echo "✗ iOS E2E 는 현재 실행 불가 — docs/e2e.md '알려진 한계' 참조." >&2
+    echo "  시뮬레이터: ML Kit(arm64 슬라이스 없음) · 실기기: Maestro test 미지원" >&2
+    echo "  ML Kit → Apple Vision OCR 로 바꾸면 시뮬레이터 경로가 열린다." >&2
+    echo "  (막힌 게 풀렸는지 직접 확인하려면 KEEGO_E2E_IOS_FORCE=1)" >&2
     exit 1
   fi
+  DEVICE="${KEEGO_E2E_DEVICE:-}"
 else
   DEVICE="${KEEGO_E2E_DEVICE:-$(adb devices | awk 'NR>1 && $2=="device"{print $1; exit}')}"
   if [ -z "$DEVICE" ]; then
@@ -47,7 +52,7 @@ else
   adb -s "$DEVICE" shell svc power stayon true >/dev/null 2>&1 || true
   trap 'adb -s "$DEVICE" shell svc power stayon false >/dev/null 2>&1 || true' EXIT
 fi
-echo "플랫폼: $PLATFORM · 기기: $DEVICE"
+echo "플랫폼: $PLATFORM · 기기: ${DEVICE:-<maestro 자동 선택>}"
 
 pass=0; fail=0; failed=()
 for f in .maestro/flows/*.yaml; do
@@ -55,7 +60,15 @@ for f in .maestro/flows/*.yaml; do
   if [ -n "$FILTER" ] && [[ "$name" != *"$FILTER"* ]]; then continue; fi
   echo
   echo "════ $name"
-  if maestro --platform "$PLATFORM" --device "$DEVICE" test "$f"; then
+  # iOS 실기기는 --device 를 받지 않는다(위 주석) — 지정이 없으면 플래그 자체를 뺀다.
+  # ⚠️ macOS 기본 bash 는 3.2 라 `set -u` 아래에서 빈 배열 확장이 "unbound variable" 로 죽는다.
+  # 배열을 쓰지 않고 두 갈래로 나눠 부른다.
+  if [ -n "$DEVICE" ]; then
+    maestro --platform "$PLATFORM" --device "$DEVICE" test "$f"
+  else
+    maestro --platform "$PLATFORM" test "$f"
+  fi
+  if [ $? -eq 0 ]; then
     pass=$((pass+1))
   else
     fail=$((fail+1)); failed+=("$name")
