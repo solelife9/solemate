@@ -78,14 +78,40 @@ describe('E2E 흐름 ↔ 소스 선택자', () => {
     expect(missing.map(m => `${m.file}: ${m.id}`)).toEqual([]);
   });
 
-  test('오늘의 회귀(뒤로가기) 흐름은 지우지 않는다', () => {
+  test('회귀(뒤로가기) 흐름은 지우지 않는다', () => {
     // 2026-08-07: 기록 상세에서 뒤로가기를 누르면 앱이 종료되던 버그. 단위 테스트
     // 3,500개가 못 잡았고 E2E 만 잡을 수 있는 종류였다. 이 흐름이 E2E 존재 이유다.
     const p = path.join(FLOW_DIR, '02-back-navigation.yaml');
     expect(fs.existsSync(p)).toBe(true);
     const src = fs.readFileSync(p, 'utf8');
-    expect(src).toContain('pressKey: Back');
+    expect(src).toContain('subflows/back.yaml');
     expect(src).toContain('run-detail-screen');
+  });
+
+  test('뒤로가기 서브플로우가 두 플랫폼을 모두 다룬다', () => {
+    // 안드로이드=하드웨어 버튼 · 아이폰=가장자리 스와이프. **물리적으로 다른 동작**이라
+    // 한쪽만 남으면 다른 플랫폼에서 흐름이 아무것도 안 하고 조용히 지나간다
+    // (Maestro 의 platform 조건은 안 맞으면 그냥 건너뛴다 — 실패하지 않는다).
+    const src = fs.readFileSync(path.join(ROOT, '.maestro', 'subflows', 'back.yaml'), 'utf8');
+    expect(src).toContain('platform: Android');
+    expect(src).toContain('pressKey: Back');
+    expect(src).toContain('platform: iOS');
+    expect(src).toContain('swipe:');
+  });
+
+  test('아이폰 스와이프 시작점이 SwipeBack 인식 범위(왼쪽 24pt) 안이다', () => {
+    // primitives.SwipeBack 은 g.x0 <= 24 일 때만 제스처를 잡는다. 시작 %를 키우면
+    // 제스처가 조용히 안 먹고 "화면이 안 닫힘"으로 애매하게 실패한다 — 그 값을 못 박는다.
+    const sub = fs.readFileSync(path.join(ROOT, '.maestro', 'subflows', 'back.yaml'), 'utf8');
+    const m = sub.match(/start:\s*"(\d+)%/);
+    expect(m).not.toBeNull();
+    const startPct = Number(m![1]);
+    // 가장 좁은 지원 기기(iPhone SE, 375pt)에서도 375 * pct/100 <= 24 여야 한다.
+    expect(375 * (startPct / 100)).toBeLessThanOrEqual(24);
+
+    // 소스 쪽 임계값이 바뀌면 위 계산의 전제가 깨진다 — 함께 감시한다.
+    const prim = fs.readFileSync(path.join(ROOT, 'primitives.tsx'), 'utf8');
+    expect(prim).toContain('g.x0 <= 24');
   });
 
   test('흐름은 비파괴다 — 삭제·저장 같은 동작을 넣지 않는다', () => {

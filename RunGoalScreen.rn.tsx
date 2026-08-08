@@ -245,7 +245,7 @@ export default function RunGoalScreen({
       <StatusBar barStyle="light-content" />
       {/* nav */}
       <View style={s.nav}>
-        <Pressable onPress={onBack} hitSlop={8} style={s.navIc} accessibilityRole="button" accessibilityLabel="뒤로"><Icon name="back" size={ri(ICON.nav)} color={T2} /></Pressable>
+        <Pressable onPress={onBack} hitSlop={8} style={s.navIc} testID="goal-back" accessibilityRole="button" accessibilityLabel="뒤로"><Icon name="back" size={ri(ICON.nav)} color={T2} /></Pressable>
         <Text style={s.navTitle}>러닝 목표</Text>
         <View style={s.navIc} />
       </View>

@@ -1828,6 +1828,7 @@ export function ScreenHeader({title, onBack, backLabel = '뒤로', right, testID
         <Pressable
           onPress={onBack}
           hitSlop={6}
+          testID="screen-back"
           accessibilityRole="button"
           accessibilityLabel={backLabel}
           style={({pressed}) => [hdrS.iconBtn, pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity}]}>

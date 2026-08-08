@@ -35,7 +35,7 @@ name: 04 신발 상세 — 열리고, 뒤로가기로 닫힌다
           timeout: 15000
 
       # 상세 → 목록. ShoesScreen 내부 state 를 백스택이 닫아야 한다.
-      - pressKey: Back
+      - runFlow: ../subflows/back.yaml
       - extendedWaitUntil:
           visible:
             id: "shoes-screen"

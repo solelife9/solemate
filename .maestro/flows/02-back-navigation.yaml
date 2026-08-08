@@ -39,7 +39,7 @@ name: 02 뒤로가기 — 상세 → 목록 → 홈 → 종료
           timeout: 15000
 
       # ① 상세 → 목록. 예전엔 여기서 앱이 죽었다.
-      - pressKey: Back
+      - runFlow: ../subflows/back.yaml
       - extendedWaitUntil:
           visible:
             id: "history-screen"
@@ -47,18 +47,35 @@ name: 02 뒤로가기 — 상세 → 목록 → 홈 → 종료
       - assertNotVisible:
           id: "run-detail-screen"
 
-# ② 홈이 아닌 탭 → 홈 탭(안드로이드 표준 동선).
-- assertVisible:
-    id: "history-screen"
-- pressKey: Back
-- extendedWaitUntil:
-    visible:
-      id: "home-screen"
-    timeout: 10000
+# ②③ 은 **안드로이드에만 있는 개념**이다. 아이폰에는 '앱을 나가는 뒤로가기'가 없고,
+# 탭에서 뒤로 미는 동작도 없다(탭 전환은 탭바로만). 그래서 플랫폼으로 가른다 —
+# 아이폰에서 억지로 돌리면 통과할 수 없는 걸 통과하라고 요구하게 된다.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      # ② 홈이 아닌 탭 → 홈 탭(안드로이드 표준 동선).
+      - assertVisible:
+          id: "history-screen"
+      - runFlow: ../subflows/back.yaml
+      - extendedWaitUntil:
+          visible:
+            id: "home-screen"
+          timeout: 10000
 
-# ③ 홈에서 한 번 더 → 앱이 백그라운드로. 여기서만 나가야 한다.
-- pressKey: Back
-- extendedWaitUntil:
-    notVisible:
-      id: "home-screen"
-    timeout: 10000
+      # ③ 홈에서 한 번 더 → 앱이 백그라운드로. 여기서만 나가야 한다.
+      - runFlow: ../subflows/back.yaml
+      - extendedWaitUntil:
+          notVisible:
+            id: "home-screen"
+          timeout: 10000
+
+# 아이폰은 여기서 끝난다 — ① 이 검사한 것(가장자리 스와이프로 상세가 닫히는가)이
+# 이 플랫폼의 전부다. 그게 iOS 사용자가 화면을 닫는 주 수단이고, 여태 회귀 방어가
+# 하나도 없던 자리다.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - assertVisible:
+          id: "history-screen"

@@ -1,0 +1,96 @@
+# 화면 안의 '‹' 뒤로 버튼 — 제스처·하드웨어 버튼과 **다른 경로**다.
+#
+# 02 는 각 플랫폼의 *주* 수단을 본다(안드로이드=하드웨어 버튼 / 아이폰=가장자리 스와이프).
+# 이 흐름은 **화면이 직접 그린 버튼**을 본다. 셋은 구현이 전부 달라서 하나가 살아 있어도
+# 다른 하나가 죽을 수 있다 — 실제로 안드로이드에서 '‹' 버튼은 멀쩡한데 하드웨어
+# 뒤로가기만 통째로 없던 게 2026-08-07 에 발견된 버그다.
+#
+# 신발 상세를 쓰는 이유: 그 헤더가 공용 프리미티브(primitives.ScreenHeader)라
+# 여기서 한 번 검사하면 같은 헤더를 쓰는 화면들이 함께 덮인다.
+appId: com.keego.app
+name: 05 뒤로 버튼 — 화면 안 '‹' 로도 닫힌다
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
+- assertNotVisible:
+    id: "dialog-host"
+
+# ── 기록 상세: 전용 뒤로 버튼 ────────────────────────────────────────────────
+- tapOn:
+    id: "tab-history"
+- extendedWaitUntil:
+    visible:
+      id: "history-screen"
+    timeout: 15000
+- runFlow:
+    when:
+      visible:
+        id: "run-card"
+    commands:
+      - tapOn:
+          id: "run-card"
+          index: 0
+      - extendedWaitUntil:
+          visible:
+            id: "run-detail-screen"
+          timeout: 15000
+      - tapOn:
+          id: "run-detail-back"
+      - extendedWaitUntil:
+          visible:
+            id: "history-screen"
+          timeout: 10000
+
+# ── 신발 상세: 공용 헤더(ScreenHeader)의 뒤로 버튼 ───────────────────────────
+- tapOn:
+    id: "tab-shoes"
+- extendedWaitUntil:
+    visible:
+      id: "shoes-screen"
+    timeout: 15000
+- runFlow:
+    when:
+      visible:
+        id: "shoe-card"
+    commands:
+      - tapOn:
+          id: "shoe-card"
+          index: 0
+      - extendedWaitUntil:
+          visible:
+            id: "shoe-detail-screen"
+          timeout: 15000
+      - tapOn:
+          id: "screen-back"
+      - extendedWaitUntil:
+          visible:
+            id: "shoes-screen"
+          timeout: 10000
+      - assertNotVisible:
+          id: "shoe-detail-screen"
+
+# ── 러닝 목표 화면: 자체 뒤로 버튼 ───────────────────────────────────────────
+- tapOn:
+    id: "tab-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000
+- tapOn:
+    id: "home-start-run"
+- extendedWaitUntil:
+    visible:
+      id: "goal-start-run"
+    timeout: 15000
+- tapOn:
+    id: "goal-back"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000
+- assertNotVisible:
+    id: "goal-start-run"
