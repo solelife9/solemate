@@ -7,10 +7,7 @@
 // ============================================================================
 import React, { useRef, useState, useEffect } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {
-  View, ScrollView, Pressable, StyleSheet, Linking, Dimensions,
-  RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated,
-} from 'react-native';
+import {View, ScrollView, StyleSheet, Linking, Dimensions, RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated} from 'react-native';
 import {Text} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -21,7 +18,7 @@ import {
   ICON,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
-import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge, BottomSheet, Rise } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge, BottomSheet, Rise, Tap} from './primitives';
 import { Unit } from './lib/units';
 import { ShoeCard as KeegoShoeCard, GhostShoeCard, Guardian, EMPTY_SHOE_LINE } from './screens/KeegoHome';
 import { shoeHealth, wearTier } from './lib/shoe';
@@ -91,7 +88,7 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
       {/* 워드마크(Helvetica)와 신발추가 버튼(Pretendard)의 폰트 메트릭 차이로 중심이 어긋나던 것 보정:
           lineHeight=fontSize 로 디센더 예약 제거 + 미세 translateY(기기 확정 필요). */}
       <KeegoWordmark size={ri(ICON.nav)} style={{ lineHeight: ri(24), transform: [{ translateY: ri(1) }] }} />
-      <Pressable
+      <Tap
         onPress={onAddShoe}
         accessibilityRole="button"
         accessibilityLabel="신발 추가"
@@ -99,7 +96,7 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
         style={({ pressed }) => [s.addBtn, pressed && s.pressed]}>
         <Text style={s.addBtnText}>신발 추가</Text>
         <Ionicons name="add" size={ri(ICON.inline)} color={T1} />
-      </Pressable>
+      </Tap>
     </View>
   );
 }
@@ -226,7 +223,7 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, weekDays = [], weekToda
 
   // 히어로 줄 — 좌: 거리/목표 숫자축(전체 탭 = 목표 시트), 우: 월~일 점 7칸.
   const hero = (
-    <Pressable
+    <Tap
       testID="home-week-goal"
       onPress={onPressGoal}
       disabled={!onPressGoal}
@@ -258,7 +255,7 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, weekDays = [], weekToda
           />
         ))}
       </View>
-    </Pressable>
+    </Tap>
   );
 
   // 이번 주 런 0 이면 0의 그리드 대신 초대 한 줄(노이즈 감사 2026-07-05) — 새 카드
@@ -291,7 +288,7 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, weekDays = [], weekToda
           </View>
         </View>
         <View style={s.insightDivider} />
-        <Pressable
+        <Tap
           style={{ flex: 1 }}
           testID="home-week-load"
           disabled={!hasLoad}
@@ -305,7 +302,7 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, weekDays = [], weekToda
             <Text style={s.loadWord} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{loadWord}</Text>
             {hasLoad && <Ionicons name={loadOpen ? 'chevron-up' : 'chevron-down'} size={ri(ICON.tag)} color={T3} />}
           </View>
-        </Pressable>
+        </Tap>
       </View>
       {loadOpen && hasLoad && (
         <View style={s.loadDetail} testID="home-week-load-detail">
@@ -348,14 +345,14 @@ function NextShoeCard({ shoe }: { shoe: Shoe }) {
             </View>
             <View style={s.shopBtns}>
               {buildShopLinks(r).map((link) => (
-                <Pressable
+                <Tap
                   key={link.shop}
                   onPress={() => open(link.url)}
                   accessibilityRole="link"
                   accessibilityLabel={`${r.brand} ${r.model} ${link.shop}에서 보기`}
                   style={({ pressed }) => [s.shopBtn, pressed && s.pressed]}>
                   <Text style={s.shopBtnTxt}>{link.shop}</Text>
-                </Pressable>
+                </Tap>
               ))}
             </View>
           </View>
@@ -514,9 +511,9 @@ function HomeScreen({
           <Rise delay={120}>
             <View style={[s.sectionRow, { marginTop: rv(4) }]}>
               <SectionTitle style={s.sectionLabelInline}>이번 주 러닝</SectionTitle>
-              <Pressable onPress={() => onTab?.(2)} hitSlop={12} accessibilityRole="button" accessibilityLabel="기록 전체 보기">
+              <Tap onPress={() => onTab?.(2)} hitSlop={12} accessibilityRole="button" accessibilityLabel="기록 전체 보기">
                 <Text style={s.sectionMore}>전체 보기 ›</Text>
-              </Pressable>
+              </Tap>
             </View>
             <View style={{ paddingHorizontal: GUTTER }}>
               {/* 원카드(B안) — 훈련 부하는 카드 3열째 셀로 흡수(구 별도 compact 카드 폐지). */}

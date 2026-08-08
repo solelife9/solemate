@@ -25,12 +25,12 @@
 // 거절('나만 보기')을 작고 흐리게 숨기지 않는다. 그렇게 하면 동의가 아니라 유도다.
 // ============================================================================
 import React from 'react';
-import {View, Pressable, StyleSheet, ScrollView} from 'react-native';
+import {View, StyleSheet, ScrollView} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {rf, rs, rv} from './lib/responsive';
 import {BG, T1, T2, T3, FONT, GUTTER, TYPE} from './theme';
-import {Button} from './primitives';
+import {Button, Tap} from './primitives';
 import SocialProfileCard from './SocialProfileCard';
 import type {PublicProfile} from './lib/publicProfile';
 
@@ -99,14 +99,14 @@ export default function SocialConsentScreen({
 
       <View style={s.footer}>
         <Button label="이대로 공개하기" size="hero" onPress={onAccept} testID="social-consent-accept" />
-        <Pressable
+        <Tap
           onPress={onDecline}
           style={s.ghost}
           accessibilityRole="button"
           accessibilityLabel="나만 보기"
           testID="social-consent-decline">
           <Text style={s.ghostTxt}>나만 보기</Text>
-        </Pressable>
+        </Tap>
         <Text style={s.fine}>언제든 마이 → 설정에서 바꿀 수 있어요</Text>
       </View>
     </View>

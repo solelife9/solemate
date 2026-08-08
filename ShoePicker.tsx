@@ -19,7 +19,7 @@ import {findShoeModel, getRecommendedLifespanKm} from './data/shoeModels';
 import {useShoeModels, useShoeBrands} from './lib/shoeCatalogStore';
 import {categoryLabelKo} from './lib/affiliate';
 import {BG, CARD, T1, T3, SEP, FONT, withAlpha, GUTTER, MOTION} from './theme';
-import {Button, Input} from './primitives';
+import {Button, Input, Tap} from './primitives';
 // 검색 0건 신호 — 카탈로그가 낡는 문제에 대한 구조적 답이다(docs/shoes-spec.md §6).
 // 사람이 눈치채기를 기다리지 않고, "사용자가 찾았는데 없던 것"을 데이터로 남긴다.
 import {logSearchMiss, requestShoe} from './services/shoes';
@@ -240,9 +240,9 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
                 />
                 {query.length > 0 && (
                   // hitSlop 12 — 글리프 한 자짜리 타깃을 실효 44pt 로 확보.
-                  <Pressable onPress={() => setQuery('')} hitSlop={12} accessibilityRole="button" accessibilityLabel="검색 지우기">
+                  <Tap onPress={() => setQuery('')} hitSlop={12} accessibilityRole="button" accessibilityLabel="검색 지우기">
                     <Text style={s.pkClear}>✕</Text>
-                  </Pressable>
+                  </Tap>
                 )}
               </View>
               <ScrollView style={s.flex1} contentContainerStyle={{paddingHorizontal: rs(18), paddingBottom: Math.max(insetBottom, 16)}} keyboardShouldPersistTaps="handled">

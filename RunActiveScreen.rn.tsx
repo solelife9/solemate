@@ -15,7 +15,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
+import {View, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions} from 'react-native';
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import type {Text as RNText} from 'react-native'; // ref 인스턴스 타입 전용
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,7 +23,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Circle, Defs, RadialGradient as SvgRadial, Stop } from 'react-native-svg';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-import { GlassEdge, Ring, ShoeGlyph, useReduceMotion } from './primitives';
+import { GlassEdge, Ring, ShoeGlyph, useReduceMotion, Tap} from './primitives';
 import { RunLiveMap } from './RunLiveMap';
 // 스크린리더 공지(iOS 보완) — accessibilityLiveRegion 은 Android 전용이라, 아래 상태
 // 배너 5종은 iOS 에서 한 마디도 안 들렸다(UX 감사 ①). lib/a11y 가 단일 소스.
@@ -560,11 +560,11 @@ export default function RunActiveScreen({
           이 잡아 러닝 모드와 동일(스왑 시 링 위치 불변). */}
       <View style={r.top}>
         {cd ? (
-          <Pressable onPress={() => cdCb.current?.onCancel?.()} hitSlop={8} testID="countdown-cancel" accessibilityRole="button" accessibilityLabel="카운트다운 취소"
+          <Tap onPress={() => cdCb.current?.onCancel?.()} hitSlop={8} testID="countdown-cancel" accessibilityRole="button" accessibilityLabel="카운트다운 취소"
             style={({ pressed }) => [r.cdCancel, pressed && { opacity: 0.8 }]}>
             <Ionicons name="chevron-back" size={ri(ICON.inline)} color={T2} />
             <Text style={r.cdCancelText}>취소</Text>
-          </Pressable>
+          </Tap>
         ) : (
           <View style={r.live} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel={`상태: ${statusLabel ?? (paused ? '일시정지' : '러닝 중')}`}>
             <View style={[r.liveDot, met && { backgroundColor: GOOD }]} />
@@ -575,14 +575,14 @@ export default function RunActiveScreen({
           {/* 음성 토글(심사 #10) — 일시정지 화면에만 나타나는 조용한 스피커 아이콘.
               설정은 '다음 런부터'라 러닝 중 끌 방법이 없던 갭을 이 런 한정으로 메운다. */}
           {uiPaused && !cd && !!onToggleVoice && (
-            <Pressable onPress={() => { tap(); onToggleVoice(); }} hitSlop={10}
+            <Tap onPress={() => { tap(); onToggleVoice(); }} hitSlop={10}
               accessibilityRole="button"
               accessibilityLabel={voiceMuted ? '음성 안내 켜기' : '음성 안내 끄기'}
               accessibilityState={{ selected: !voiceMuted }}
               style={({ pressed }) => [r.voiceBtn, pressed && { opacity: 0.8 }]}
               testID="voice-toggle">
               <Ionicons name={voiceMuted ? 'volume-mute-outline' : 'volume-high-outline'} size={ri(ICON.inline)} color={voiceMuted ? T3 : T1} />
-            </Pressable>
+            </Tap>
           )}
           <View style={r.shoeChip} accessibilityRole="text" accessibilityLabel={`신고 있는 신발 ${shoeLabel}`}><ShoeGlyph color={T3} size={ri(ICON.inline)} /><Text style={r.shoeText}>{shoeLabel}</Text></View>
         </View>
@@ -609,10 +609,10 @@ export default function RunActiveScreen({
       {/* 권한 회수 복구 배너 — 위치 권한이 꺼지면 탭해서 설정에서 다시 허용.
           assertive live-region: 스크린리더가 즉시 끼어들어 '거리 기록 멈춤'을 알린다. */}
       {permLost && (
-        <Pressable onPress={onOpenSettings} accessibilityRole="button" accessibilityLiveRegion="assertive" accessibilityLabel="위치 권한이 꺼져 거리 기록을 멈췄어요. 눌러서 다시 허용하세요." style={r.permBanner}>
+        <Tap onPress={onOpenSettings} accessibilityRole="button" accessibilityLiveRegion="assertive" accessibilityLabel="위치 권한이 꺼져 거리 기록을 멈췄어요. 눌러서 다시 허용하세요." style={r.permBanner}>
           <Ionicons name="alert-circle" size={ri(ICON.inline)} color={DANGER} />
           <Text style={r.permBannerText}>위치 권한이 꺼져 거리 기록을 멈췄어요. 눌러서 다시 허용하세요.</Text>
-        </Pressable>
+        </Tap>
       )}
 
       {/* 백업 실패 경고(2026-07-26 생명주기 감사) — 스냅샷 저장이 연속 실패하면 러닝은
@@ -645,7 +645,7 @@ export default function RunActiveScreen({
           꽉 채운다(2026-07-12 사용자 확정: 카드 폐지, km 위까지 여백 없이). flex:1 이 상단을
           전부 차지하고 km 히어로가 바로 아래 붙는다. 탭하면 전체화면 인터랙티브 지도(mapFull). */}
       {mapShown && (
-        <Pressable
+        <Tap
           onPress={() => setMapFull(true)}
           accessibilityRole="button"
           accessibilityLabel="지도 전체화면으로 보기"
@@ -668,7 +668,7 @@ export default function RunActiveScreen({
               <Ionicons name="expand" size={ri(ICON.inline)} color={T1} />
             </View>
           </Animated.View>
-        </Pressable>
+        </Tap>
       )}
 
       {/* ring — 러닝 중에만(사용자 설계: 달릴 땐 링, 일시정지엔 링 없이 지도+하단 지표).
@@ -854,7 +854,7 @@ export default function RunActiveScreen({
           주력 + 야외 보정용. 마지막 랩 되돌리기(-1)로 오검지/중복을 정리한다. */}
       {track && !paused && (
         <View style={r.lapBar}>
-          <Pressable onPress={() => onLap?.()} accessibilityRole="button"
+          <Tap onPress={() => onLap?.()} accessibilityRole="button"
             accessibilityLabel={`랩 기록, 현재 ${track.lapCount}바퀴`}
             style={({ pressed }) => [r.lapBtn, pressed && { opacity: 0.85 }]}>
             {/* 버튼 우측 카운트 제거(간결화 J1, 2026-07-26) — 링 한가운데 큰 숫자가 이미
@@ -862,12 +862,12 @@ export default function RunActiveScreen({
                 가 생긴다. 버튼은 행동만, 숫자는 링만. (음성 라벨엔 현재 바퀴 수 유지.) */}
             <Ionicons name="flag-outline" size={ri(ICON.action)} color={T1} />
             <Text style={r.lapBtnText}>랩 기록</Text>
-          </Pressable>
+          </Tap>
           {track.lapCount > 0 && (
-            <Pressable onPress={onUndoLap} accessibilityRole="button" accessibilityLabel="마지막 랩 되돌리기"
+            <Tap onPress={onUndoLap} accessibilityRole="button" accessibilityLabel="마지막 랩 되돌리기"
               hitSlop={8} style={({ pressed }) => [r.lapUndo, pressed && { opacity: 0.7 }]}>
               <Ionicons name="arrow-undo" size={ri(ICON.inline)} color={T3} />
-            </Pressable>
+            </Tap>
           )}
         </View>
       )}
@@ -889,12 +889,12 @@ export default function RunActiveScreen({
           <View style={{ alignItems: 'center', gap: rv(8) }}>
             {/* accessibilityHint 신설(UX 감사 ⑮) — 종료 버튼엔 있는데 여기만 없었다.
                 일시정지가 무엇을 멈추는지(기록) 스크린리더가 말해 준다. */}
-            <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지"
+            <Tap onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지"
               accessibilityHint="거리·시간 기록을 잠시 멈춥니다"
               style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}>
               <Ionicons name="pause" size={ri(ICON.hero)} color={T1} />
               <GlassEdge glints={false} fade={false} radius={rs(44)} />
-            </Pressable>
+            </Tap>
             <Text style={r.ctrlHint}>일시정지</Text>
           </View>
         ) : (
@@ -908,7 +908,7 @@ export default function RunActiveScreen({
                     strokeLinecap="round" strokeDasharray={STOP_CIRC} strokeDashoffset={holdOffset}
                     transform={`rotate(-90 ${STOP_D / 2} ${STOP_D / 2})`} />
                 </Svg>
-                <Pressable
+                <Tap
                   onPressIn={startHold} onPressOut={cancelHold}
                   // 확정은 홀드 링 완료가 담당한다(위 주석). onLongPress 는 백업 경로 —
                   // 먼저 온 쪽만 1회 발화(fireStopOnce 가드).
@@ -918,15 +918,15 @@ export default function RunActiveScreen({
                   style={({ pressed }) => [r.cStop, pressed && { backgroundColor: withAlpha(DANGER, 0.18) }]}>
                   <Ionicons name="stop" size={ri(ICON.feature)} color={DANGER} />
                   <GlassEdge glints={false} fade={false} radius={rs(38)} />
-                </Pressable>
+                </Tap>
               </View>
               <Text style={r.ctrlHint}>길게 눌러 종료</Text>
             </View>
             <View style={{ alignItems: 'center', gap: rv(8) }}>
-              <Pressable onPress={resumeRun} accessibilityRole="button" accessibilityLabel="재개" style={({ pressed }) => [r.cResume, pressed && { opacity: 0.85 }]}>
+              <Tap onPress={resumeRun} accessibilityRole="button" accessibilityLabel="재개" style={({ pressed }) => [r.cResume, pressed && { opacity: 0.85 }]}>
                 <Ionicons name="play" size={ri(32)} color={T1} />
                 <GlassEdge glints={false} fade={false} radius={rs(38)} />
-              </Pressable>
+              </Tap>
               <Text style={r.ctrlHint}>재개</Text>
             </View>
           </>
@@ -938,12 +938,12 @@ export default function RunActiveScreen({
 
       {/* 수동 재개 3·2·1 카운트다운(심사 #11) — 딤 스크림 위 큰 숫자, 탭하면 취소(일시정지 유지). */}
       {resumeCd > 0 && (
-        <Pressable style={r.resumeCdWrap} onPress={() => { tap(); clearResumeCd(); }}
+        <Tap style={r.resumeCdWrap} onPress={() => { tap(); clearResumeCd(); }}
           accessibilityRole="button" accessibilityLabel={`${resumeCd}초 후 재개, 탭하면 취소`}
           testID="resume-countdown">
           <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={r.resumeCdNum} accessibilityLiveRegion="assertive">{resumeCd}</Text>
           <Text style={r.resumeCdHint}>곧 다시 달려요 — 탭하면 취소</Text>
-        </Pressable>
+        </Tap>
       )}
 
       {/* 전체화면 인터랙티브 지도 — 일시정지 지도 패널을 탭하면 열린다. 팬·줌 가능, 닫기 버튼.
@@ -954,22 +954,22 @@ export default function RunActiveScreen({
           {/* 하단 중앙 버튼 행 — 구석이 아니라 가운데·크게·살짝 위로(잘 눌리게). 좌=내 위치로
               이동, 우=닫기(일시정지 화면 복귀). 라벨 병기로 무엇인지 바로 읽힘. */}
           <View style={[r.mapBtnRow, { bottom: insets.bottom + 84 }]} pointerEvents="box-none">
-            <Pressable
+            <Tap
               onPress={() => setRecenter(x => x + 1)}
               accessibilityRole="button"
               accessibilityLabel="내 위치로 이동"
               hitSlop={12}
               style={({ pressed }) => [r.mapBtn, pressed && { opacity: 0.8 }]}>
               <Ionicons name="locate" size={ri(ICON.feature)} color={T1} />
-            </Pressable>
-            <Pressable
+            </Tap>
+            <Tap
               onPress={() => setMapFull(false)}
               accessibilityRole="button"
               accessibilityLabel="지도 닫기"
               hitSlop={12}
               style={({ pressed }) => [r.mapBtn, pressed && { opacity: 0.8 }]}>
               <Ionicons name="close" size={ri(ICON.feature)} color={T1} />
-            </Pressable>
+            </Tap>
           </View>
         </View>
       )}

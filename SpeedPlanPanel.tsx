@@ -19,7 +19,7 @@ import {
   LEADING, MOTION, TOUCH_TARGET, withAlpha,
   ICON,
 } from './theme';
-import {SegmentedControl, SwipeBackExclude, Stepper, GlassEdge, useReduceMotion} from './primitives';
+import {SegmentedControl, SwipeBackExclude, Stepper, GlassEdge, useReduceMotion, Tap} from './primitives';
 import {buildPacePlan, clampPace, fmtPaceSec, PaceStrategy} from './lib/pacePlan';
 
 const KM_MIN = 1, KM_MAX = 42;
@@ -156,11 +156,11 @@ export default function SpeedPlanPanel({
         {DIST_PRESETS.map(p => {
           const on = Math.abs(p.v - km) < 0.05;
           return (
-            <Pressable key={p.label} onPress={() => pickDist(p.v)} hitSlop={6}
+            <Tap key={p.label} onPress={() => pickDist(p.v)} hitSlop={6}
               style={[s.preset, on && s.presetOn]} accessibilityRole="button"
               accessibilityState={{selected: on}} accessibilityLabel={`${p.label} 목표 선택`}>
               <Text style={[s.presetText, on && s.presetTextOn]}>{p.label}</Text>
-            </Pressable>
+            </Tap>
           );
         })}
       </View>
@@ -180,13 +180,13 @@ export default function SpeedPlanPanel({
       </Text>
 
       {/* km별 미세조정(고급) — 접힌 줄. 펼치면 기존 km 칩 + ± 스테퍼 그대로. */}
-      <Pressable
+      <Tap
         testID="goal-perkm-row" onPress={toggleTune} style={s.foldRow}
         accessibilityRole="button" accessibilityState={{expanded: tuneOpen}}
         accessibilityLabel="km별 목표 조정" accessibilityHint="눌러서 펼치기 또는 접기">
         <Text style={s.foldLabel}>km별 목표 조정</Text>
         <Text style={[s.foldChevron, tuneOpen && s.foldChevronOpen]}>›</Text>
-      </Pressable>
+      </Tap>
       {tuneOpen && (
         <>
           {/* km별 목표 칩 — 탭해서 선택 후 ±5초 미세조정. SwipeBackExclude: 가로 칩
@@ -196,12 +196,12 @@ export default function SpeedPlanPanel({
             {plan.map((p, i) => {
               const on = i === selIdx;
               return (
-                <Pressable key={i} onPress={() => setSelIdx(i)} accessibilityRole="button"
+                <Tap key={i} onPress={() => setSelIdx(i)} accessibilityRole="button"
                   accessibilityState={{selected: on}} accessibilityLabel={`${i + 1}킬로미터 목표 ${fmtPaceSec(p)}`}
                   testID={`plan-km-${i + 1}`} style={[s.kmChip, on && s.kmChipOn]}>
                   <Text style={[s.kmChipNum, on && s.kmChipNumOn]}>{i + 1}km</Text>
                   <Text style={[s.kmChipPace, on && s.kmChipPaceOn]}>{fmtPaceSec(p)}</Text>
-                </Pressable>
+                </Tap>
               );
             })}
           </ScrollView>

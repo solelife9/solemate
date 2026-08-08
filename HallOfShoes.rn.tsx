@@ -48,8 +48,7 @@ import {
   GhostBar,
   GhostThumb,
   ShoeGlyph,
-  Button,
-} from './primitives';
+  Button, Tap} from './primitives';
 import RetirementCard from './RetirementCard';
 import {buildRetirementCardModel, highlightLabel} from './lib/progression/retirementCard';
 import {shareRetirementCard} from './lib/progression/retirementShare';
@@ -118,9 +117,9 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
     <View style={[st.screen, {paddingTop: insets.top}]}>
       <AmbientBackdrop />
       <View style={st.nav}>
-        <Pressable style={st.iconBtn} onPress={onBack} hitSlop={10} accessibilityRole="button" accessibilityLabel="뒤로" testID="hall-back">
+        <Tap style={st.iconBtn} onPress={onBack} hitSlop={10} accessibilityRole="button" accessibilityLabel="뒤로" testID="hall-back">
           <Ionicons name="chevron-back" size={ri(ICON.action)} color={T1} />
-        </Pressable>
+        </Tap>
         <Text style={st.navTitle}>러닝화 아카이브</Text>
         <View style={{width: rs(36)}} />
       </View>
@@ -259,12 +258,12 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
   return (
     <View style={st.certScreen}>
       <AmbientBackdrop />
-      <Pressable style={[st.certX, {left: 20, top: insets.top + 6}]} onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기">
+      <Tap style={[st.certX, {left: 20, top: insets.top + 6}]} onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기">
         <Ionicons name="close" size={ri(ICON.inline)} color={T2} />
-      </Pressable>
-      <Pressable style={[st.certX, {right: 20, top: insets.top + 6}]} onPress={onShare} hitSlop={10} accessibilityRole="button" accessibilityLabel="인증서 공유" testID="cert-share">
+      </Tap>
+      <Tap style={[st.certX, {right: 20, top: insets.top + 6}]} onPress={onShare} hitSlop={10} accessibilityRole="button" accessibilityLabel="인증서 공유" testID="cert-share">
         <Ionicons name="share-outline" size={ri(ICON.inline)} color={T1} />
-      </Pressable>
+      </Tap>
 
       <ScrollView contentContainerStyle={[st.certContent, {paddingTop: insets.top + 56, paddingBottom: insets.bottom + 40}]} showsVerticalScrollIndicator={false}>
         {/* 마스트헤드: RUNNER 좌상 · RETIRED 연도 칩 우상(골드 소액센트) */}

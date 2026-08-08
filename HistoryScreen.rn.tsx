@@ -4,7 +4,7 @@
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, ScrollView, FlatList, Pressable, StyleSheet, KeyboardAvoidingView, Platform, RefreshControl, Image } from 'react-native';
+import {View, ScrollView, FlatList, StyleSheet, KeyboardAvoidingView, Platform, RefreshControl, Image} from 'react-native';
 import { showDialog } from './lib/dialog';
 import { showToast } from './lib/toast';
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
@@ -17,7 +17,7 @@ import {
   BAR,
   ICON, NUMERIC} from './theme';
 // 기간 탭 스트립 = SegmentedControl(md), 러닝 상세 2×3 메트릭 = StatGrid(sm) 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar, Rise, GlassEdge, BottomSheet, Input } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar, Rise, GlassEdge, BottomSheet, Input, Tap} from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
@@ -110,7 +110,7 @@ export function PeriodChartView({ data, labels, unit }: { data: number[]; labels
             const on = sel === i;
             const dim = sel != null && !on;
             return (
-              <Pressable key={i} style={s.chartBarSlot} onPress={() => setSel(on ? null : i)} hitSlop={4} accessibilityRole="button" accessibilityLabel={`${labels[i]} ${fmtTick(v)}${unit}`}>
+              <Tap key={i} style={s.chartBarSlot} onPress={() => setSel(on ? null : i)} hitSlop={4} accessibilityRole="button" accessibilityLabel={`${labels[i]} ${fmtTick(v)}${unit}`}>
                 {/* 값을 막대 위에 상시 표기 — 주·월·년 모두(년도 12칸도 표시). 둥근 막대라
                     몇 km 인지 헷갈리던 지적 해소. 촘촘하면 폰트만 줄여 겹침을 최소화. */}
                 {v > 0 && (
@@ -120,7 +120,7 @@ export function PeriodChartView({ data, labels, unit }: { data: number[]; labels
                 )}
                 {/* 막대: 윗모서리만 라운드(직사각형 — 값 읽기 쉽게). 아래는 각지게. */}
                 <View style={[s.chartBar, { maxWidth: dense ? 12 : 18, height: bh, backgroundColor: dim ? withAlpha(BRAND, 0.28) : BRAND }]} />
-              </Pressable>
+              </Tap>
             );
           })}
         </View>
@@ -220,7 +220,7 @@ export function RunForm({
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <AmbientBackdrop />
       <View style={[s.nav, s.navRow]}>
-        <Pressable onPress={onCancel} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(ICON.action)} color={T1} /></Pressable>
+        <Tap onPress={onCancel} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(ICON.action)} color={T1} /></Tap>
         <Text style={s.formTitle}>{editing ? '러닝 편집' : '수동 기록 추가'}</Text>
         <View style={s.iconBtn} />
       </View>
@@ -514,20 +514,20 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
     <View style={[s.screen, { paddingTop: insets.top }]} testID="run-detail-screen">
       <AmbientBackdrop />
       <View style={[s.nav, s.navRow]}>
-        <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn} testID="run-detail-back"><Ionicons name="chevron-back" size={ri(ICON.action)} color={T1} /></Pressable>
+        <Tap onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn} testID="run-detail-back"><Ionicons name="chevron-back" size={ri(ICON.action)} color={T1} /></Tap>
         <View style={s.navActions}>
-          <Pressable onPress={onShareCard} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유" testID="detail-share">
+          <Tap onPress={onShareCard} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유" testID="detail-share">
             <Ionicons name="share-outline" size={ri(ICON.action)} color={ACCENT} />
-          </Pressable>
+          </Tap>
           {!!onEdit && !!run.id && (
-            <Pressable onPress={() => onEdit(run)} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="편집" testID="detail-edit">
+            <Tap onPress={() => onEdit(run)} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="편집" testID="detail-edit">
               <Ionicons name="create-outline" size={ri(ICON.action)} color={ACCENT} />
-            </Pressable>
+            </Tap>
           )}
           {!!onDelete && (
-            <Pressable onPress={confirmDelete} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="삭제">
+            <Tap onPress={confirmDelete} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="삭제">
               <Ionicons name="trash-outline" size={ri(ICON.action)} color={DANGER} />
-            </Pressable>
+            </Tap>
           )}
         </View>
       </View>
@@ -632,7 +632,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
               {/* 헤더 탭 = 곡선 접기/펼치기(심사 #19, 2026-07-22) — 곡선과 존 막대가 한
                   데이터의 이중 표현이라, 밀도를 스스로 고를 수 있게 곡선을 접이식으로.
                   기본 펼침 + 선택 영속(다음 상세에서도 내 선택 유지). 존 막대는 항상 표시. */}
-              <Pressable
+              <Tap
                 onPress={() => { const v = !hrCurveOpen; setHrCurveOpen(v); void AsyncStorage.setItem(HR_CURVE_OPEN_KEY, v ? '1' : '0').catch(() => {}); }}
                 accessibilityRole="button"
                 accessibilityLabel={hrCurveOpen ? '심박 그래프 접기' : '심박 그래프 펼치기'}
@@ -647,7 +647,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
                 <Text style={s.labelT2}>
                   평균 <Text style={s.t1Bold}>{hr.avg}</Text> · 최대 <Text style={s.t1Bold}>{hr.max}</Text> bpm
                 </Text>
-              </Pressable>
+              </Tap>
               {/* 심박 곡선(#7) — 존 색 밴드 위 흰 라인. 페이스 곡선과 달리 밴드라는 절대
                   기준이 배경에 깔려 '어느 존인가'가 색으로 즉답된다. hrTrack 2점 이상일 때만. */}
               {hrCurveOpen && hrTrack.length >= 2 && (() => {
@@ -792,7 +792,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
         {/* 데이터 내보내기 — 조용한 하단 진입점. 경로가 있는(GPS) 런에서만. 감정적 공유(위
             공유 버튼)와 분리해, 가민/스트라바로 코스를 옮기려는 사람만 찾아 쓴다. */}
         {route.length >= 2 && (
-          <Pressable
+          <Tap
             onPress={exportRouteGpx}
             accessibilityRole="button"
             accessibilityLabel="GPX 파일로 내보내기, 다른 앱으로 코스 옮기기"
@@ -800,7 +800,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
             <Ionicons name="download-outline" size={ri(ICON.inline)} color={T3} />
             <Text style={s.gpxTxt}>GPX 파일로 내보내기</Text>
             <Text style={s.gpxHint}>다른 앱으로 코스 옮기기</Text>
-          </Pressable>
+          </Tap>
         )}
       </ScrollView>
       {/* 공유 카드 선택기 — 공유 버튼으로 열린다(여러 템플릿·포맷·배경·크기). */}
@@ -865,7 +865,7 @@ function DrumColumn({ items, selectedIndex, onChange }: {
           // 조정 가능 역할(UX 감사 ⑮) — 스크롤 스냅으로 값을 고르는 컨트롤이라
           // 스크린리더에는 '조정 가능'으로 서야 위/아래 스와이프로 값을 바꿀 수 있다.
           // (같은 앱의 온보딩 슬라이더는 이미 adjustable + accessibilityActions 를 쓴다.)
-          <Pressable onPress={() => select(index)}
+          <Tap onPress={() => select(index)}
             accessibilityRole={index === active ? 'adjustable' : 'button'}
             accessibilityLabel={String(item)}
             accessibilityState={index === active ? { selected: true } : undefined}
@@ -880,7 +880,7 @@ function DrumColumn({ items, selectedIndex, onChange }: {
               fontWeight: index === active ? '700' : '400',
               color: index === active ? T1 : T3,
             }]}>{item}</Text>
-          </Pressable>
+          </Tap>
         )}
       />
     </View>
@@ -893,7 +893,7 @@ function DrumColumn({ items, selectedIndex, onChange }: {
 export function RunCard({ run, shoes, onPress, unit, hideShoe }: { run: Run; shoes: Shoe[]; onPress?: () => void; unit: Unit; /** 신발 상세용 — 신발명 대신 날짜를 제목 자리에(반복 노이즈 제거). */ hideShoe?: boolean }) {
   const shoe = shoes[run.shoe];
   return (
-    <Pressable onPress={onPress} disabled={!onPress} testID="run-card" accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && !!onPress && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
+    <Tap onPress={onPress} disabled={!onPress} testID="run-card" accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && !!onPress && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
       <GlassEdge glints={false} radius={RADIUS.lg} />
       <View style={s.runCardTop}>
         <View style={s.flex1min0}>
@@ -909,7 +909,7 @@ export function RunCard({ run, shoes, onPress, unit, hideShoe }: { run: Run; sho
         <View style={s.runCardMetric}><Text style={s.runV}>{run.pace}</Text><Text style={s.runML}>평균 페이스</Text></View>
         <View style={s.runCardMetric}><Text style={s.runV}>{run.time}</Text><Text style={s.runML}>시간</Text></View>
       </View>
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -1135,9 +1135,9 @@ function HistoryScreen({
         <Text style={s.title}>기록</Text>
         {/* 수동 기록 추가 — 앱 없이/기록 못한 러닝을 직접 넣는 진입점(라이브 GPS 외 보조 경로). */}
         {!!onAddRun && (
-          <Pressable onPress={() => setForm({ mode: 'add' })} hitSlop={8} accessibilityRole="button" accessibilityLabel="기록 직접 추가" style={s.iconBtn}>
+          <Tap onPress={() => setForm({ mode: 'add' })} hitSlop={8} accessibilityRole="button" accessibilityLabel="기록 직접 추가" style={s.iconBtn}>
             <Ionicons name="add" size={ri(ICON.nav)} color={ACCENT} />
-          </Pressable>
+          </Tap>
         )}
       </View>
       {/* recent runs 리스트는 FlatList 로 가상화한다(런이 수백 건이어도 보이는 행만 마운트).
@@ -1156,18 +1156,18 @@ function HistoryScreen({
           hiddenCount > 0 ? (
             /* 불투명 CARD+수동 보더 → 유리 표면(GLASS.fill+GlassEdge) — 형제 카드·CTA 와
                같은 재질 문법으로 수렴(검수 MED, 2026-07-16). */
-            <Pressable onPress={() => setShowAllRuns(true)} accessibilityRole="button" accessibilityLabel={`모든 기록 보기, ${displayRuns.length}개`}
+            <Tap onPress={() => setShowAllRuns(true)} accessibilityRole="button" accessibilityLabel={`모든 기록 보기, ${displayRuns.length}개`}
               style={({ pressed }) => [{ marginTop: rv(4), paddingVertical: rv(14), borderRadius: RADIUS.md, backgroundColor: GLASS.fill, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(6), overflow: 'hidden' }, pressed && { backgroundColor: GLASS.fillActive }]}>
               <GlassEdge glints={false} radius={RADIUS.md} />
               <Text style={s.labelT1w6}>모든 기록 {displayRuns.length}개 보기</Text>
               <Ionicons name="chevron-down" size={ri(ICON.inline)} color={T3} />
-            </Pressable>
+            </Tap>
           ) : showAllRuns && displayRuns.length > RECENT_LIMIT ? (
-            <Pressable onPress={() => setShowAllRuns(false)} accessibilityRole="button" accessibilityLabel="접기"
+            <Tap onPress={() => setShowAllRuns(false)} accessibilityRole="button" accessibilityLabel="접기"
               style={s.collapseRow}>
               <Text style={s.labelT3w6}>접기</Text>
               <Ionicons name="chevron-up" size={ri(ICON.inline)} color={T3} />
-            </Pressable>
+            </Tap>
           ) : null
         }
         contentContainerStyle={{ padding: rs(14), paddingHorizontal: GUTTER, paddingBottom: TABBAR_CLEARANCE, gap: rv(10) }}
@@ -1181,11 +1181,11 @@ function HistoryScreen({
             />
             {period !== '전체'
               ? (
-                <Pressable onPress={openPicker} accessibilityRole="button"
+                <Tap onPress={openPicker} accessibilityRole="button"
                   style={s.periodBtn}>
                   <Text style={s.periodTitle}>{periodTitle}</Text>
                   <Ionicons name="chevron-down" size={ri(ICON.tag)} color={T3} />
-                </Pressable>
+                </Tap>
               ) : (
                 <View style={s.periodStatic}>
                   <Text style={s.periodTitle}>
@@ -1256,19 +1256,19 @@ function HistoryScreen({
                   **첫 러닝으로 가는 길은 주지 않았다.** 러닝은 홈에서 신발을 골라 시작하므로
                   홈으로 보낸다(런 진입점은 홈 카드와 신발 상세 둘뿐). 주 동작이므로 먼저. */}
               {!!onTab && (
-                <Pressable onPress={() => onTab(0)} accessibilityRole="button" accessibilityLabel="홈에서 러닝 시작하기" hitSlop={6}
+                <Tap onPress={() => onTab(0)} accessibilityRole="button" accessibilityLabel="홈에서 러닝 시작하기" hitSlop={6}
                   testID="history-empty-go-run"
                   style={({ pressed }) => [s.emptyActionPill, pressed && s.pressedPill]}>
                   <Ionicons name="play" size={ri(ICON.inline)} color={ACCENT} />
                   <Text style={s.labelT1w6}>러닝 시작하기</Text>
-                </Pressable>
+                </Tap>
               )}
               {!!onAddRun && (
-                <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가" hitSlop={6}
+                <Tap onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가" hitSlop={6}
                   style={({ pressed }) => [s.emptyActionPill, s.emptyActionPillNext, pressed && s.pressedPill]}>
                   <Ionicons name="add" size={ri(ICON.inline)} color={ACCENT} />
                   <Text style={s.labelT1w6}>기록 추가</Text>
-                </Pressable>
+                </Tap>
               )}
             </View>
           ) : (

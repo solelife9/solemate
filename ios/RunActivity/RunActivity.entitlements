@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  위젯 확장(RunActivityExtension)의 엔타이틀먼트.
+
+  왜 필요한가(2026-08-08): 이 타깃에는 엔타이틀먼트가 **아예 없었다.** 앱(SoleMate)과
+  워치에만 App Group 이 등록돼 있었고, 그래서 위젯 안에서
+  `UserDefaults(suiteName: "group.com.keego.app")` 가 늘 nil 을 돌려줬다.
+  앱이 활성 신발을 아무리 써 넣어도 위젯은 한 글자도 못 읽었다는 뜻이다.
+
+  App Group 이름은 앱 쪽(SoleMate.entitlements)과 **정확히 같아야** 한다 — 한 글자만
+  달라도 두 프로세스가 서로 다른 저장소를 보고, 증상은 '조용히 아무것도 안 보임'이라
+  원인을 찾기 어렵다.
+
+  쓰는 쪽: ios/SoleMate/WatchSessionModule.swift `updateWidgetShoe`
+  읽는 쪽: ios/RunActivity/RunActivityBundle.swift `KeegoShoe.load()`
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.keego.app</string>
+	</array>
+</dict>
+</plist>

@@ -55,18 +55,37 @@ struct KeegoShoe {
         return [Color(hex: 0x79B7F6), Color(hex: 0x3A86D8)]                // 최상(파랑)
     }
 
-    static let sample = KeegoShoe(name: "Pegasus 41", brand: "Nike", category: "데일리", usedKm: 118, maxKm: 650)
+    /// **위젯 갤러리 전용** 미리보기. 시스템이 리댁션(회색 처리)해 보여주는 자리이며,
+    /// Apple 이 대표 샘플을 쓰라고 안내하는 곳이다. `placeholder(in:)` 에서만 쓴다.
+    ///
+    /// ⚠️ **실제 타임라인에는 절대 쓰지 않는다.** 예전엔 `load()` 가 데이터를 못 읽으면
+    /// 이 값을 돌려줬고, 그 결과 **모든 사용자의 홈 화면에 "Nike Pegasus 41 · 118/650km"
+    /// 라는 남의 신발이 진짜인 것처럼 떴다**(2026-08-08 감사). App Group 이 위젯 타깃에
+    /// 등록돼 있지 않아 suite 가 늘 nil 이었기 때문에 100% 재현됐다.
+    /// MISSION.md 의 Truth only 정면 위반이고, 안드로이드 위젯은 같은 상황에서
+    /// "러닝화를 등록해 주세요"를 띄운다(ShoeWidgetProvider.kt — "지어내지 않는다").
+    /// 브랜드·모델은 **비운다.** 리댁션이 풀린 채 보이더라도 없는 신발을 주장하지 않게.
+    static let sample = KeegoShoe(name: "러닝화", brand: "", category: "", usedKm: 120, maxKm: 600)
 
-    static func load() -> KeegoShoe {
+    /// 공유 저장소에서 활성 신발을 읽는다. **없으면 nil** — 지어내지 않는다.
+    ///
+    /// nil 이 되는 경우가 셋이고 전부 "보여줄 진실이 없다"로 같다:
+    ///   · App Group 이 안 열린다(위젯 타깃 미등록)
+    ///   · 앱을 한 번도 안 열어 아직 아무것도 안 썼다
+    ///   · 등록된 러닝화가 없다
+    /// 수명(maxKm)이 0 이면 링을 그릴 수 없으므로 그것도 데이터 없음으로 본다.
+    static func load() -> KeegoShoe? {
         guard let d = UserDefaults(suiteName: KeegoWidgetShared.appGroup),
               let name = d.string(forKey: KeegoWidgetShared.kName), !name.isEmpty
-        else { return .sample }
+        else { return nil }
+        let maxKm = d.integer(forKey: KeegoWidgetShared.kMax)
+        guard maxKm > 0 else { return nil }
         return KeegoShoe(
             name: name,
             brand: d.string(forKey: KeegoWidgetShared.kBrand) ?? "",
             category: d.string(forKey: KeegoWidgetShared.kCategory) ?? "",
             usedKm: d.integer(forKey: KeegoWidgetShared.kUsed),
-            maxKm: d.integer(forKey: KeegoWidgetShared.kMax)
+            maxKm: maxKm
         )
     }
 }
@@ -74,7 +93,8 @@ struct KeegoShoe {
 // ── 타임라인(정적 — 신발 데이터는 앱이 갱신 시 reloadTimelines 로 밀어준다) ──────────
 struct KeegoEntry: TimelineEntry {
     let date: Date
-    let shoe: KeegoShoe
+    /// nil = 보여줄 신발이 없다(빈 상태를 그린다). 샘플로 메우지 않는다.
+    let shoe: KeegoShoe?
 }
 
 struct KeegoProvider: TimelineProvider {
@@ -167,14 +187,43 @@ struct KeegoMediumView: View {
     }
 }
 
+/// 보여줄 신발이 없을 때. **안드로이드 위젯과 같은 문구·같은 태도**
+/// (ShoeWidgetProvider.kt: "아직 신발이 없거나 앱을 한 번도 안 열었다 — 지어내지 않는다").
+/// 링은 비어 있는 상태로 그려 위젯의 형태는 유지한다 — 탭하면 앱이 열려 등록할 수 있다.
+struct KeegoEmptyView: View {
+    var compact: Bool = false
+    var body: some View {
+        VStack(spacing: compact ? 10 : 12) {
+            ZStack {
+                Circle().stroke(Color.white.opacity(0.10), lineWidth: 9)
+                Image(systemName: "plus")
+                    .font(.system(size: compact ? 22 : 26, weight: .heavy))
+                    .foregroundColor(Color(hex: 0x9C9CA3))
+            }
+            .frame(width: compact ? 100 : 114, height: compact ? 100 : 114)
+            Text("러닝화를 등록해 주세요")
+                .font(.system(size: compact ? 12 : 14, weight: .semibold))
+                .foregroundColor(Color(hex: 0x9C9CA3))
+                .lineLimit(2).multilineTextAlignment(.center).minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(14)
+    }
+}
+
 struct KeegoShoeWidgetEntryView: View {
     @Environment(\.widgetFamily) var family
     let entry: KeegoEntry
     var body: some View {
         Group {
-            switch family {
-            case .systemMedium: KeegoMediumView(shoe: entry.shoe)
-            default: KeegoSmallView(shoe: entry.shoe)
+            // 신발이 없으면 **빈 상태**다. 샘플로 메우면 남의 신발이 내 홈 화면에 뜬다.
+            if let shoe = entry.shoe {
+                switch family {
+                case .systemMedium: KeegoMediumView(shoe: shoe)
+                default: KeegoSmallView(shoe: shoe)
+                }
+            } else {
+                KeegoEmptyView(compact: family != .systemMedium)
             }
         }
         .containerBackgroundCompat()

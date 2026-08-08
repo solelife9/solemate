@@ -11,7 +11,7 @@ import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD, CARD_HI, ACCENT, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE, HERO, GLASS, RADIUS, GUTTER, MOTION, ICON} from './theme';
-import {SwipeBack, ScreenHeader, EmptyGhostHeader, GhostStrong, GhostBar, GlassEdge} from './primitives';
+import {SwipeBack, ScreenHeader, EmptyGhostHeader, GhostStrong, GhostBar, GlassEdge, Tap} from './primitives';
 import {fmtTime} from './lib/format';
 import {RACE_DISTANCE_LABEL} from './data/raceEvents';
 import {medalTimeSec, medalArchiveStats, type Medal} from './lib/medals';
@@ -74,9 +74,9 @@ export default function MedalArchiveScreen({
           onBack={onBack}
           style={m.header}
           right={onAddMedal ? (
-            <Pressable onPress={onAddMedal} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 추가" testID="medal-add" style={m.iconBtn}>
+            <Tap onPress={onAddMedal} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 추가" testID="medal-add" style={m.iconBtn}>
               <Ionicons name="add" size={ri(ICON.nav)} color={ACCENT} />
-            </Pressable>
+            </Tap>
           ) : undefined}
         />
 
@@ -216,17 +216,17 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
       ]}
       testID="medal-detail">
       <View style={[m.detailNav, {paddingTop: insetTop + 6}]}>
-        <Pressable onPress={close} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={m.iconBtn}>
+        <Tap onPress={close} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={m.iconBtn}>
           <Ionicons name="chevron-down" size={ri(ICON.nav)} color={T1} />
-        </Pressable>
+        </Tap>
         <View style={{flexDirection: 'row', gap: rv(8)}}>
-          <Pressable onPress={onShare} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 공유" testID="medal-share" style={m.iconBtn}>
+          <Tap onPress={onShare} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 공유" testID="medal-share" style={m.iconBtn}>
             <Ionicons name="share-outline" size={ri(ICON.action)} color={HALL_GOLD} />
-          </Pressable>
+          </Tap>
           {onDelete && (
-            <Pressable onPress={onDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 삭제" style={m.iconBtn}>
+            <Tap onPress={onDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 삭제" style={m.iconBtn}>
               <Ionicons name="trash-outline" size={ri(ICON.action)} color={T3} />
-            </Pressable>
+            </Tap>
           )}
         </View>
       </View>

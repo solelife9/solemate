@@ -40,7 +40,7 @@ import {
   ICON,
   RING_ACCENT,
 } from './theme';
-import {Button, GlassEdge, SwipeBack} from './primitives';
+import {Button, GlassEdge, SwipeBack, Tap} from './primitives';
 import {Unit} from './lib/units';
 import {
   buildRetirementSummary,
@@ -186,7 +186,7 @@ function RetirementFlow({
     <View style={[s.screen, {paddingTop: insets.top}]}>
       {/* 상단 바: 닫기 + 스텝 진행 점(4) */}
       <View style={s.nav}>
-        <Pressable
+        <Tap
           onPress={onClose}
           hitSlop={8}
           accessibilityRole="button"
@@ -194,7 +194,7 @@ function RetirementFlow({
           testID="retire-flow-close"
           style={s.iconBtn}>
           <Ionicons name="close" size={ri(ICON.action)} color={T2} />
-        </Pressable>
+        </Tap>
         <View
           style={s.dots}
           accessible

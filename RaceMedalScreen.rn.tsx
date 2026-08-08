@@ -12,7 +12,7 @@ import {Text, TextInput} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD_BORDER, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS, GUTTER, MOTION, ICON} from './theme';
-import {Button, Chip, GlassEdge, Input, SwipeBack} from './primitives';
+import {Button, Chip, GlassEdge, Input, SwipeBack, Tap} from './primitives';
 import {capturePhotoWithPermission} from './lib/photo';
 import {showPermissionSettingsDialog} from './lib/dialog';
 import MedalCamera from './MedalCamera';
@@ -167,7 +167,7 @@ export default function RaceMedalScreen({
       <SwipeBack onBack={goBackStep}>
       <View style={[s.screen, {paddingTop: insets.top}]} testID="race-medal-select">
         <View style={s.nav}>
-          <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={s.iconBtn}><Ionicons name="close" size={ri(ICON.action)} color={T2} /></Pressable>
+          <Tap onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={s.iconBtn}><Ionicons name="close" size={ri(ICON.action)} color={T2} /></Tap>
           <Text style={s.navTitle}>어떤 대회였나요?</Text>
           <View style={{width: rs(36)}} />
         </View>
@@ -210,7 +210,7 @@ export default function RaceMedalScreen({
     <SwipeBack onBack={goBackStep}>
     <View style={[s.screen, {paddingTop: insets.top}]} testID="race-medal-record">
       <View style={s.nav}>
-        <Pressable onPress={goBackStep} hitSlop={8} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name={presetRace ? 'close' : 'chevron-back'} size={presetRace ? 18 : 20} color={T2} /></Pressable>
+        <Tap onPress={goBackStep} hitSlop={8} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name={presetRace ? 'close' : 'chevron-back'} size={presetRace ? 18 : 20} color={T2} /></Tap>
         <Text style={s.navTitle} numberOfLines={1}>{raceName || '대회 기록'}</Text>
         <View style={{width: rs(36)}} />
       </View>

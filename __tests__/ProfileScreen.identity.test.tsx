@@ -19,8 +19,20 @@ function render(el: React.ReactElement) {
 }
 const byTestID = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
   root.findAll((n: any) => n && n.props && n.props.testID === id);
+// ⚠️ **래퍼는 세지 않는다**(2026-08-08). 눌림 피드백 스윕으로 화면의 Pressable 이
+// `primitives.Tap` 으로 바뀌었는데, Tap 은 Pressable 을 감싸는 합성 컴포넌트라 같은
+// props 를 가진 인스턴스가 **둘**(Tap + 내부 Pressable) 잡힌다. 개수를 세는 단언이
+// 그대로면 "버튼이 두 개"라고 잘못 읽는다 — 화면은 하나도 안 바뀌었는데.
+//
+// 호스트만 세는 방법은 쓸 수 없다: RN 의 Pressable 은 호스트 View 에 onPress 를 넘기지
+// 않고 responder 핸들러로 바꿔 단다. 그래서 **래퍼 이름으로 제외**한다.
 const byA11y = (root: ReactTestRenderer.ReactTestInstance, label: string) =>
-  root.findAll((n: any) => n && n.props && n.props.accessibilityLabel === label && typeof n.props.onPress === 'function');
+  root.findAll(
+    (n: any) =>
+      n && n.props &&
+      !(typeof n.type === 'function' && n.type.name === 'Tap') &&
+      n.props.accessibilityLabel === label && typeof n.props.onPress === 'function',
+  );
 
 const PROFILE: Profile = {
   name: '러너', since: '2026년 5월부터', totalKm: 120, totalRuns: 12, totalTime: '8', rankTier: 'silver',

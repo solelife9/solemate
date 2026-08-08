@@ -8,12 +8,12 @@
 // ============================================================================
 import React from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Pressable, StyleSheet} from 'react-native';
+import {View, StyleSheet} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, ACCENT, GOOD, T1, T2, T3, FONT, RADIUS, SEP, GLASS, GUTTER, withAlpha, TYPE, ICON} from './theme';
-import {Button, GlassEdge} from './primitives';
+import {Button, GlassEdge, Tap} from './primitives';
 
 function Row({icon, color, title, body}: {icon: string; color: string; title: string; body: string}) {
   return (
@@ -67,10 +67,10 @@ export default function LocationPrimeScreen({
         {/* 수제 54px Pressable(GlassEdge 조차 없던 민짜 표면) → 전역 Button size="hero"
             (검수 디밸롭 ⑤ 수렴, 2026-07-17). */}
         <Button size="hero" label="계속" onPress={onContinue} testID="location-prime-continue" />
-        <Pressable onPress={onCancel} accessibilityRole="button" accessibilityLabel="나중에" testID="location-prime-cancel"
+        <Tap onPress={onCancel} accessibilityRole="button" accessibilityLabel="나중에" testID="location-prime-cancel"
           style={s.ghost}>
           <Text style={s.ghostTxt}>나중에</Text>
-        </Pressable>
+        </Tap>
       </View>
     </View>
   );

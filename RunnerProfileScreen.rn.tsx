@@ -25,7 +25,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {ri, rs, rv} from './lib/responsive';
 import {BG, CARD, T1, T2, T3, SEP, FONT, RADIUS, GUTTER, TYPE, ICON, SPACE} from './theme';
-import {GlassEdge} from './primitives';
+import {GlassEdge, SwipeBack} from './primitives';
 import SocialProfileCard from './SocialProfileCard';
 import {fetchPublicProfile, type ProfileFetch, type ProfilePort} from './lib/publicProfile';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -135,6 +135,12 @@ export default function RunnerProfileScreen({
   };
 
   return (
+    // 아이폰 왼쪽 가장자리 스와이프 백 — 이 화면만 빠져 있었다(2026-08-08 감사).
+    // 부모(HallOfFameScreen)에는 있는데 그 위에 얹히는 이 프로필엔 없어서, 아이폰에서
+    // 랭킹은 밀어서 닫히는데 러너 프로필만 좌상단 '‹' 를 찾아 눌러야 했다.
+    // 아이폰엔 시스템 뒤로가기 버튼이 없으므로 가장자리 스와이프가 사실상의 표준 동선이다
+    // (안드로이드 쪽은 App.tsx 의 BackHandler 가 이미 닫는다 — lib/backStack).
+    <SwipeBack onBack={onClose}>
     <View style={[s.screen, {paddingTop: insets.top + rv(8)}]} testID="runner-profile-screen">
       <View style={s.bar}>
         <Pressable
@@ -193,6 +199,7 @@ export default function RunnerProfileScreen({
         )}
       </ScrollView>
     </View>
+    </SwipeBack>
   );
 }
 

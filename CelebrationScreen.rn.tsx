@@ -9,13 +9,13 @@
 // ============================================================================
 import React, {useEffect, useRef} from 'react';
 import { rs, ri, rv, leading } from './lib/responsive';
-import {View, Pressable, ScrollView, StyleSheet, Animated} from 'react-native';
+import {View, ScrollView, StyleSheet, Animated} from 'react-native';
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BG, T1, T3, FONT, DISPLAY, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE, MOTION, LEADING} from './theme';
 import {success, impactHeavy} from './lib/haptics';
-import {Button, useReduceMotion} from './primitives';
+import {Button, useReduceMotion, Tap} from './primitives';
 
 export type CelebrationData =
   | {
@@ -258,7 +258,7 @@ export default function CelebrationScreen({
       <Glow color={c} />
       {/* 남은 개수를 밝힌다 — 왜 계속 뜨는지 알려주고, 한 번에 끝낼 수 있음을 보여준다.
           개수를 숨기면 사용자는 "언제 끝나지?"를 모른 채 계속 누르게 된다. */}
-      <Pressable
+      <Tap
         style={[st.skip, {top: insets.top + 14}]}
         onPress={onSkipAll ?? onClose}
         hitSlop={10}
@@ -266,7 +266,7 @@ export default function CelebrationScreen({
         accessibilityLabel={remaining > 0 ? `${remaining}개 더 있음, 모두 건너뛰기` : '건너뛰기'}
         testID="celebration-skip">
         <Text style={st.skipTxt}>{remaining > 0 ? `모두 건너뛰기 (${remaining})` : '건너뛰기'}</Text>
-      </Pressable>
+      </Tap>
       <ScrollView
         style={st.bodyScroll}
         contentContainerStyle={st.body}

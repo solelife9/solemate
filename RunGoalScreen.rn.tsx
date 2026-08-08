@@ -13,9 +13,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {
-  View, Pressable, StyleSheet, StatusBar, LayoutAnimation,
-} from 'react-native';
+import {View, StyleSheet, StatusBar, LayoutAnimation} from 'react-native';
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +34,7 @@ import { useEffect } from 'react';
 import { HR_ZONE_COLORS, GOOD } from './theme';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(md — 주 탭).
-import { Button, SegmentedControl, SwipeBack, BottomSheet, useReduceMotion } from './primitives';
+import { Button, SegmentedControl, SwipeBack, BottomSheet, useReduceMotion, Tap} from './primitives';
 // 탭 구성 재확정(민우님 2026-07-24): 거리·시간·스피드·트랙 4탭 복원 + '자유'는 거리 탭의
 // 첫 프리셋(val=0)으로. 자유런 전용 탭(2026-07-22안)은 하루 써보고 철회 — 자유는 목표
 // 모드가 아니라 '거리 목표 없음'이라 거리 탭 안이 문법상 맞다.
@@ -245,7 +243,7 @@ export default function RunGoalScreen({
       <StatusBar barStyle="light-content" />
       {/* nav */}
       <View style={s.nav}>
-        <Pressable onPress={onBack} hitSlop={8} style={s.navIc} testID="goal-back" accessibilityRole="button" accessibilityLabel="뒤로"><Icon name="back" size={ri(ICON.nav)} color={T2} /></Pressable>
+        <Tap onPress={onBack} hitSlop={8} style={s.navIc} testID="goal-back" accessibilityRole="button" accessibilityLabel="뒤로"><Icon name="back" size={ri(ICON.nav)} color={T2} /></Tap>
         <Text style={s.navTitle}>러닝 목표</Text>
         <View style={s.navIc} />
       </View>
@@ -296,29 +294,29 @@ export default function RunGoalScreen({
               {LAP_PRESETS.map(m => {
                 const on = !lapCustom && lapM === m;
                 return (
-                  <Pressable key={m} onPress={() => { tap(); setLapM(m); setLapCustom(false); }}
+                  <Tap key={m} onPress={() => { tap(); setLapM(m); setLapCustom(false); }}
                     style={[s.lapChip, on && s.lapChipOn]}
                     accessibilityRole="button" accessibilityState={{ selected: on }}
                     accessibilityLabel={`한 바퀴 ${m}미터${m === 400 ? ', 야외 공인 트랙' : m === 200 ? ', 실내 트랙' : ''}`}>
                     <Text style={[s.lapChipVal, on && s.lapChipValOn]}>{m}</Text>
                     <Text style={[s.lapChipUnit, on && s.lapChipValOn]}>m</Text>
-                  </Pressable>
+                  </Tap>
                 );
               })}
-              <Pressable onPress={() => { tap(); setKpBuf(''); setKpOpen(true); }}
+              <Tap onPress={() => { tap(); setKpBuf(''); setKpOpen(true); }}
                 style={[s.lapChip, lapCustom && s.lapChipOn]}
                 accessibilityRole="button" accessibilityState={{ selected: lapCustom }}
                 accessibilityLabel={lapCustom ? `커스텀 한 바퀴 ${lapM}미터, 눌러서 변경` : '커스텀 한 바퀴 거리 직접 입력'}>
                 <Text style={[s.lapChipVal, lapCustom && s.lapChipValOn]}>{lapCustom ? String(lapM) : '커스텀'}</Text>
                 {lapCustom ? <Text style={[s.lapChipUnit, s.lapChipValOn]}>m</Text> : null}
-              </Pressable>
+              </Tap>
             </View>
           </View>
         ) : mode === 'speed' ? (
           <SpeedPlanPanel initialAvgSec={speedInitialAvgSec} onChange={(km, plan) => setSpeedGoal({ km, plan })} />
         ) : (
           <>
-            <Pressable
+            <Tap
               onPress={() => { setKpBuf(''); setKpOpen(true); }}
               style={s.bigRow}
               testID="goal-bignum"
@@ -342,7 +340,7 @@ export default function RunGoalScreen({
                   <Text style={s.bigUnit}>{cfg!.unit}</Text>
                 </>
               )}
-            </Pressable>
+            </Tap>
             <Text style={s.estimate}>{estimate}</Text>
 
             {/* 눈금 룰러는 폐기(재구성 2026-07-25) — 같은 값(거리/시간)의 세 번째 중복
@@ -351,9 +349,9 @@ export default function RunGoalScreen({
               {cfg!.presets.map(p => {
                 const on = Math.abs(p.v - val) < (mode === 'km' ? 0.05 : 0.5);
                 return (
-                  <Pressable key={p.label} onPress={() => pickPreset(p.v)} hitSlop={6} style={[s.preset, on && s.presetOn]} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={p.v === 0 ? '자유 러닝 선택' : `${p.label} 목표 선택`}>
+                  <Tap key={p.label} onPress={() => pickPreset(p.v)} hitSlop={6} style={[s.preset, on && s.presetOn]} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={p.v === 0 ? '자유 러닝 선택' : `${p.label} 목표 선택`}>
                     <Text style={[s.presetText, on && s.presetTextOn]}>{p.label}</Text>
-                  </Pressable>
+                  </Tap>
                 );
               })}
             </View>
@@ -365,7 +363,7 @@ export default function RunGoalScreen({
           재구성(2026-07-25): 상시 4칩+힌트 → 접힌 한 줄 요약("심박 가이드 · 현재값 ›").
           탭하면 기존 4칩+힌트가 펼쳐진다. 설정값은 접혀 있어도 유지·적용. */}
       <View style={s.zoneRow}>
-        <Pressable
+        <Tap
           testID="goal-hr-row"
           onPress={toggleZoneOpen}
           style={s.zoneHead}
@@ -378,7 +376,7 @@ export default function RunGoalScreen({
             <Text style={s.zoneSummaryVal}>{ZONE_OPTS.find(o => o.z === targetZone)?.label ?? '끄기'}</Text>
           </Text>
           <Text style={[s.zoneChevron, zoneOpen && s.zoneChevronOpen]}>›</Text>
-        </Pressable>
+        </Tap>
         {zoneOpen && !liveHrAvailable && (
           // 있는 척하지 않는다 — 왜 안 되는지와, 무엇은 되는지를 한 줄로 말한다.
           <Text style={s.zoneHint}>
@@ -393,11 +391,11 @@ export default function RunGoalScreen({
                 const on = targetZone === o.z;
                 const col = o.z !== 0 ? HR_ZONE_COLORS[o.z as 2 | 3 | 4] : GOOD;
                 return (
-                  <Pressable key={o.z} onPress={() => pickZone(o.z)} accessibilityRole="radio" hitSlop={6}
+                  <Tap key={o.z} onPress={() => pickZone(o.z)} accessibilityRole="radio" hitSlop={6}
                     accessibilityState={{ selected: on }} accessibilityLabel={`심박 가이드 ${o.label}`}
                     style={[s.zoneChip, on && { backgroundColor: withAlpha(col, 0.16), borderColor: withAlpha(col, 0.5) }]}>
                     <Text style={[s.zoneChipTxt, on && { color: col }]}>{o.label}</Text>
-                  </Pressable>
+                  </Tap>
                 );
               })}
             </View>
@@ -431,13 +429,13 @@ export default function RunGoalScreen({
                 const dot = k === '.';
                 const off = dot && (mode === 'min' || mode === 'track'); // 시간·트랙 모드는 정수만
                 return (
-                  <Pressable key={k} disabled={off} onPress={() => kpPress(k)}
+                  <Tap key={k} disabled={off} onPress={() => kpPress(k)}
                     accessibilityRole="button"
                     accessibilityLabel={k === '⌫' ? '지우기' : k === '.' ? '소수점' : k}
                     testID={`kp-${k === '⌫' ? 'del' : k === '.' ? 'dot' : k}`}
                     style={({ pressed }) => [s.kpKey, off && { opacity: 0.25 }, pressed && { opacity: 0.7 }]}>
                     <Text style={s.kpKeyTxt}>{k}</Text>
-                  </Pressable>
+                  </Tap>
                 );
               })}
             </View>

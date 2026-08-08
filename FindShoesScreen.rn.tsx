@@ -33,7 +33,7 @@ import {
   BG, CARD, T1, T2, T3, SEP, FONT, DISPLAY, SPACE, RADIUS,
   withAlpha, TYPE, GLASS, MOTION, ICON, RING_ACCENT, GOOD, WARN,
 } from './theme';
-import {Button, WearRing, SwipeBack} from './primitives';
+import {Button, WearRing, SwipeBack, Tap} from './primitives';
 import {ShoePicker} from './ShoePicker';
 import ShoeCompareTable from './ShoeCompareTable';
 import {MAX_COMPARE, type CompareShoe} from './lib/shoeCompareTable';
@@ -221,7 +221,7 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
     <SwipeBack onBack={goBackStep}>
     <View style={[s.screen, {paddingTop: insets.top}]}>
       <View style={s.nav}>
-        <Pressable
+        <Tap
           onPress={goBackStep}
           hitSlop={8}
           accessibilityRole="button"
@@ -231,7 +231,7 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
           <Ionicons
             name={step === 'base' || (step === 'candidates' && !!baseProp) ? 'close' : 'chevron-back'}
             size={ri(ICON.action)} color={T2} />
-        </Pressable>
+        </Tap>
         {step !== 'base' && (
           <View style={s.dots} accessible accessibilityLabel={`3단계 중 ${DOT_STEPS.indexOf(step) + 1}`}>
             {DOT_STEPS.map((k, i) => (

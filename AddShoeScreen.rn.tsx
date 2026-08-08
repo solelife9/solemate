@@ -8,7 +8,7 @@
 // ============================================================================
 import React, { useState } from 'react';
 import { rs, ri, rv } from './lib/responsive';
-import { View, ScrollView, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import {View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform} from 'react-native';
 import {Text} from './lib/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -17,7 +17,7 @@ import {
   GUTTER, MOTION,
   ICON,
 } from './theme';
-import { Button, GlassEdge, Input, SwipeBack } from './primitives';
+import { Button, GlassEdge, Input, SwipeBack, Tap} from './primitives';
 // 러닝화 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
 import { getRecommendedLifespanKm, LIFESPAN_BASIS_KO } from './data/shoeModels';
 // 러닝화 선택은 온보딩과 공유하는 2열 분할 피커(단일 소스).
@@ -98,9 +98,9 @@ export default function AddShoeScreen({
     <View style={[s.screen, { paddingTop: insets.top }]}>
       {/* nav */}
       <View style={s.nav}>
-        <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기" style={({ pressed }) => [s.iconBtn, pressed && s.pressed]}>
+        <Tap onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기" style={({ pressed }) => [s.iconBtn, pressed && s.pressed]}>
           <Ionicons name="close" size={ri(ICON.action)} color={T2} />
-        </Pressable>
+        </Tap>
         <Text style={s.navTitle}>러닝화 등록</Text>
         <View style={{ width: rs(38) }} />
       </View>
@@ -112,14 +112,14 @@ export default function AddShoeScreen({
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: GUTTER, paddingTop: rv(18), paddingBottom: rv(20) }} keyboardShouldPersistTaps="handled">
         {/* 러닝화(브랜드+모델) — 탭하면 온보딩과 동일한 2열 분할 피커가 열린다 */}
         <Text style={s.label}>러닝화</Text>
-        <Pressable onPress={() => setPickerOpen(true)} accessibilityRole="button" accessibilityLabel={picked ? `러닝화 ${picked.brand} ${picked.model}, 눌러서 변경` : '러닝화 선택'} testID="add-shoe-select" style={({ pressed }) => [s.selector, pressed && s.pressed]}>
+        <Tap onPress={() => setPickerOpen(true)} accessibilityRole="button" accessibilityLabel={picked ? `러닝화 ${picked.brand} ${picked.model}, 눌러서 변경` : '러닝화 선택'} testID="add-shoe-select" style={({ pressed }) => [s.selector, pressed && s.pressed]}>
           <GlassEdge glints={false} radius={rs(16)} />
           <Ionicons name="search" size={ri(ICON.action)} color={T3} />
           <Text style={[s.selectorText, !picked && { color: T3 }]} numberOfLines={1}>
             {picked ? `${picked.brand ? `${picked.brand} · ` : ''}${picked.model}` : '브랜드·모델 선택'}
           </Text>
           <Ionicons name="chevron-down" size={ri(ICON.action)} color={T3} />
-        </Pressable>
+        </Tap>
 
         {/* 권장 교체 거리 — 쿠셔닝(성능) 기준 가이드. 자동 입력·수정 가능, 미수정 시 '권장' 배지 */}
         <View style={s.maxHead}>

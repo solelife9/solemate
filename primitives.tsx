@@ -703,19 +703,40 @@ const btn = StyleSheet.create({
 export function Tap({
   style,
   android_ripple,
-  /** 눌림 축소를 끈다 — 행 전체가 눌리는 큰 영역에서 화면이 출렁이지 않게. */
+  /**
+   * 눌림 축소를 강제로 끈다. **보통은 줄 필요가 없다** — 아래에서 스스로 판정한다.
+   * 자동 판정이 틀리는 드문 자리(가로 스크롤 안의 넓은 카드 등)에만 명시한다.
+   */
   noScale,
+  onLayout,
   ...rest
 }: PressableProps & {noScale?: boolean}) {
   const reduceMotion = useReduceMotion();
+  const {width: winW} = useWindowDimensions();
+  // ── 넓은 행은 스스로 알아본다 (2026-08-08) ──────────────────────────────
+  // 화면 폭짜리 행이 0.97 로 줄면 **목록 전체가 출렁여** 보인다. 반대로 아이콘 버튼은
+  // 줄어들어야 손가락에 가려진 상태에서도 눌린 것이 보인다.
+  //
+  // 이 판정을 호출부에 맡기면 158곳에서 158번 판단해야 하고, 그중 몇은 반드시 틀린다.
+  // 그래서 **컴포넌트가 자기 크기를 보고 정한다** — 화면 폭의 70% 를 넘으면 '행'으로 본다.
+  // (측정 전 첫 프레임은 축소 쪽이다. 사용자가 누르기 전에 레이아웃이 끝나므로 실제로는
+  //  보이지 않는다.)
+  const [wide, setWide] = useState(false);
+  const handleLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (winW > 0) setWide(w > winW * 0.7);
+    onLayout?.(e);
+  };
+  const skipScale = (noScale ?? wide) || reduceMotion;
   return (
     <Pressable
       {...rest}
+      onLayout={handleLayout}
       android_ripple={android_ripple ?? {color: withAlpha(ACCENT, 0.12), borderless: false}}
       style={state => [
         state.pressed && {
           opacity: MOTION.press.opacity,
-          ...(noScale || reduceMotion ? null : {transform: [{scale: MOTION.press.scale}]}),
+          ...(skipScale ? null : {transform: [{scale: MOTION.press.scale}]}),
         },
         typeof style === 'function' ? style(state) : style,
       ]}
@@ -1943,6 +1964,9 @@ export function BottomSheet({visible, onClose, title, cancelLabel = '취소', co
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose} testID={testID}>
       <Animated.View style={[StyleSheet.absoluteFill, {backgroundColor: SCRIM, opacity: v}]}>
+        {/* tap-exempt: 시트 밖을 덮는 **투명 면**이다. 눌림 표시를 주면 보이지 않아야 할
+            스크림이 번쩍이고, 리플은 화면 절반에 퍼진다. 여기서는 '피드백이 없는 것'이
+            의도다 — 누르는 대상이 아니라 '바깥을 눌러 닫는' 영역이기 때문. (2026-08-08) */}
         <Pressable style={{flex: 1}} onPress={onClose} accessibilityRole="button" accessibilityLabel="닫기" />
       </Animated.View>
       <View style={sheetS.host} pointerEvents="box-none">
@@ -1951,14 +1975,14 @@ export function BottomSheet({visible, onClose, title, cancelLabel = '취소', co
           style={[sheetS.sheet, {paddingBottom: insets.bottom + rv(16), transform: [{translateY: slide}]}]}>
           {hasHeader && (
             <View style={sheetS.header}>
-              <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button">
+              <Tap onPress={onClose} hitSlop={12} accessibilityRole="button">
                 <Text style={sheetS.cancel}>{cancelLabel}</Text>
-              </Pressable>
+              </Tap>
               <Text style={sheetS.title} numberOfLines={1}>{title}</Text>
               {confirmLabel ? (
-                <Pressable onPress={onConfirm} hitSlop={12} accessibilityRole="button">
+                <Tap onPress={onConfirm} hitSlop={12} accessibilityRole="button">
                   <Text style={sheetS.confirm}>{confirmLabel}</Text>
-                </Pressable>
+                </Tap>
               ) : <View style={{width: rs(32)}} />}
             </View>
           )}

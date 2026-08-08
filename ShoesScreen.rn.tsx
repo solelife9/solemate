@@ -4,7 +4,7 @@
 // ============================================================================
 import React, { useEffect, useMemo, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
+import {View, ScrollView, StyleSheet} from 'react-native';
 import { showDialog } from './lib/dialog';
 import {Text} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -14,7 +14,7 @@ import {
   BAR, NUMERIC,
   ICON,
 } from './theme';
-import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge, WEAR_TONE_COLOR, ScreenHeader, Input } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge, WEAR_TONE_COLOR, ScreenHeader, Input, Tap} from './primitives';
 import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
@@ -277,8 +277,8 @@ function ShoeDetail({
         style={s.header}
         right={
           <View style={{ flexDirection: 'row', gap: rv(10) }}>
-            <Pressable onPress={() => setEditing((e) => !e)} hitSlop={6} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.iconBtn}><Ionicons name="pencil" size={ri(ICON.inline)} color={T2} /></Pressable>
-            <Pressable onPress={confirmDelete} hitSlop={6} accessibilityRole="button" accessibilityLabel="신발 삭제" style={s.iconBtn}><Ionicons name="trash-outline" size={ri(ICON.inline)} color={DANGER} /></Pressable>
+            <Tap onPress={() => setEditing((e) => !e)} hitSlop={6} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.iconBtn}><Ionicons name="pencil" size={ri(ICON.inline)} color={T2} /></Tap>
+            <Tap onPress={confirmDelete} hitSlop={6} accessibilityRole="button" accessibilityLabel="신발 삭제" style={s.iconBtn}><Ionicons name="trash-outline" size={ri(ICON.inline)} color={DANGER} /></Tap>
           </View>
         }
       />
@@ -289,7 +289,7 @@ function ShoeDetail({
             <Text style={s.dHeroLabel}>신발 이름</Text>
             <Input value={name} onChangeText={setName} style={s.editInput} accessibilityLabel="신발 이름" autoFocus />
             <View style={{ flexDirection: 'row', gap: rv(10) }}>
-              <Pressable onPress={() => setEditing(false)} style={[s.editBtn, { backgroundColor: CARD_HI }]}><Text style={[s.editBtnTxt, { color: T2 }]}>취소</Text></Pressable>
+              <Tap onPress={() => setEditing(false)} style={[s.editBtn, { backgroundColor: CARD_HI }]}><Text style={[s.editBtnTxt, { color: T2 }]}>취소</Text></Tap>
               <Button label="저장" onPress={saveName} style={s.editBtn} />
             </View>
           </View>
@@ -334,9 +334,9 @@ function ShoeDetail({
             usedLabel={String(usedDisp)}
             maxLabel={String(maxDisp)}
             editSlot={onSetMaxKm ? (
-              <Pressable onPress={() => setMaxEditOpen((o) => !o)} hitSlop={10} accessibilityRole="button" accessibilityLabel={`신발 수명 편집, 현재 ${maxDisp}${unit}`} style={s.maxEditToggle}>
+              <Tap onPress={() => setMaxEditOpen((o) => !o)} hitSlop={10} accessibilityRole="button" accessibilityLabel={`신발 수명 편집, 현재 ${maxDisp}${unit}`} style={s.maxEditToggle}>
                 <Ionicons name={maxEditOpen ? 'checkmark' : 'pencil'} size={ri(ICON.tag)} color={T2} />
-              </Pressable>
+              </Tap>
             ) : undefined}
           />
           {/* 이 숫자가 어디서 왔는지(UX 감사 ②·⑩). 한 줄에 다 이어 붙였더니 45자가 넘어
@@ -351,10 +351,10 @@ function ShoeDetail({
           </Text>
           {maxEditOpen && onSetMaxKm && (
             <View style={s.maxStepRow}>
-              <Pressable onPress={() => stepMaxKm(-50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 줄이기" style={s.maxEditToggle}><Ionicons name="remove" size={ri(ICON.inline)} color={T1} /></Pressable>
+              <Tap onPress={() => stepMaxKm(-50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 줄이기" style={s.maxEditToggle}><Ionicons name="remove" size={ri(ICON.inline)} color={T1} /></Tap>
               {/* 편집 대상 = 게이지에 뜬 그 숫자(내 몸무게 기준). 저장만 기저로 되돌린다. */}
               <Text style={s.maxStepVal}>수명 {editShownDisp}<Text style={s.maxStepUnitTxt}> {unit}</Text></Text>
-              <Pressable onPress={() => stepMaxKm(50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 늘리기" style={s.maxEditToggle}><Ionicons name="add" size={ri(ICON.inline)} color={T1} /></Pressable>
+              <Tap onPress={() => stepMaxKm(50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 늘리기" style={s.maxEditToggle}><Ionicons name="add" size={ri(ICON.inline)} color={T1} /></Tap>
             </View>
           )}
         </View>
@@ -382,14 +382,14 @@ function ShoeDetail({
               은퇴시킬지는 직접 정해요.
             </Text>
             <View style={s.keepsakeBtns}>
-              <Pressable
+              <Tap
                 onPress={() => setKept(true)}
                 accessibilityRole="button"
                 accessibilityLabel="계속 사용"
                 testID="retire-keep-using"
                 style={({ pressed }) => [s.keepsakeBtn, s.keepUsingBtn, pressed && s.pressed]}>
                 <Text style={[s.keepsakeBtnTxt, { color: T1 }]}>계속 사용</Text>
-              </Pressable>
+              </Tap>
               <Button
                 label="은퇴"
                 onPress={() => setFlowOpen(true)}
@@ -404,7 +404,7 @@ function ShoeDetail({
         {/* 계속 사용 후에도 은퇴 진입점 유지(2026-07-05): [계속 사용]을 누르면 카드가
             사라져 '은퇴 어떻게 시키지?'가 되던 문제 — 조용한 링크 하나를 남긴다. */}
         {keepsakeReady && atLifespan && kept && (
-          <Pressable
+          <Tap
             onPress={() => setFlowOpen(true)}
             accessibilityRole="button"
             accessibilityLabel="이 신발 은퇴시키기"
@@ -415,7 +415,7 @@ function ShoeDetail({
             {/* 셰브론도 T3 — 같은 버튼 안 형제 아이콘과 톤이 갈려 있었고, T4 는 UI 컴포넌트
                 최소 대비(3:1)에 못 미친다(UX 감사 ⑤). */}
             <Ionicons name="chevron-forward" size={ri(ICON.tag)} color={T3} />
-          </Pressable>
+          </Tap>
         )}
 
         {/* (다음 러닝화 쇼핑 추천은 어필리에이트 정식 도입 전까지 상세에서 숨김 —
@@ -503,7 +503,7 @@ function ShoeDetail({
 
         {/* 러닝화 찾기 — 이 신발을 기준으로 같은 종류 후보를 보고, 거기서 스펙 표까지
             이어진다. 마이 탭 진입점과 같은 화면이다(이름이 다르면 다른 기능처럼 보인다). */}
-        <Pressable
+        <Tap
           onPress={() => setFindOpen('button')}
           accessibilityRole="button"
           accessibilityLabel="러닝화 찾기"
@@ -511,20 +511,20 @@ function ShoeDetail({
           style={({ pressed }) => [s.compareBtn, pressed && s.pressed]}>
           <Ionicons name="search-outline" size={ri(ICON.inline)} color={T2} />
           <Text style={s.compareBtnText}>러닝화 찾기</Text>
-        </Pressable>
+        </Tap>
 
         {/* 신발 보관(아카이브) — 하단 전체폭 버튼(danger 외곽선). 키프세이크 '은퇴'(명예의
             전당 기록)와 구분되는 단순 보관 동선이다: 런 기록은 보존한 채 선택목록에서만
             숨긴다. 이미 보관된 신발은 '복원'으로 토글한다(키프세이크 기록 없음). */}
         {shoe.id && onRetire && (
-          <Pressable
+          <Tap
             onPress={toggleRetire}
             accessibilityRole="button"
             accessibilityLabel={retired ? '복원' : '보관 처리'}
             style={({ pressed }) => [retired ? s.restoreBtn : s.retireBtn, pressed && s.pressed]}>
             <Ionicons name={retired ? 'arrow-undo-outline' : 'archive-outline'} size={ri(ICON.inline)} color={retired ? T2 : DANGER} />
             <Text style={[s.retireBtnText, { color: retired ? T2 : DANGER }]}>{retired ? '복원' : '보관 처리'}</Text>
-          </Pressable>
+          </Tap>
         )}
       </ScrollView>
     </View>
@@ -552,7 +552,7 @@ function ShoeCard({ shoe, onPress, onPlay, unit, pace: _pace, forecast }: { shoe
   const cardType = typeLabel(cardClass?.type);
   const cardPurpose = purposeSentenceKo(cardClass?.recommended);
   return (
-    <Pressable
+    <Tap
       onPress={onPress}
       testID="shoe-card"
       accessibilityRole="button"
@@ -585,9 +585,9 @@ function ShoeCard({ shoe, onPress, onPlay, unit, pace: _pace, forecast }: { shoe
             <Text style={[s.shoeCondText, { color: T2 }]} numberOfLines={1}>{condLabel(wearPct)}</Text>
           </View>
           {!retired && onPlay ? (
-            <Pressable onPress={onPlay} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}로 달리기`} style={({ pressed }) => [s.cardPlay, pressed && s.pressed]} testID={shoe.id ? `shoe-play-${shoe.id}` : undefined}>
+            <Tap onPress={onPlay} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}로 달리기`} style={({ pressed }) => [s.cardPlay, pressed && s.pressed]} testID={shoe.id ? `shoe-play-${shoe.id}` : undefined}>
               <Ionicons name="play" size={ri(ICON.tag)} color={T2} />
-            </Pressable>
+            </Tap>
           ) : (
             <Ionicons name="chevron-forward" size={ri(ICON.action)} color={T3} />
           )}
@@ -620,7 +620,7 @@ function ShoeCard({ shoe, onPress, onPlay, unit, pace: _pace, forecast }: { shoe
           <Text style={[s.fcText, fcOverdue && { color: WARN, fontWeight: '600' }]} numberOfLines={1}>{fcLine}</Text>
         </View>
       )}
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -756,10 +756,10 @@ function ShoesScreen({
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={s.title}>러닝화</Text>
         </View>
-        <Pressable onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="신발 추가" hitSlop={8} style={({ pressed }) => [s.addPill, pressed && s.pressed]}>
+        <Tap onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="신발 추가" hitSlop={8} style={({ pressed }) => [s.addPill, pressed && s.pressed]}>
           <Text style={s.addPillText}>신발 추가</Text>
           <Ionicons name="add" size={ri(ICON.inline)} color={T1} />
-        </Pressable>
+        </Tap>
       </View>
       <Rise style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: GUTTER, paddingBottom: TABBAR_CLEARANCE, gap: rv(14), paddingTop: rv(12) }}>
@@ -789,7 +789,7 @@ function ShoesScreen({
         {/* 신발 보관함(마이탭에서 이관 — 심사 #7) — 보관 처리와 복원을 한 지붕에.
             조용한 하단 행: 보관 신발이 있을 때만 나타난다. */}
         {!!onOpenArchive && archivedCount > 0 && (
-          <Pressable
+          <Tap
             onPress={onOpenArchive}
             testID="open-shoe-archive"
             accessibilityRole="button"
@@ -798,7 +798,7 @@ function ShoesScreen({
             <Ionicons name="archive-outline" size={ri(ICON.inline)} color={T3} />
             <Text style={s.archiveRowText}>보관된 신발 <Text style={s.archiveRowStrong}>{archivedCount}켤레</Text></Text>
             <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} />
-          </Pressable>
+          </Tap>
         )}
       </ScrollView>
       </Rise>

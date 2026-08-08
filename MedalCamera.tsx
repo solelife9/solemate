@@ -6,7 +6,7 @@
 // ============================================================================
 import React, {useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Pressable, StyleSheet, useWindowDimensions, ActivityIndicator} from 'react-native';
+import {View, StyleSheet, useWindowDimensions, ActivityIndicator} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -18,6 +18,7 @@ import {pickPhotoWithPermission} from './lib/photo';
 import {showPermissionSettingsDialog} from './lib/dialog';
 import {medalCropRect} from './lib/medalCrop';
 
+import {Tap} from './primitives';
 export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: string) => void; onCancel: () => void}) {
   const insets = useSafeAreaInsets();
   const {width, height} = useWindowDimensions();
@@ -88,10 +89,10 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
           <Ionicons name="camera-outline" size={ri(ICON.hero)} color={T3} />
           <Text style={c.permT}>카메라 권한이 필요해요</Text>
           <Text style={c.permD}>메달을 촬영하려면 카메라를 허용해주세요. 앨범에서 고를 수도 있어요.</Text>
-          <Pressable onPress={() => { void requestPerm(); }} style={c.permBtn}><Text style={c.permBtnT}>카메라 허용</Text></Pressable>
+          <Tap onPress={() => { void requestPerm(); }} style={c.permBtn}><Text style={c.permBtnT}>카메라 허용</Text></Tap>
           {/* 보조 고스트: 세로 ~34pt → hitSlop 8 로 실효 44pt(HIG 터치 타깃) 확보. */}
-          <Pressable onPress={fromLibrary} hitSlop={8} style={c.permGhost}><Text style={c.permGhostT}>앨범에서 선택</Text></Pressable>
-          <Pressable onPress={onCancel} hitSlop={8} style={c.permGhost}><Text style={c.permGhostT}>취소</Text></Pressable>
+          <Tap onPress={fromLibrary} hitSlop={8} style={c.permGhost}><Text style={c.permGhostT}>앨범에서 선택</Text></Tap>
+          <Tap onPress={onCancel} hitSlop={8} style={c.permGhost}><Text style={c.permGhostT}>취소</Text></Tap>
         </View>
       </View>
     );
@@ -119,18 +120,18 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
       <Text style={[c.sub, {top: cy - r - 28}]}>가운데 정렬하면 자동으로 원형으로 담겨요</Text>
 
       {/* 상단 취소 */}
-      <Pressable onPress={onCancel} hitSlop={10} style={[c.close, {top: insets.top + 8}]} accessibilityRole="button" accessibilityLabel="닫기">
+      <Tap onPress={onCancel} hitSlop={10} style={[c.close, {top: insets.top + 8}]} accessibilityRole="button" accessibilityLabel="닫기">
         <Ionicons name="close" size={ri(ICON.feature)} color={T1} />
-      </Pressable>
+      </Tap>
 
       {/* 하단 컨트롤: 앨범 · 셔터 */}
       <View style={[c.controls, {bottom: insets.bottom + 30}]}>
-        <Pressable onPress={fromLibrary} hitSlop={8} style={c.libBtn} accessibilityRole="button" accessibilityLabel="앨범에서 선택">
+        <Tap onPress={fromLibrary} hitSlop={8} style={c.libBtn} accessibilityRole="button" accessibilityLabel="앨범에서 선택">
           <Ionicons name="images-outline" size={ri(ICON.nav)} color={T1} />
-        </Pressable>
-        <Pressable onPress={shoot} disabled={busy} accessibilityRole="button" accessibilityLabel="촬영" style={c.shutterWrap}>
+        </Tap>
+        <Tap onPress={shoot} disabled={busy} accessibilityRole="button" accessibilityLabel="촬영" style={c.shutterWrap}>
           <View style={c.shutter}>{busy ? <ActivityIndicator color={BG} /> : null}</View>
-        </Pressable>
+        </Tap>
         <View style={{width: rs(48)}} />
       </View>
     </View>

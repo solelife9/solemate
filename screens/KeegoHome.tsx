@@ -26,7 +26,7 @@ import {
   BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, GLASS, MOTION, SHADOW, ICON, withAlpha,
   type Shoe,
 } from '../theme';
-import {GlassEdge, ShoeGlyph, useReduceMotion} from '../primitives';
+import {GlassEdge, ShoeGlyph, useReduceMotion, Tap} from '../primitives';
 import {shoeHealth, wearTier, type RunLike, KEEP_GOING_REPLACE} from '../lib/shoe';
 import {findShoeClass, typeLabel} from '../data/shoeClass';
 import {ringColor} from '../lib/ringColor';
@@ -87,14 +87,14 @@ export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onO
         </View>
         {/* 아이콘만 있는 버튼이라 라벨이 없으면 보이스오버가 아무것도 읽지 못한다
             (2026-07-27 접근성 점검에서 앱 전체 중 유일하게 남아 있던 곳). */}
-        <Pressable
+        <Tap
           style={styles.avatar}
           onPress={onOpenProfile}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="내 프로필 열기">
           <Ionicons name="person" size={ri(ICON.inline)} color={withAlpha(T1, 0.9)} />
-        </Pressable>
+        </Tap>
       </View>
 
       {/* TITLE */}
@@ -231,7 +231,7 @@ export function ShoeCard({
         <View style={styles.cardInner}>
           {/* 정보영역(탭 → 상세). 러닝 시작 버튼은 이 Pressable '밖'의 형제라, 텍스트 기반
               테스트가 '러닝 시작'을 눌러도 상세로 새지 않는다(시각은 동일 — 이벤트 중첩만 분리). */}
-          <Pressable onPress={() => onOpenShoe?.(shoe)} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}, 컨디션 ${tier.label}, 남은 수명 ${remainPct}%, 상세 보기`}>
+          <Tap onPress={() => onOpenShoe?.(shoe)} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}, 컨디션 ${tier.label}, 남은 수명 ${remainPct}%, 상세 보기`}>
           {/* 상단: 브랜드/모델(좌) · 컨디션(우) */}
           <View style={styles.cardTop}>
             <View style={{flexShrink: 1}}>
@@ -299,7 +299,7 @@ export function ShoeCard({
               <Text style={{color: h.remainingKm > 0 ? T1 : rc.solid}}>{remainText}</Text>
             </Text>
           </View>
-          </Pressable>
+          </Tap>
 
           {/* 러닝 시작 — 정보 Pressable 의 형제(중첩 아님).
               UX 감사 ⑫ 는 이 라벨을 '이 신발로 달리기'로 바꾸자고 했다(목표 화면 CTA 와
@@ -351,7 +351,7 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
         {/* 실카드와 동일한 유리 재질(글로우 없음) — 고스트는 기본 림 세기. */}
         <GlassEdge glints={false} id="edge-card-ghost" radius={CARD_RADIUS} />
         <View style={styles.cardInner}>
-          <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="첫 러닝화 등록">
+          <Tap onPress={onPress} accessibilityRole="button" accessibilityLabel="첫 러닝화 등록">
             {/* 빈 수명 링 — 트랙만 남긴 링 중앙에 신발 글리프(여기가 네 신발의 자리) */}
             <View style={[styles.ringWrap, {width: ring, height: ring}]}>
               <Svg width={ring} height={ring}>
@@ -372,7 +372,7 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
               <View style={styles.kmSep} />
               <Text style={styles.ghostValTxt}>부상 예방</Text>
             </View>
-          </Pressable>
+          </Tap>
           <Pressable
             style={({pressed}) => [styles.runBtn, pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity}]}
             onPress={onPress}
