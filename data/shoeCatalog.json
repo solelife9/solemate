@@ -9353,7 +9353,7 @@
       "heel": 38,
       "forefoot": 30
     },
-    "releaseYear": null,
+    "releaseYear": 2022,
     "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
@@ -9450,7 +9450,7 @@
       "heel": 34,
       "forefoot": 26
     },
-    "releaseYear": null,
+    "releaseYear": 2022,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -9474,7 +9474,7 @@
     "drop": 9,
     "plate": null,
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -9498,7 +9498,7 @@
     "drop": null,
     "plate": null,
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2022,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -9604,7 +9604,7 @@
       "heel": 33,
       "forefoot": 23
     },
-    "releaseYear": null,
+    "releaseYear": 2022,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -9634,7 +9634,7 @@
       "heel": 33,
       "forefoot": 23
     },
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -9973,7 +9973,7 @@
       "heel": 31,
       "forefoot": 25
     },
-    "releaseYear": null,
+    "releaseYear": 2022,
     "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
@@ -10047,7 +10047,7 @@
       "heel": 37,
       "forefoot": 27
     },
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -10179,7 +10179,7 @@
       "heel": 38,
       "forefoot": 30
     },
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
@@ -10380,7 +10380,7 @@
     "drop": null,
     "plate": null,
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -10497,7 +10497,7 @@
     "drop": 10,
     "plate": "carbon",
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2022,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
