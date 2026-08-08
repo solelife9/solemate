@@ -117,6 +117,16 @@ describe('서버 입력 검증', () => {
     expect(body).toMatch(/allow delete: if signedIn\(\) && request\.auth\.uid == uid;/);
   });
 
+  // 상한은 **근거가 있어야 한다.** 10,000 이던 시절엔 실제 최대(≈6,310)보다 58% 높아서,
+  // 아무도 평생 못 미치는 값을 쓸 수 있었다(2026-08-08). 지금은 실제 최대 위에 최소한의
+  // 여유만 둔다 — 여유가 0 이면 정직하게 달성한 사람의 점수를 조용히 깎게 되고(clamp 는
+  // 거부가 아니다), 여유가 크면 그만큼이 조작 가능 폭이 된다.
+  it('진척 포인트 상한이 실제 획득 가능 최대(≈6,310) 바로 위에 있다', () => {
+    const MAX_ACHIEVABLE = 6310; // lib/progression/rank.ts 헤더의 산출값
+    expect(server.CAPS.progressPoints).toBeGreaterThan(MAX_ACHIEVABLE);
+    expect(server.CAPS.progressPoints).toBeLessThanOrEqual(Math.round(MAX_ACHIEVABLE * 1.2));
+  });
+
   it('상한은 서버에 있고, 다섯 축 전부 값이 잡혀 있다', () => {
     expect(Object.keys(server.CAPS).sort()).toEqual(
       ['collection', 'consistency', 'distance', 'progressPoints', 'shoeHealth'].sort(),

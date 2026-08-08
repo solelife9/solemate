@@ -61,29 +61,41 @@ import type {
   RankingProvider,
 } from './lib/progression/types';
 
-// ── 랭킹 축은 '러닝 기록에서 파생된 것'만 둔다 (2026-08-03) ────────────────────
-// 뺀 둘과 그 이유:
+// ── 랭킹 축은 '서버가 검산할 수 있는 것'만 둔다 (2026-08-03 → 2026-08-08) ─────
+// 뺀 셋과 그 이유:
 //  · shoeHealth(평균 잔여 수명%) — **안 신을수록 1등**이었다. 새 신발만 사서 모셔두면
 //    100점이고, 수명을 끝까지 쓴 은퇴 신발이 평균에 섞여 성실히 쓴 사람일수록 점수가
 //    내려갔다. MISSION('부상 없이, 계속 달리도록')과 인센티브가 정반대다.
 //  · collection(등록 신발 수) — **검증이 불가능하다.** 이름만 열 번 입력하면 1위가
 //    되는데 앱은 그게 진짜인지 판별할 수 없다. Truth-only 위반이라 튜닝으로 못 고친다.
-// 남긴 셋은 전부 런 레코드에서 파생된다(위조하려면 러닝 자체를 만들어야 한다).
+//  · progressPoints(평생 누적 XP) — **2026-08-08 추가.** 같은 이유다: 검증이 불가능하다.
+//    2026-08-07 에 리더보드 점수를 서버 재계산으로 옮기면서 거리·꾸준함은 사용자의 실제
+//    러닝 기록에서 서버가 직접 계산하게 됐다. 그런데 이 축만은 옮기지 못했다 — 업적·
+//    타이틀·은퇴·챌린지가 얽힌 약 1,900줄 엔진의 산출물이라, 서버에 옮겨 적으면 두 벌이
+//    되어 반드시 갈라지기 때문이다(같은 데이터로 앱과 서버가 다른 점수를 내는 순간
+//    고칠 수 없는 버그가 된다).
+//    그 결과 **세 축 중 이 하나만 앱이 보낸 숫자를 그대로 믿는 상태**였다. 실제 최대
+//    획득 XP 는 ≈6,310 인데 상한이 10,000 이라, 아무도 평생 못 미치는 값을 써서 영구
+//    1위가 될 수 있었다. 상한은 7,000 으로 조였지만(functions/ranking.js) 조이는 것과
+//    막는 것은 다르다. **검증할 수 없는 것으로 순위를 매기지 않는다** — collection 을
+//    내린 것과 같은 판단이고, 이 저장소가 세 번째로 같은 결론에 도달한 자리다.
 //
-// ⚠️ 점수 발행은 그대로 둔다 — firestore.rules 의 validRankingEntry 가 shoeHealth·
-// collection 필드를 요구하므로 빼면 쓰기가 거부된다. 화면에서만 내린다. 축을 다시
-// 설계해 열 때(모델별 랭킹·은퇴 켤레 등) 규칙 변경 없이 되살릴 수 있다.
+// 남긴 둘은 **서버가 사용자의 러닝 기록에서 직접 계산한다**(functions/ranking.js).
+// 위조하려면 러닝 자체를 만들어야 하고, 그러면 자기 앱과 공개 프로필에 그 가짜 런이
+// 그대로 남는다 — 스트라바·나이키도 여기까지가 한계다.
+//
+// ⚠️ 점수 **발행**은 그대로 둔다(엔트리에 다섯 필드가 계속 실린다). 화면에서만 내린다 —
+// 순위를 매기지 않으면 값을 지어낼 이유도 사라진다. 축을 다시 설계해 열 때(모델별 랭킹·
+// 은퇴 켤레 등) 데이터 배관을 새로 깔지 않아도 된다.
 type Category =
   | 'distance'
-  | 'consistency'
-  | 'progressPoints';
+  | 'consistency';
 
 // 카테고리 메타(라벨/아이콘/점수 표기). 고정 순서로 칩을 노출(결정적 레이아웃).
 // 로테이션은 제거(정상 행동 페널티화 회피).
 const CATEGORIES: ReadonlyArray<{key: Category; label: string; icon: string}> = [
   {key: 'distance', label: '거리', icon: 'walk'},
   {key: 'consistency', label: '꾸준함', icon: 'flame'},
-  {key: 'progressPoints', label: '진척 포인트', icon: 'sparkles'},
 ];
 
 /**
@@ -113,14 +125,12 @@ function yearMonthOf(now: number): string {
   return ymLocal(new Date(now));
 }
 
-/** 카테고리별 점수 표기(거리 km / 꾸준함 일 / 진척 포인트 P). */
+/** 카테고리별 점수 표기(거리 km / 꾸준함 일). */
 function formatScore(category: Category, score: number): string {
   const n = Number.isFinite(score) ? score : 0;
   switch (category) {
     case 'distance':
       return `${Math.round(n).toLocaleString()} km`;
-    case 'progressPoints':
-      return `${Math.round(n).toLocaleString()} P`;
     case 'consistency':
       return `${Math.round(n)} 일`;
     default:
@@ -400,20 +410,10 @@ export default function HallOfFameScreen({
             거터는 ScrollView 컨테이너가 이미 주므로 패딩 0. (구 back 버튼 testID
             hof-back 은 헤더 행으로 이동 — 참조 테스트 없음 확인.) */}
         <ScreenHeader title="랭킹" onBack={onBack} testID="hof-back" style={s.header} />
-        {/* 축마다 집계 범위가 다르다 — 라벨이 그걸 말해줘야 한다(2026-08-03).
-            · 거리·꾸준함 = 이번 달 런만 센다(월간 리셋 — 매달 시작선이 같다).
-            · 진척 포인트 = **평생 누적 XP**다(App.tsx 가 view.rank.xp 를 싣는다).
-              티어가 XP 에서 파생되므로(rank.tierForXp, 레전드 5,000) 이 축의 순위는
-              곧 '누가 레전드를 찍었나'다 — 월간 경쟁이 아니라 명예의 전당 성격이라
-              그대로 둔다. 다만 "이번 달 랭킹"이라 적으면 거짓이 된다.
-            엔트리는 leaderboards/{ym} 에 월별로 쌓이므로, 누적 축이라도 목록에 오르는 건
-            **그 달에 동기한 사람**뿐이다. 결함이 아니라 성질이다 — 유령 1위가 영구히
-            박혀 있는 대신 '현역 중 누가 최고인가'가 보인다. 라벨에 그걸 밝힌다. */}
-        <Text style={s.monthLabel}>
-          {category === 'progressPoints'
-            ? `전체 기간 누적 · ${yearMonth}에 달린 러너 중`
-            : `${yearMonth} · 이번 달 랭킹`}
-        </Text>
+        {/* 남은 두 축은 **둘 다 이번 달 런만** 센다(월간 리셋 — 매달 시작선이 같다).
+            누적 축(진척 포인트)이 빠지면서 축마다 범위가 갈리던 문제가 사라졌고,
+            라벨도 분기 없이 한 줄이면 된다(2026-08-08). */}
+        <Text style={s.monthLabel}>{`${yearMonth} · 이번 달 랭킹`}</Text>
 
         {/* 카테고리 선택 칩(가로 스크롤) */}
         <ScrollView

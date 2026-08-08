@@ -411,14 +411,27 @@ describe('집계 범위 라벨', () => {
     expect(labelOf(r)).toContain('이번 달 랭킹');
   });
 
-  test('진척 포인트 축은 누적임을 밝힌다 — "이번 달"이라 하지 않는다', async () => {
+  // 2026-08-08: 이 자리엔 원래 "진척 포인트 축은 누적임을 밝힌다" 가 있었다.
+  // 그 축을 **화면에서 내렸다** — 서버가 검산할 수 없는 유일한 축이었기 때문이다.
+  // 거리·꾸준함은 서버가 사용자의 러닝 기록에서 직접 계산하지만, 진척 포인트는 앱이 보낸
+  // 숫자를 그대로 믿었다(≈1,900줄 엔진이라 서버로 옮기면 두 벌이 되어 갈라진다).
+  // 실제 최대 획득 XP 는 ≈6,310 인데 상한이 10,000 이라, **아무도 평생 못 미치는 값**으로
+  // 영구 1위가 될 수 있었다. shoeHealth·collection 을 내린 것과 같은 판단이다.
+  test('검증할 수 없는 축은 화면에 없다 — 진척 포인트 칩이 사라졌다', async () => {
     const r = await render(<HallOfFameScreen provider={makeProvider(true)} now={NOW} />);
-    const chip = one(r.root, 'hof-category-progressPoints');
+    expect(byId(r.root, 'hof-category-progressPoints')).toHaveLength(0);
+    // 남은 둘은 그대로 있어야 한다(축을 통째로 날린 게 아니다).
+    expect(byId(r.root, 'hof-category-distance').length).toBeGreaterThan(0);
+    expect(byId(r.root, 'hof-category-consistency').length).toBeGreaterThan(0);
+  });
+
+  test('두 축 모두 이번 달 랭킹이다 — 축마다 범위가 갈리지 않는다', async () => {
+    const r = await render(<HallOfFameScreen provider={makeProvider(true)} now={NOW} />);
+    const chip = one(r.root, 'hof-category-consistency');
     await act(async () => { (chip.props as any).onPress(); });
     await settle();
-    const t = labelOf(r);
-    expect(t).toContain('전체 기간 누적');
-    expect(t).not.toContain('이번 달 랭킹');
+    expect(labelOf(r)).toContain('이번 달 랭킹');
+    expect(labelOf(r)).not.toContain('전체 기간 누적');
   });
 });
 
