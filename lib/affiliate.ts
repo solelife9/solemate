@@ -8,6 +8,7 @@
 //  - '러너에게 최선' 우선: 커미션이 아니라 같은 카테고리 동급 모델을 추천한다(투명성=신뢰).
 //  - 이 모듈은 순수하다(네트워크/네이티브 0). 화면이 Linking.openURL 로 외부 쇼핑몰 검색을 연다.
 
+import {compareNewerFirst} from './shoeYear';
 import {
   SHOE_MODELS, ShoeModel, ShoeCategory, findShoeModel,
 } from '../data/shoeModels';
@@ -79,7 +80,9 @@ export function recommendNextShoes(current: NextShoeInput, limit = 3): ShoeModel
     const aSame = a.brand.toLowerCase() === curBrand ? 0 : 1;
     const bSame = b.brand.toLowerCase() === curBrand ? 0 : 1;
     if (aSame !== bSame) return aSame - bSame;          // 같은 브랜드 먼저
-    if (a.year !== b.year) return b.year - a.year;      // 최신 연도 먼저
+    // 최신 연도 먼저 — 단, 한쪽이라도 미상이면 연도로 정하지 않는다(카탈로그 69% 가 미상).
+    const y = compareNewerFirst(a.year, b.year);
+    if (y !== 0) return y;
     return a.model.localeCompare(b.model);              // 안정적 tie-break
   });
 

@@ -18,6 +18,7 @@
 // 정렬 규칙(불가침): 정렬 키는 개선 폭뿐이다. 커미션·제휴 태그는 이 계산 어디에도
 // 등장하지 않는다(lib/shoeStore 불가침 ②와 같은 원칙).
 
+import {compareNewerFirst} from './shoeYear';
 import {SHOE_MODELS, ShoeModel, ShoeCategory, findShoeModel} from '../data/shoeModels';
 import {buildShoeSpec, OfficialSpec} from './shoeSpecModel';
 import {CompareAxis, ShoeSpec, AxisDelta, compareAxes} from './shoeCompare';
@@ -127,9 +128,12 @@ export function recommendByAxis(
   }
 
   // 개선 폭 큰 순 → 최신 연도 → 모델명(결정적 tie-break).
+  // ⚠️ 연도 비교는 compareNewerFirst 를 쓴다 — 카탈로그의 69% 가 연도 미상(=0)이라
+  // 뺄셈으로 비교하면 "모른다"가 "1970년"이 돼 그 전부가 구조적으로 맨 뒤로 밀린다.
   scored.sort((a, b) => {
     if (b.gain !== a.gain) return b.gain - a.gain;
-    if (b.model.year !== a.model.year) return b.model.year - a.model.year;
+    const y = compareNewerFirst(a.model.year, b.model.year);
+    if (y !== 0) return y;
     return a.model.model.localeCompare(b.model.model);
   });
 
@@ -246,7 +250,8 @@ export function similarShoes(
   all.sort((a, b) => {
     const d = rank(a) - rank(b);
     if (d !== 0) return d;
-    if (b.model.year !== a.model.year) return b.model.year - a.model.year;
+    const y = compareNewerFirst(a.model.year, b.model.year);
+    if (y !== 0) return y;
     return a.model.model.localeCompare(b.model.model);
   });
 
