@@ -18,6 +18,7 @@ import ToastHost from './ToastHost';
 import DialogHost from './DialogHost';
 import {installCrashHandler, setCrashUser, recordError, reportIssue, setCrashCollectionEnabled} from './lib/crashlytics';
 import {devSeedShoes, devSeedRuns} from './lib/devSeed';
+import {calibrateStride} from './lib/strideLength';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
 import HistoryScreen, {PeriodSummary, PeriodChart} from './HistoryScreen.rn';
@@ -2832,6 +2833,23 @@ function Main(){
     setOverlay('none');
   };
 
+  // ── 실내(트레드밀) 보폭 — 안드로이드 실내 거리의 재료 ─────────────────────
+  // 안드로이드엔 OS 가 주는 이동거리 API 가 없어서 실내 거리는 걸음 × 보폭으로 낸다.
+  // 그 보폭을 **사용자의 실외 GPS 러닝에서 보정**한다(가민·폴라와 같은 방식) —
+  // 밖에서 뛸수록 트레드밀 거리가 정확해진다. 근거·한계는 lib/strideLength 헤더.
+  //
+  // GPS 로 잰 러닝만 쓴다: 실내 러닝은 바로 이 보폭으로 만든 거리라, 쓰면 자기 추정으로
+  // 자기를 보정하는 순환이 된다. 판별은 **경로(route) 유무** — 실내는 GPS 를 켜지 않아
+  // 좌표가 남지 않는다.
+  const indoorStride=useMemo(()=>calibrateStride(
+    runs.map(r=>({
+      km:Number(r.km)||0,
+      durationS:Number(r.duration)||0,
+      cadence:Number(r.cadence)||0,
+      gpsMeasured:!!r.route&&r.route!=='[]',
+    })),
+  ),[runs]);
+
   // ── 안드로이드 하드웨어 뒤로가기 ─────────────────────────────────────────────
   // 2026-08-07 실기기 확정: 기록 상세에서 시스템 뒤로가기를 누르면 목록으로 돌아가는 게
   // 아니라 **앱이 통째로 종료됐다**. 저장소 전체에 BackHandler 가 0건이었다 — iOS 만 보고
@@ -2973,6 +2991,7 @@ function Main(){
         runs={runs}
         // 목표 화면을 떠나면 '설정 다녀오면 시작' 대기도 함께 푼다(엉뚱한 순간의 자동 시작 방지).
         onBack={()=>{setOverlay('none');setPendingShoe(null);setPermRetryGoal(null);}}
+        strideSource={indoorStride.source}
         onStart={startActiveRun}
       />
     );
@@ -3005,6 +3024,7 @@ function Main(){
         track={activeRun.trackLapM?{lapM:activeRun.trackLapM}:null}
         indoor={!!activeRun.indoor}
         weightKg={weightKg}
+        strideM={indoorStride.strideM}
         age={age}
         restHR={restHR}
         resume={resumeSnap}

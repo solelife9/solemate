@@ -13,7 +13,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, StyleSheet, StatusBar, LayoutAnimation} from 'react-native';
+import {View, StyleSheet, StatusBar, LayoutAnimation, Platform} from 'react-native';
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -99,7 +99,7 @@ const CFG: Record<'km' | 'min', { min: number; max: number; step: number; unit: 
 };
 
 export default function RunGoalScreen({
-  onBack, onStart, age = 0, restHR = 0, runs = NO_RUNS,
+  onBack, onStart, age = 0, restHR = 0, runs = NO_RUNS, strideSource = 'personal',
 }: {
   // 신발은 홈 히어로에서 이미 선택해 넘어온다 — 이 화면은 '목표'에만 집중한다(2026-07-19
   // 민우: 홈에서 신발 고르고 러닝시작 눌렀는데 여기 또 신발 행이 있어 화면이 복잡했다.
@@ -109,6 +109,12 @@ export default function RunGoalScreen({
   age?: number; restHR?: number;
   /** 러닝 이력(추정치 개인화용, 심사 #74). 미전달 = 기본값(5분/km·64kcal/km) 추정. */
   runs?: EstimateRunLike[];
+  /**
+   * 실내 거리에 쓰는 보폭이 **개인 보정값인가 기본 추정값인가**(lib/strideLength).
+   * 'default' 면 아래 실내 힌트가 "실외 러닝을 하면 더 정확해져요"를 덧붙인다 —
+   * 추정을 측정인 것처럼 보여주지 않기 위해서다(MISSION.md Truth only).
+   */
+  strideSource?: 'personal' | 'default';
 }) {
   // safe-area 실측(검수 MED, 2026-07-16): 상단 rv(54)·하단 rv(30) 하드코딩은 노치/홈바
   // 기기별 편차를 못 담는다(다이내믹 아일랜드 밑에 nav 가 살짝 파고들던 것) — insets 로.
@@ -273,8 +279,13 @@ export default function RunGoalScreen({
         />
       )}
       {mode !== 'track' && indoor && (
+        // 안드로이드는 OS 가 이동거리를 주지 않아 걸음 × 보폭으로 낸다. 아직 실외 러닝이
+        // 모자라 **기본 보폭**을 쓰는 동안에는 그 사실을 말한다 — 추정을 측정처럼 보여주지
+        // 않는다. 아이폰은 CMPedometer 가 기기 보정된 거리를 직접 주므로 해당 없음.
         <Text style={s.envHint} testID="goal-indoor-hint">
-          걸음으로 거리를 세요 · 지도는 기록되지 않아요
+          {Platform.OS === 'android' && strideSource === 'default'
+            ? '걸음으로 거리를 세요 · 실외 러닝을 하면 더 정확해져요'
+            : '걸음으로 거리를 세요 · 지도는 기록되지 않아요'}
         </Text>
       )}
 

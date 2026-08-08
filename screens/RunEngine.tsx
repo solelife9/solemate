@@ -48,6 +48,7 @@ import {liveActivity} from '../lib/liveActivity';
 import {watchSession} from '../lib/watchSession';
 import {reportIssue} from '../lib/crashlytics';
 import {pedometerDistance} from '../lib/pedometerDistance';
+import {stepsToMeters} from '../lib/strideLength';
 import {estimateMaxHR, zoneOf} from '../lib/analytics/hrZones';
 import {decideZoneCoach, initZoneCoachState} from '../lib/zoneCoach';
 import {decidePaceCoach, initPaceCoachState} from '../lib/paceCoach';
@@ -63,7 +64,7 @@ function openLocationSettingsAlert(message:string){
   ]);
 }
 
-export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,track=null,indoor=false,weightKg,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;goalMin?:number;pacePlan?:number[];targetZone?:number;track?:{lapM:number}|null;indoor?:boolean;weightKg:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,track=null,indoor=false,weightKg,strideM=1,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;goalMin?:number;pacePlan?:number[];targetZone?:number;track?:{lapM:number}|null;indoor?:boolean;weightKg:number;strideM?:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
   // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
@@ -771,6 +772,20 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
             // 최신값을 돌려준다(신선도가 거짓말이 되지 않는다).
             const stepSignalTrustworthy=Platform.OS!=='android'||AppState.currentState==='active';
             if(stepSignalTrustworthy) runTracker.feedSteps(steps,Date.now());
+            // ── 안드로이드 실내(트레드밀) 거리 ────────────────────────────────────
+            // 아이폰은 CMPedometer 가 **거리를 직접** 주지만(lib/pedometerDistance),
+            // 안드로이드엔 OS 가 주는 이동거리 API 가 아예 없다. 그래서 걸음 × 보폭으로
+            // 낸다(가민·폴라와 같은 방식 — lib/strideLength 헤더에 근거).
+            // 이게 없으면 **안드로이드 실내 러닝이 항상 0.00km 로 끝난다**(2026-08-08).
+            //
+            // 실외에는 절대 붙이지 않는다 — 거리 정본은 GPS 이고, 걸음 거리를 더하면
+            // 이중계산이다(엔진의 死구간 융합은 iOS 전용 경로가 따로 맡는다).
+            // 신선도(stepSignalTrustworthy)도 걸지 않는다: 화면이 꺼져 얼어붙은 누적값은
+            // 델타 0 이라 무해하고, 복귀하면 그동안의 걸음이 한꺼번에 실려 와 총합이 맞는다.
+            // 일시정지·센서 리셋 처리는 엔진(feedPedometerDistance)이 이미 갖고 있다.
+            if(Platform.OS==='android'&&indoor){
+              runTracker.feedPedometerDistance(stepsToMeters(steps,strideM),Date.now());
+            }
             // **일시정지 중** 걸음만 따로 센다(분자에서 뺀다).
             // 신뢰도(stepSignalTrustworthy)는 여기에 걸지 않는다 — 그건 정지 게이트의
             // 신선도 문제일 뿐이고, 화면이 꺼져 있던 동안의 걸음도 진짜 달린 걸음이다.
