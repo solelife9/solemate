@@ -1395,7 +1395,7 @@
       "heel": 32,
       "forefoot": 28
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "알트라",
@@ -1470,7 +1470,7 @@
       "heel": 33,
       "forefoot": 29
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "알트라",
@@ -1675,7 +1675,7 @@
     "drop": 0,
     "plate": null,
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "알트라",
@@ -1956,7 +1956,7 @@
     "drop": 0,
     "plate": "none",
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "알트라",
@@ -2029,7 +2029,7 @@
       "heel": 24,
       "forefoot": 19
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "discontinued": false,
     "searchAliases": [
       "아식스",
@@ -2103,7 +2103,7 @@
     "drop": 8,
     "plate": null,
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -2131,7 +2131,7 @@
       "heel": 38.5,
       "forefoot": 30.5
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -2252,7 +2252,7 @@
     "drop": 10,
     "plate": "none",
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2022,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -2280,7 +2280,7 @@
       "heel": 40,
       "forefoot": 30
     },
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -2308,7 +2308,7 @@
       "heel": 40,
       "forefoot": 30
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -2390,7 +2390,7 @@
       "heel": 41.5,
       "forefoot": 33.5
     },
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -2418,7 +2418,7 @@
       "heel": 42,
       "forefoot": 34
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -2565,7 +2565,7 @@
     "drop": 8,
     "plate": null,
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -2585,7 +2585,7 @@
       "heel": 36,
       "forefoot": 28
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "discontinued": false,
     "searchAliases": [
       "아식스",
@@ -2774,7 +2774,7 @@
       "heel": 46,
       "forefoot": 40
     },
-    "releaseYear": null,
+    "releaseYear": 2025,
     "discontinued": false,
     "searchAliases": [
       "아식스",
@@ -2854,7 +2854,7 @@
       "heel": 34.5,
       "forefoot": 26.5
     },
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -2880,7 +2880,7 @@
       "heel": 36,
       "forefoot": 28
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -3159,7 +3159,7 @@
       "heel": 37,
       "forefoot": 32
     },
-    "releaseYear": null,
+    "releaseYear": 2022,
     "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
@@ -3205,7 +3205,7 @@
       "heel": 40,
       "forefoot": 35
     },
-    "releaseYear": null,
+    "releaseYear": 2025,
     "discontinued": false,
     "searchAliases": [
       "아식스",
@@ -3232,7 +3232,7 @@
       "heel": 43,
       "forefoot": 38
     },
-    "releaseYear": null,
+    "releaseYear": 2025,
     "discontinued": false,
     "searchAliases": [
       "아식스",
@@ -3263,7 +3263,7 @@
       "heel": 38,
       "forefoot": 33
     },
-    "releaseYear": null,
+    "releaseYear": 2022,
     "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
@@ -3309,7 +3309,7 @@
       "heel": 40,
       "forefoot": 35
     },
-    "releaseYear": null,
+    "releaseYear": 2025,
     "discontinued": false,
     "searchAliases": [
       "아식스",
@@ -3364,7 +3364,7 @@
       "heel": 41,
       "forefoot": 33
     },
-    "releaseYear": null,
+    "releaseYear": 2022,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -3392,7 +3392,7 @@
       "heel": 41.5,
       "forefoot": 33.5
     },
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -4006,7 +4006,7 @@
     "drop": 6,
     "plate": null,
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "브룩스",
@@ -4381,7 +4381,7 @@
     "drop": 6,
     "plate": null,
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "브룩스",
@@ -4511,7 +4511,7 @@
       "heel": 39,
       "forefoot": 31
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "브룩스",
@@ -4841,7 +4841,7 @@
     "drop": 8,
     "plate": "carbon",
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "브룩스",
@@ -4942,7 +4942,7 @@
       "heel": 46,
       "forefoot": 38
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "브룩스",
@@ -5394,7 +5394,7 @@
       "heel": 48,
       "forefoot": 41
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "호카",
@@ -5446,7 +5446,7 @@
       "heel": 43,
       "forefoot": 35
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "호카",
@@ -5621,7 +5621,7 @@
       "heel": 39,
       "forefoot": 33
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "호카",
@@ -6211,7 +6211,7 @@
       "heel": 38,
       "forefoot": 33
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -6432,7 +6432,7 @@
       "heel": 31,
       "forefoot": 26
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "호카",
@@ -7550,7 +7550,7 @@
       "heel": 50,
       "forefoot": 42
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "미즈노",
@@ -10808,7 +10808,7 @@
       "heel": 43,
       "forefoot": 37
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "노다",
@@ -13714,7 +13714,7 @@
       "heel": 39,
       "forefoot": 31
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "소코니",
@@ -13982,7 +13982,7 @@
       "heel": 41,
       "forefoot": 35
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "소코니",
@@ -15049,7 +15049,7 @@
       "heel": 28,
       "forefoot": 28
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "토포",
@@ -15311,7 +15311,7 @@
       "heel": 32,
       "forefoot": 27
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "토포",
