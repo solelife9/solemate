@@ -335,6 +335,12 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   // 화면 표시(setHeartRate)와 함께 엔진(runTracker.feedHeartRate)에 먹여 HR 시계열을 적립한다
   // — 완주 시 hrTrack_<id>로 영속해 HR존·트레이닝효과 분석에 쓴다(워치 등록 시 자동 작동).
   useEffect(()=>watchSession.onHeartRate(bpm=>{setHeartRate(bpm);hrLiveRef.current=bpm;runTracker.feedHeartRate(bpm);}),[]);
+  // 워치 거리 미러링 — 워치가 붙어 있으면 **워치가 기록자**다(2026-08-09).
+  // 예전엔 두 기기가 각자 재서 러닝 중 화면 숫자가 달랐고(실측 폰 5.14 / 워치 5.358),
+  // 종료 시 병합에서 워치 값이 이겨 본 것과 남는 것이 달라졌다. 이제 폰이 그 값을
+  // 그대로 표시·저장한다. 엔진이 단조성·정지·끊김(20초)을 전부 책임진다
+  // (runTracker.feedWatchDistance) — 여기서는 흘려보내기만 한다.
+  useEffect(()=>watchSession.onWatchDistance(km=>runTracker.feedWatchDistance(km)),[]);
 
   useEffect(()=>{
     // 'review' 복구는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.

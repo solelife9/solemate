@@ -105,6 +105,21 @@ export const watchSession = {
     return () => sub.remove();
   },
   /**
+   * 워치가 러닝 중 보내는 **누적 거리**(km) 스트림 — 폰+워치 동시 러닝의 '진짜 미러링'.
+   *
+   * 예전엔 두 기기가 각자 재서 러닝 중 화면 숫자가 달랐고(실측 폰 5.14 / 워치 5.358),
+   * 저장하면서 워치 값으로 바뀌었다(본 것 ≠ 남는 것). 이제 폰이 이 값을 그대로 쓴다.
+   * 무효(0·음수·NaN)는 걸러 낸다 — 엔진도 한 번 더 거르지만 채널에서 막는 편이 낫다.
+   */
+  onWatchDistance(cb: (km: number) => void): () => void {
+    if (!emitter) return () => {};
+    const sub = emitter.addListener('onWatchDistance', (e: any) => {
+      const km = Number(e?.km);
+      if (Number.isFinite(km) && km > 0) cb(km);
+    });
+    return () => sub.remove();
+  },
+  /**
    * 워치 단독 러닝 완주 수신. 숫자 필드를 정규화하고 무효 페이로드(runId 없음·거리 0)는
    * 거른다. 같은 런이 메시지+큐로 두 번 올 수 있으므로 수신부는 runId 로 중복 방어할 것.
    */

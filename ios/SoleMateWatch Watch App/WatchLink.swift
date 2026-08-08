@@ -265,6 +265,26 @@ final class WatchLink: NSObject, ObservableObject {
     }
   }
 
+  /// 실시간 **누적 거리**(km)를 폰으로 보낸다 — 폰+워치 동시 러닝의 '진짜 미러링'.
+  ///
+  /// 왜: 예전엔 폰으로 시작해도 워치가 자기 워크아웃을 독립적으로 돌려 **두 기기가 각자
+  /// 쟀다.** 러닝 중 두 화면이 다른 숫자를 보여줬고(실측 폰 5.14 / 워치 5.358), 종료 시
+  /// 병합에서 워치 값이 이겨 **본 것과 남는 것이 달라졌다**. 업계는 기록자를 하나로 정한다
+  /// (애플=워치 전용, 가민=시계). 워치가 붙어 있으면 워치가 기록자다.
+  ///
+  /// 심박과 **같은 채널·같은 정책**이다: 도달하면 message, 아니면 컨텍스트로 최신값만 덮는다.
+  /// 놓쳐도 문제없다 — 누적값이라 다음 표본 하나로 따라잡는다(증분이 아니다).
+  nonisolated func sendDistance(_ km: Double) {
+    guard km.isFinite, km > 0 else { return }
+    let s = WCSession.default
+    guard s.activationState == .activated else { return }
+    if s.isReachable {
+      s.sendMessage(["wkm": km], replyHandler: nil, errorHandler: nil)
+    } else {
+      try? s.updateApplicationContext(["wkm": km])
+    }
+  }
+
   /// 심박 기록 전체를 폰으로 직송(경로 A). transferUserInfo = 배달 보장 큐라 폰이 주머니에
   /// 있어(비도달) 실시간 스트림을 놓쳐도 폰이 깨는 순간 배달된다. 폰은 시간창으로 자기 런과
   /// 매칭해 hrTrack 을 채운다 — HealthKit 동기화 타이밍과 무관한 정본 경로.

@@ -46,7 +46,7 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
   }
 
   override static func requiresMainQueueSetup() -> Bool { return true }
-  override func supportedEvents() -> [String]! { return ["onHeartRate", "onWatchRun", "onWatchHrTrack", "onWatchStop"] }
+  override func supportedEvents() -> [String]! { return ["onHeartRate", "onWatchRun", "onWatchHrTrack", "onWatchStop", "onWatchDistance"] }
   override func startObserving() {
     hasListeners = true
     // 구독 전에 도착해 버퍼된 정지·런·심박기록 재생(JS 가 runId·시간창·cmdAt 으로 방어).
@@ -85,6 +85,15 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
       DispatchQueue.main.async {
         if self.hasListeners { self.sendEvent(withName: "onWatchStop", body: body) }
         else { self.pendingStops.append(body) } // 콜드런치 — 구독되면 startObserving 이 재생
+      }
+      return
+    }
+    // 워치 누적 거리(진짜 미러링) — 폰이 러닝 중이면 그 값을 그대로 표시·저장한다.
+    // 버퍼링하지 않는다: 러닝이 끝난 뒤 배달돼도 쓸 데가 없고(엔진이 비활성), 누적값이라
+    // 놓쳐도 다음 표본 하나로 따라잡는다. 심박 스트림과 같은 정책이다.
+    if let wkm = payload["wkm"] as? Double {
+      DispatchQueue.main.async {
+        if self.hasListeners { self.sendEvent(withName: "onWatchDistance", body: ["km": wkm]) }
       }
       return
     }

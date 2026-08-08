@@ -302,9 +302,15 @@ class RunTracker {
 
   // ── 평활 거리 적산 심 ──────────────────────────────────────────────
   // dist 는 반드시 이 두 헬퍼를 통해서만 늘어난다(평활기 증분 = 단일 소스).
+  //
+  // ⚠️ **워치가 기록자일 땐 여기서 거리를 더하지 않는다**(2026-08-09 진짜 미러링).
+  // 아래 feedWatchDistance 주석 참조 — 두 기기가 각자 재면 화면과 저장값이 갈린다.
+  // 경로·고도·페이스 계산은 그대로 돈다(평활기는 계속 밀어 넣는다) — 끊는 것은
+  // **거리 적산 한 줄**뿐이다.
   private smoothPush(p: {lat: number; lon: number}) {
     const before = this.smoother.distKm();
     this.smoother.push(p);
+    if (this.watchLed()) return;
     this.dist += this.smoother.distKm() - before;
   }
 
@@ -312,6 +318,7 @@ class RunTracker {
   private smoothFlush() {
     const before = this.smoother.distKm();
     this.smoother.flush();
+    if (this.watchLed()) return;
     this.dist += this.smoother.distKm() - before;
   }
 
@@ -319,6 +326,10 @@ class RunTracker {
   start(config: RunTrackerConfig) {
     this.kf.reset();
     this.dist = 0;
+    // 워치 미러링 상태 — 새 런에서 반드시 지운다. 안 지우면 직전 러닝의 누적 거리가
+    // 남아 "워치 값이 현재보다 크면 채택" 규칙에 걸려 **새 런이 지난 거리에서 시작**한다.
+    this.watchKm = 0;
+    this.watchAtMs = 0;
     this.smoother = new DistanceSmoother();
     this.pts = [];
     this.stateWrittenAt = 0;   // 새 런 = 첫 저장 즉시(스로틀 리셋)
@@ -830,6 +841,64 @@ class RunTracker {
       permissionRevoked: this.permissionRevoked,
       elevGainM: Math.round(this.elev.gain),
     };
+  }
+
+  // ── 폰+워치 동시 러닝 = **진짜 미러링** (2026-08-09) ─────────────────────
+  //
+  // 예전엔 폰으로 시작해도 워치가 **자기 워크아웃을 독립적으로** 돌렸다. 미러링이 아니라
+  // 두 기기가 각자 잰 것이다. 그 결과:
+  //   · 러닝 중 두 화면이 **다른 숫자**를 보여준다(실측 폰 5.14 / 워치 5.358)
+  //   · 종료 시 병합에서 워치 값이 이겨 **본 것과 남는 것이 달라진다**(조용히 바뀐다)
+  //
+  // 업계는 **기록자를 시작할 때 하나로 정한다** — 애플은 아이폰에 러닝 기록 자체가 없고
+  // (워치 전용), 가민도 시계가 기록자다. 스트라바는 겹치는 활동이 오면 병합이 아니라
+  // 거부한다. 두 기록자를 두고 사후에 필드별로 합치는 앱은 확인된 게 없다.
+  //
+  // 그래서 워치가 붙어 있으면 **워치가 기록자**다. 폰은 워치가 보내는 거리를 그대로
+  // 표시하고 저장한다 → 두 화면이 같아지고, 저장하면서 숫자가 바뀌지 않는다.
+  // (경로 지도·고도·케이던스는 폰이 계속 잰다 — 워치가 안 주는 것들이다.)
+
+  /** 워치가 마지막으로 알려 준 거리(km). 0 = 아직 없음. */
+  private watchKm = 0;
+  /** 그 값이 도착한 시각(ms). 0 = 아직 없음. */
+  private watchAtMs = 0;
+
+  /**
+   * 워치 거리가 이 시간(ms) 넘게 안 오면 **폰이 기록자로 돌아온다.**
+   * 워치가 꺼지거나 멀어지면 거리가 그 자리에 얼어붙는데, 그건 데이터 유실이다.
+   * HK 컬렉션 콜백은 보통 수 초 간격이라 20초면 넉넉하고, 얼어붙는 시간도 짧다.
+   */
+  private static readonly WATCH_STALE_MS = 20000;
+
+  /** 지금 워치가 기록자인가(최근 표본이 살아 있는가). */
+  private watchLed(): boolean {
+    return this.watchAtMs > 0 && this.now() - this.watchAtMs < RunTracker.WATCH_STALE_MS;
+  }
+
+  /**
+   * 워치가 잰 **누적 거리**(km)를 먹인다. 워치 워크아웃이 도는 동안 주기적으로 들어온다.
+   *
+   * 지키는 선:
+   *  · **줄지 않는다.** 워치 값이 현재보다 작으면 무시한다(워치가 늦게 시작했거나 표본이
+   *    튄 경우). 화면의 거리가 뒤로 가면 사용자는 기록이 사라졌다고 읽는다 — Iron Law.
+   *  · 정지·일시정지 중에는 받지 않는다(그 구간은 어느 기기든 거리가 늘면 안 된다).
+   *  · 비유한·음수는 버린다.
+   *  · 워치가 끊기면 WATCH_STALE_MS 뒤 폰이 이어받는다 — **현재 거리에서 이어서** 쌓으므로
+   *    되돌아가지도, 건너뛰지도 않는다(평활기 증분 방식이라 그 지점부터 더해진다).
+   */
+  feedWatchDistance(km: number, atMs?: number) {
+    if (!this.active || this.pausedFlag()) return;
+    if (!Number.isFinite(km) || km <= 0) return;
+    const now = atMs ?? this.now();
+    this.watchAtMs = now;           // 값을 안 쓰더라도 '워치가 살아 있다'는 사실은 갱신한다
+    if (km <= this.watchKm) return; // 워치 누적은 단조 — 역행 표본은 버린다
+    this.watchKm = km;
+    if (km > this.dist) this.dist = km;  // 절대 줄이지 않는다
+  }
+
+  /** 지금 거리의 출처 — 화면이 '워치로 측정 중'을 알릴 수 있게. */
+  getDistanceSource(): 'watch' | 'phone' {
+    return this.watchLed() ? 'watch' : 'phone';
   }
 
   getDistanceKm(): number {

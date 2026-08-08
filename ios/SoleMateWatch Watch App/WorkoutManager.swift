@@ -1015,6 +1015,10 @@ extension WorkoutManager: HKLiveWorkoutBuilderDelegate {
         WorkoutManager.shared.hkDistanceKm = km
         WorkoutManager.shared.hkAlive = true
         WorkoutManager.shared.recomputeDistance()
+        // 폰이 같은 러닝을 돌고 있으면 **그 화면도 이 값을 쓴다**(진짜 미러링).
+        // recomputeDistance 뒤에 보내는 이유: HK·GPS 융합이 끝난 최종값이어야 폰과
+        // 워치가 같은 숫자를 본다. 폰이 없거나 러닝 중이 아니면 조용히 버려진다.
+        WatchLink.shared.sendDistance(WorkoutManager.shared.distanceKm)
       }
     }
   }
