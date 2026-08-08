@@ -37,6 +37,17 @@ enum RunGoalKind: String, Equatable { case free, distance, time, track }
 /// 러닝 목표 — 시작 시점에 확정, 러닝 내내 불변(표시·달성 판정용).
 struct RunGoal: Equatable {
   var kind: RunGoalKind = .free
+  /// 실내(트레드밀) 러닝인가.
+  ///
+  /// **목표 종류가 아니라 별도 플래그다** — 실내는 '거리 5km'와 배타가 아니라 함께 성립한다
+  /// (트레드밀에서 5km 목표로 뛴다). enum 에 case 를 늘리면 목표×실내 조합이 곱으로 늘어난다.
+  ///
+  /// 이 값이 하는 일 두 가지(2026-08-08):
+  ///  · `HKWorkoutConfiguration.locationType` 을 `.indoor` 로 준다. 건강 앱이 실내 러닝으로
+  ///    기록하고, 애플이 실내용 거리 추정(가속도계 보행 모델)을 쓴다.
+  ///  · **GPS 를 아예 켜지 않는다.** 예전엔 `.outdoor` 하드코딩이라 트레드밀 위에서도
+  ///    위성을 계속 찾았다 — 실내에서는 잡히지도 않으면서 배터리만 태운다.
+  var indoor: Bool = false
   var distanceKm: Double = 5.0    // .distance 목표 거리
   var minutes: Double = 30        // .time 목표 시간(분)
   var trackLapM: Double = 400     // .track 한 바퀴 예상 거리(m) — 첫 랩 GPS 보정
@@ -352,7 +363,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     requestPermissions()
     let config = HKWorkoutConfiguration()
     config.activityType = .running
-    config.locationType = .outdoor
+    // 실내면 .indoor — 건강 앱의 기록 종류가 달라지고, 애플의 실내 거리 추정이 켜진다.
+    config.locationType = goal.indoor ? .indoor : .outdoor
     do {
       let s = try HKWorkoutSession(healthStore: healthStore, configuration: config)
       let b = s.associatedWorkoutBuilder()
@@ -408,8 +420,12 @@ final class WorkoutManager: NSObject, ObservableObject {
       s.startActivity(with: now)
       b.beginCollection(withStart: now) { _, _ in }
       // 워크아웃 세션 중 손목 다운/백그라운드에서도 위치가 계속 흐르게(SpeedySloth 관용).
-      locationManager.allowsBackgroundLocationUpdates = true
-      locationManager.startUpdatingLocation()
+      // **실내면 켜지 않는다**(2026-08-08) — 트레드밀 위에서 위성은 잡히지 않고 배터리만
+      // 태운다. 거리는 HealthKit 의 실내 추정이 담당한다(config.locationType = .indoor).
+      if !goal.indoor {
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.startUpdatingLocation()
+      }
       phase = .running
       startTimer()
       WatchVoice.shared.start() // 러닝 시작 음성(워치 단독+에어팟)

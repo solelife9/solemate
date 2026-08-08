@@ -187,6 +187,82 @@ struct KeegoMediumView: View {
     }
 }
 
+// ── 잠금화면 위젯 (iOS 16+ accessory 패밀리) ──────────────────────────────────
+//
+// 왜 넣나 (2026-08-08)
+// ----------------------------------------------------------------------------
+// 홈 위젯만 있었는데 **문서와 주석은 "홈/잠금"이라고 적고 있었다** — 문서가 코드보다
+// 앞서 있던 자리다(감사 L-2). 잠금화면은 러닝 직전에 가장 많이 보는 면이고, 여기서
+// 신발 수명이 보이면 "오늘 뭘 신지"가 앱을 열기 전에 끝난다(shoe-first).
+//
+// 잠금화면은 **단색으로 렌더된다**(widgetRenderingMode = .accessory). 홈 위젯의 마모
+// 그라데이션은 여기서 의미가 없다 — 시스템이 전부 같은 틴트로 칠한다. 그래서 색으로
+// 말하지 않고 **형태와 숫자로** 말한다: 링의 채움 정도와 남은 km.
+// (색을 우겨 넣으면 시스템이 뭉개서 오히려 판독성만 떨어진다.)
+struct KeegoCircularView: View {
+    let shoe: KeegoShoe?
+    var body: some View {
+        if let shoe {
+            // Gauge — 잠금화면 원형에서 애플이 주는 표준 표현. 링 채움이 곧 남은 수명이다.
+            Gauge(value: shoe.remaining) {
+                Image(systemName: "shoe")
+            } currentValueLabel: {
+                Text("\(Int(shoe.remaining * 100))")
+                    .font(.system(size: 15, weight: .heavy))
+                    .monospacedDigit()
+            }
+            .gaugeStyle(.accessoryCircular)
+        } else {
+            // 지어내지 않는다 — 홈 위젯과 같은 태도. 눌러서 앱을 열면 등록할 수 있다.
+            Gauge(value: 0) {
+                Image(systemName: "shoe")
+            } currentValueLabel: {
+                Image(systemName: "plus")
+            }
+            .gaugeStyle(.accessoryCircular)
+        }
+    }
+}
+
+struct KeegoRectangularView: View {
+    let shoe: KeegoShoe?
+    var body: some View {
+        if let shoe {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(shoe.name)
+                    .font(.system(size: 14, weight: .semibold))
+                    .lineLimit(1)
+                // 남은 수명 막대 — 단색이라 '얼마나 남았나'는 길이로만 읽힌다.
+                Gauge(value: shoe.remaining) { EmptyView() }
+                    .gaugeStyle(.accessoryLinearCapacity)
+                Text("\(shoe.usedKm) / \(shoe.maxKm)km")
+                    .font(.system(size: 12, weight: .medium))
+                    .monospacedDigit()
+                    .widgetAccentable(false)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Keego").font(.system(size: 14, weight: .semibold))
+                Text("러닝화를 등록해 주세요")
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1).minimumScaleFactor(0.8)
+            }
+        }
+    }
+}
+
+struct KeegoInlineView: View {
+    let shoe: KeegoShoe?
+    var body: some View {
+        if let shoe {
+            // 한 줄 — 시스템이 폭을 심하게 줄이므로 이름은 뒤로, 숫자를 앞에 둔다.
+            Text("\(shoe.usedKm)/\(shoe.maxKm)km · \(shoe.name)")
+        } else {
+            Text("러닝화를 등록해 주세요")
+        }
+    }
+}
+
 /// 보여줄 신발이 없을 때. **안드로이드 위젯과 같은 문구·같은 태도**
 /// (ShoeWidgetProvider.kt: "아직 신발이 없거나 앱을 한 번도 안 열었다 — 지어내지 않는다").
 /// 링은 비어 있는 상태로 그려 위젯의 형태는 유지한다 — 탭하면 앱이 열려 등록할 수 있다.
@@ -214,19 +290,27 @@ struct KeegoEmptyView: View {
 struct KeegoShoeWidgetEntryView: View {
     @Environment(\.widgetFamily) var family
     let entry: KeegoEntry
+    /// 잠금화면 패밀리인가 — 배경 처리와 링크 방식이 홈 위젯과 다르다.
+    private var isAccessory: Bool {
+        family == .accessoryCircular || family == .accessoryRectangular || family == .accessoryInline
+    }
     var body: some View {
         Group {
-            // 신발이 없으면 **빈 상태**다. 샘플로 메우면 남의 신발이 내 홈 화면에 뜬다.
-            if let shoe = entry.shoe {
-                switch family {
-                case .systemMedium: KeegoMediumView(shoe: shoe)
-                default: KeegoSmallView(shoe: shoe)
+            switch family {
+            // 잠금화면(액세서리) — 단색 렌더라 전용 뷰를 쓴다. 빈 상태 처리는 각 뷰 안에서.
+            case .accessoryCircular: KeegoCircularView(shoe: entry.shoe)
+            case .accessoryRectangular: KeegoRectangularView(shoe: entry.shoe)
+            case .accessoryInline: KeegoInlineView(shoe: entry.shoe)
+            // 홈 화면 — 신발이 없으면 **빈 상태**다. 샘플로 메우면 남의 신발이 내 홈에 뜬다.
+            default:
+                if let shoe = entry.shoe {
+                    if family == .systemMedium { KeegoMediumView(shoe: shoe) } else { KeegoSmallView(shoe: shoe) }
+                } else {
+                    KeegoEmptyView(compact: family != .systemMedium)
                 }
-            } else {
-                KeegoEmptyView(compact: family != .systemMedium)
             }
         }
-        .containerBackgroundCompat()
+        .containerBackgroundCompat(accessory: isAccessory)
         // 위젯 탭 → 앱 열리며 활성 신발로 바로 러닝(딥링크). 앱이 keego://start 를 처리한다.
         .widgetURL(URL(string: "keego://start"))
     }
@@ -240,7 +324,11 @@ struct KeegoShoeWidget: Widget {
         }
         .configurationDisplayName("러닝화 수명")
         .description("활성 러닝화의 남은 수명을 보고, 탭하면 바로 러닝을 시작해요.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        // 잠금화면 3종 추가(2026-08-08) — 러닝 직전에 가장 많이 보는 면이다.
+        .supportedFamilies([
+            .systemSmall, .systemMedium,
+            .accessoryCircular, .accessoryRectangular, .accessoryInline,
+        ])
     }
 }
 
@@ -259,8 +347,13 @@ extension Color {
 
 extension View {
     // iOS 17 은 위젯에 containerBackground 를 요구한다. 16 은 배경을 직접 깐다.
-    @ViewBuilder func containerBackgroundCompat() -> some View {
-        if #available(iOS 17.0, *) {
+    /// 홈 위젯은 검은 판을 직접 깐다. **잠금화면(액세서리)은 깔면 안 된다** — 그 면은
+    /// 시스템이 소유하고 반투명 재질 위에 얹히므로, 검은 사각형을 그리면 잠금화면에
+    /// 시커먼 판이 박힌다(2026-08-08 액세서리 패밀리 추가 시 함께 처리).
+    @ViewBuilder func containerBackgroundCompat(accessory: Bool) -> some View {
+        if accessory {
+            self
+        } else if #available(iOS 17.0, *) {
             self.containerBackground(Color.black, for: .widget)
         } else {
             ZStack { Color.black; self }

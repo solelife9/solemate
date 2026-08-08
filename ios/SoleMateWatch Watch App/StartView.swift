@@ -10,6 +10,7 @@
 // 확정: '신발 없이 시작' 폴백 제거. 폰 앱을 먼저 설치하는 흐름이라 shoe-first 를
 // 워치에서도 그대로 지킨다). 파파야는 시작 요소에만 — 무채 베이스 유지.
 import SwiftUI
+import WatchKit  // WKInterfaceDevice — 실내 토글 햅틱
 
 struct StartView: View {
   @EnvironmentObject var workout: WorkoutManager
@@ -212,6 +213,9 @@ private struct GoalPanel: View {
   let onStart: (RunGoal) -> Void
 
   @State private var kind: RunGoalKind = .distance   // 거리 기본(가장 흔한 러닝)
+  /// 실내(트레드밀). **목표 종류와 다른 축**이라 세그먼트에 넣지 않는다 — 트레드밀에서
+  /// 5km 를 뛸 수 있으므로 '거리'와 배타가 아니다. 세그에 넣으면 조합이 곱으로 늘어난다.
+  @State private var indoor = false
   @State private var distanceKm: Double = 5.0
   @State private var minutes: Double = 30
   @State private var trackLapM: Double = 400
@@ -228,12 +232,40 @@ private struct GoalPanel: View {
       Spacer(minLength: 2)
       valueArea            // 유연 — 작은 워치에서 먼저 축소
       Spacer(minLength: 2)
+      indoorToggle         // 고정 높이 22 — '시작'을 밀어내지 않는다
       StartButton(label: "시작") {
-        onStart(RunGoal(kind: kind, distanceKm: distanceKm, minutes: minutes, trackLapM: trackLapM))
+        onStart(RunGoal(kind: kind, indoor: indoor,
+                        distanceKm: distanceKm, minutes: minutes, trackLapM: trackLapM))
       }
     }
     .padding(.horizontal, 6)
     .padding(.vertical, 4)
+  }
+
+  /// 실내 토글 — 한 줄, 고정 높이. 켜면 GPS 를 아예 켜지 않고 건강 앱에 '실내 러닝'으로
+  /// 기록된다(WorkoutManager 의 RunGoal.indoor 주석 참조).
+  ///
+  /// 트랙 모드에서는 숨긴다 — 트랙은 실외 운동장 자동랩이 존재 이유라 '실내 트랙'은
+  /// 지금 구조에서 뜻이 없다(첫 랩 GPS 보정이 실내에선 성립하지 않는다).
+  @ViewBuilder private var indoorToggle: some View {
+    if kind != .track {
+      Button {
+        indoor.toggle()
+        WKInterfaceDevice.current().play(.click)
+      } label: {
+        HStack(spacing: 5) {
+          Image(systemName: indoor ? "figure.run.treadmill" : "location.fill")
+            .font(.system(size: 11, weight: .semibold))
+          Text(indoor ? "실내" : "실외")
+            .font(.system(size: 12, weight: .semibold))
+        }
+        .foregroundStyle(indoor ? KeegoTheme.brand : KeegoTheme.t3)
+        .frame(maxWidth: .infinity)
+        .frame(height: 22)
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel(indoor ? "실내 러닝. 눌러서 실외로" : "실외 러닝. 눌러서 실내로")
+    }
   }
 
   @ViewBuilder private var valueArea: some View {

@@ -152,10 +152,23 @@ struct RunView: View {
 
   // ── 세로 0: 핵심이 다 보이는 메인(거리 히어로 + 보조 스택) ──────────────────
   private var mainPage: some View {
+    // ── AOD 에서도 **모든 지표**가 갱신된다 (2026-08-08) ────────────────────────
+    // 예전엔 TimelineView 가 경과시간 한 줄만 감쌌다. 그래서 손목을 내리면(AOD) 시계만
+    // 흐르고 **거리·페이스·심박은 손목을 내린 순간의 숫자로 얼어붙었다.** 달리다 흘끗
+    // 봤을 때 가장 믿게 되는 화면인데 거기 멈춘 값이 떠 있는 것이라, "안 늘어난다"는
+    // 오해를 넘어 **잘못된 판단(페이스 조절)** 으로 이어진다.
+    //
+    // 스택 전체를 감싸 한 번에 갱신한다. AOD 에서는 1초가 아니라 60초 간격이므로
+    // (watchOS 가 그보다 잦은 갱신을 허용하지 않는다) 전력 비용은 사실상 그대로다.
+    TimelineView(.periodic(from: .now, by: dimmed ? 60 : 1)) { _ in
+      mainPageBody
+    }
+  }
+
+  private var mainPageBody: some View {
     VStack(spacing: 0) {
       // 경과시간 — 화면 맨 위에 계속 흐른다(2026-07-28 민우님: "시간 제일 위에 흐르게").
-      // TimelineView 라 AOD(손목 내림)에서도 watchOS 가 갱신을 보장한다.
-      TimelineView(.periodic(from: .now, by: dimmed ? 60 : 1)) { _ in
+      Group {
         Text(KeegoFormat.time(workout.liveElapsedS))
           .font(.system(size: 22, weight: .semibold))
           .monospacedDigit()
