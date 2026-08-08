@@ -94,6 +94,13 @@ describe('러닝 알림 발송', () => {
       setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
       scheduleNotificationAsync: jest.fn().mockResolvedValue('id'),
       dismissNotificationAsync: jest.fn().mockResolvedValue(undefined),
+      // 알림 액션 버튼(2026-08-08) — 카테고리 등록 + 응답 구독.
+      setNotificationCategoryAsync: jest.fn().mockResolvedValue(undefined),
+      addNotificationResponseReceivedListener: jest.fn((cb: (r: {actionIdentifier?: string}) => void) => {
+        api.__fire = cb;
+        return {remove: jest.fn()};
+      }),
+      __fire: undefined as undefined | ((r: {actionIdentifier?: string}) => void),
     };
     jest.doMock('expo-notifications', () => api);
     const rn = require('react-native');
@@ -128,5 +135,97 @@ describe('러닝 알림 발송', () => {
     await showRunNotification({km: 1, elapsedSec: 60, avgPaceSecPerKm: null, paused: false});
 
     expect(api.scheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+});
+
+// ── 잠금화면에서 조작할 수 있어야 한다 (2026-08-08, 감사 L-9) ────────────────
+// 지표를 잠금화면에 띄워 놓고 조작은 잠금을 풀어야만 되게 두면 이 알림의 목적을 반쯤
+// 무효화한다. 자동 일시정지를 보고도 다시 뛰려면 폰을 꺼내야 한다 — 달리는 중에 하기
+// 가장 나쁜 동작이다. NRC·스트라바 안드로이드판은 알림에서 바로 조작된다.
+describe('알림 액션 버튼', () => {
+  const bootAndroid = () => {
+    jest.resetModules();
+    const api: any = {
+      setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
+      scheduleNotificationAsync: jest.fn().mockResolvedValue('id'),
+      dismissNotificationAsync: jest.fn().mockResolvedValue(undefined),
+      setNotificationCategoryAsync: jest.fn().mockResolvedValue(undefined),
+      addNotificationResponseReceivedListener: jest.fn((cb: any) => {
+        api.__fire = cb;
+        return {remove: jest.fn()};
+      }),
+    };
+    jest.doMock('expo-notifications', () => api);
+    const rn = require('react-native');
+    rn.Platform.OS = 'android';
+    return {api, rn};
+  };
+  afterEach(() => {
+    jest.dontMock('expo-notifications');
+    jest.resetModules();
+  });
+
+  test('달리는 중엔 [일시정지][종료] — 상태에 맞는 버튼이 붙는다', async () => {
+    const {api} = bootAndroid();
+    const {showRunNotification, RUN_ACTION} = require('../../lib/runNotification');
+    await showRunNotification({km: 3, elapsedSec: 900, avgPaceSecPerKm: 300, paused: false});
+
+    const cats = api.setNotificationCategoryAsync.mock.calls;
+    const running = cats.find((c: any[]) =>
+      c[1].some((a: any) => a.identifier === RUN_ACTION.pause));
+    expect(running).toBeDefined();
+    expect(running[1].map((a: any) => a.buttonTitle)).toEqual(['일시정지', '종료']);
+    // 보낸 알림이 그 카테고리를 가리켜야 한다 — 등록만 하고 안 붙이면 버튼이 안 뜬다.
+    expect(api.scheduleNotificationAsync.mock.calls[0][0].content.categoryIdentifier).toBe(running[0]);
+  });
+
+  test('멈춘 중엔 [재개][종료] — 다른 카테고리로 바뀐다', async () => {
+    const {api} = bootAndroid();
+    const {showRunNotification, RUN_ACTION} = require('../../lib/runNotification');
+    await showRunNotification({km: 3, elapsedSec: 900, avgPaceSecPerKm: 300, paused: true});
+
+    const cats = api.setNotificationCategoryAsync.mock.calls;
+    const paused = cats.find((c: any[]) =>
+      c[1].some((a: any) => a.identifier === RUN_ACTION.resume));
+    expect(paused[1].map((a: any) => a.buttonTitle)).toEqual(['재개', '종료']);
+    expect(api.scheduleNotificationAsync.mock.calls[0][0].content.categoryIdentifier).toBe(paused[0]);
+  });
+
+  test('버튼은 앱을 열지 않는다 — 달리는 중에 앱이 튀어나오면 그게 더 방해다', async () => {
+    const {api} = bootAndroid();
+    const {showRunNotification} = require('../../lib/runNotification');
+    await showRunNotification({km: 1, elapsedSec: 300, avgPaceSecPerKm: null, paused: false});
+    for (const call of api.setNotificationCategoryAsync.mock.calls) {
+      for (const a of call[1]) expect(a.options.opensAppToForeground).toBe(false);
+    }
+  });
+
+  test('우리 버튼만 콜백한다 — 알림 본문을 눌렀다고 러닝이 멈추면 안 된다', () => {
+    const {api} = bootAndroid();
+    const {onRunNotificationAction, RUN_ACTION} = require('../../lib/runNotification');
+    const seen: string[] = [];
+    onRunNotificationAction((a: string) => seen.push(a));
+
+    api.__fire({actionIdentifier: 'expo.modules.notifications.actions.DEFAULT'}); // 본문 탭
+    api.__fire({}); // 식별자 없음
+    api.__fire({actionIdentifier: RUN_ACTION.pause});
+    api.__fire({actionIdentifier: RUN_ACTION.stop});
+
+    expect(seen).toEqual([RUN_ACTION.pause, RUN_ACTION.stop]);
+  });
+
+  test('구독 해제가 리스너를 떼어 낸다', () => {
+    bootAndroid();
+    const {onRunNotificationAction} = require('../../lib/runNotification');
+    expect(() => onRunNotificationAction(() => {})()).not.toThrow();
+  });
+
+  test('모듈이 없으면 조용히 no-op — 호출부가 분기하지 않아도 된다', () => {
+    jest.resetModules();
+    jest.doMock('expo-notifications', () => {
+      throw new Error('없음');
+    });
+    const {onRunNotificationAction} = require('../../lib/runNotification');
+    expect(() => onRunNotificationAction(() => {})()).not.toThrow();
   });
 });

@@ -35,7 +35,7 @@ import {appendFinalSplit} from '../lib/splits';
 import {runTracker} from '../lib/runTracker';
 import {haversineM, calibrateLapM, lapsToTrack} from '../lib/laps';
 import {requestRunPermissions, startTracking, stopTracking, isPermissionError, hasForegroundPermission, RunPermissions} from '../lib/locationService';
-import {showRunNotification, clearRunNotification} from '../lib/runNotification';
+import {showRunNotification, clearRunNotification, onRunNotificationAction, RUN_ACTION} from '../lib/runNotification';
 import {activateKeepAwakeAsync, deactivateKeepAwake} from 'expo-keep-awake';
 import {initStepCadence, feedStepCount, averageSpm} from '../lib/stepCadence';
 import {fmtPace, fmtTime} from '../lib/format';
@@ -881,6 +881,32 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   const runBeganMsRef=useRef(0);
   const finishRunRef=useRef<()=>void>(()=>{});
   finishRunRef.current=finishRun;
+
+  // ── 잠금화면 알림 버튼 (2026-08-08, 감사 L-9) ──────────────────────────────
+  // 지표를 잠금화면에 띄워 놓고 **조작은 잠금을 풀어야만** 되게 두면 이 알림의 목적을
+  // 반쯤 무효화한다. 특히 자동 일시정지를 잠금화면에서 보고도 다시 뛰려면 폰을 꺼내
+  // 잠금을 풀어야 한다 — 달리는 중에 하기 가장 나쁜 동작이다.
+  //
+  // 워치 정지 미러링(아래 onWatchStop)과 **같은 성격**이라 같은 규율을 쓴다:
+  // ref 로 최신 핸들러를 잡아 두고, 구독은 마운트 1회(빈 의존성)로 둔다.
+  const handlePauseRef=useRef<()=>void>(()=>{});
+  handlePauseRef.current=handlePause;
+  useEffect(()=>{
+    return onRunNotificationAction(action=>{
+      // 종료는 **저장까지 하지 않는다** — finishRun 이 완주 화면으로 보내 사용자가
+      // 저장/버리기를 고른다. 잠금화면에서 되돌릴 수 없는 결정을 시키지 않는다.
+      if(action===RUN_ACTION.stop){finishRunRef.current();return;}
+      // 일시정지/재개는 같은 토글이다. 버튼 라벨이 상태에 따라 갈리므로(알림 카테고리)
+      // 여기서 상태를 다시 판정할 필요가 없다 — 다만 **엇갈림 방어**는 둔다: 알림이
+      // 3초 스로틀로 갱신되므로, 그 사이 화면에서 이미 토글했으면 버튼이 한 박자 낡았다.
+      // 그때 토글을 그대로 실행하면 사용자가 원한 것과 반대가 된다.
+      const paused=runTracker.pausedFlag();
+      if(action===RUN_ACTION.pause&&paused)return;   // 이미 멈춰 있다 — 무시
+      if(action===RUN_ACTION.resume&&!paused)return; // 이미 달리는 중 — 무시
+      handlePauseRef.current();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
   const watchStopHandledRef=useRef(false);
   useEffect(()=>watchSession.onWatchStop(cmdAtMs=>{
     if(!runBeganMsRef.current||watchStopHandledRef.current)return;

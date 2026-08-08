@@ -114,6 +114,15 @@ interface NotificationsModule {
   setNotificationChannelAsync(id: string, channel: Record<string, unknown>): Promise<unknown>;
   scheduleNotificationAsync(req: Record<string, unknown>): Promise<string>;
   dismissNotificationAsync(id: string): Promise<void>;
+  /** 알림 액션 버튼 묶음 등록(2026-08-08). 안드로이드에서 알림 하단 버튼으로 뜬다. */
+  setNotificationCategoryAsync(
+    id: string,
+    actions: {identifier: string; buttonTitle: string; options?: Record<string, unknown>}[],
+  ): Promise<unknown>;
+  /** 알림/버튼 응답 구독. 버튼 id 는 `actionIdentifier` 로 온다. */
+  addNotificationResponseReceivedListener?(
+    cb: (res: {actionIdentifier?: string}) => void,
+  ): {remove(): void};
 }
 
 function mod(): NotificationsModule | null {
@@ -140,6 +149,46 @@ async function ensureChannel(m: NotificationsModule): Promise<void> {
   channelReady = true;
 }
 
+// ── 알림 액션 버튼 (2026-08-08) ──────────────────────────────────────────────
+//
+// 왜: 잠금화면에 지표를 띄워 놓고 **조작은 잠금을 풀어야만** 되게 두면, 이 알림의 목적을
+// 반쯤 무효화한다. 특히 자동 일시정지가 걸린 걸 잠금화면에서 보고도 다시 뛰려면 폰을
+// 꺼내 잠금을 풀어야 한다 — 달리는 중에 하기 가장 나쁜 동작이다.
+// NRC·스트라바 안드로이드판은 알림에서 바로 조작된다.
+//
+// 두 개만 둔다. 알림 액션은 좁고, 러닝 중에 고를 수 있는 건 두 개가 한계다:
+//   · 달리는 중  → [일시정지] [종료]
+//   · 멈춘 중    → [재개]    [종료]
+// '종료'는 **저장까지 하지 않는다** — 앱을 열어 완주 화면에서 저장/버리기를 고르게 한다.
+// 잠금화면에서 되돌릴 수 없는 결정을 시키지 않는다(오탭 한 번에 러닝이 사라지면 안 된다).
+export const RUN_ACTION = {
+  pause: 'keego.run.pause',
+  resume: 'keego.run.resume',
+  stop: 'keego.run.stop',
+} as const;
+export type RunAction = (typeof RUN_ACTION)[keyof typeof RUN_ACTION];
+
+/** 달리는 중 / 멈춘 중 각각의 카테고리 id. 버튼 구성이 달라 둘로 나눈다. */
+const CATEGORY_RUNNING = 'keego.run.running';
+const CATEGORY_PAUSED = 'keego.run.paused';
+let categoriesReady = false;
+
+async function ensureCategories(m: NonNullable<ReturnType<typeof mod>>): Promise<void> {
+  if (categoriesReady) return;
+  // 버튼은 **앱을 열지 않고** 처리한다(opensAppToForeground: false) — 달리는 중에 앱이
+  // 튀어나오면 그게 더 방해다. 응답은 App 이 리스너로 받아 엔진에 전달한다.
+  const opts = {opensAppToForeground: false};
+  await m.setNotificationCategoryAsync(CATEGORY_RUNNING, [
+    {identifier: RUN_ACTION.pause, buttonTitle: '일시정지', options: opts},
+    {identifier: RUN_ACTION.stop, buttonTitle: '종료', options: opts},
+  ]);
+  await m.setNotificationCategoryAsync(CATEGORY_PAUSED, [
+    {identifier: RUN_ACTION.resume, buttonTitle: '재개', options: opts},
+    {identifier: RUN_ACTION.stop, buttonTitle: '종료', options: opts},
+  ]);
+  categoriesReady = true;
+}
+
 /**
  * 러닝 지표 알림을 띄우거나 갱신한다(같은 id 로 덮어쓴다 → 알림이 쌓이지 않는다).
  * 안드로이드가 아니거나 모듈이 없으면 조용히 아무것도 하지 않는다. **절대 throw 하지 않는다.**
@@ -153,6 +202,7 @@ export async function showRunNotification(
   if (!m) return;
   try {
     await ensureChannel(m);
+    await ensureCategories(m);
     const {title, body} = buildRunNotificationText(state, unit);
     await m.scheduleNotificationAsync({
       identifier: NOTIFICATION_ID,
@@ -171,6 +221,8 @@ export async function showRunNotification(
         // importance 3 이 **전부 무시되고**, 사용자 알림 설정에도 '러닝 중 기록' 이 아니라
         // 정체불명 채널명으로 보인다. 3초마다 갱신되는 알림이라 영향이 크다.
         channelId: CHANNEL_ID,
+        // 상태에 맞는 버튼 묶음. 달리는 중엔 [일시정지][종료], 멈춘 중엔 [재개][종료].
+        categoryIdentifier: state.paused ? CATEGORY_PAUSED : CATEGORY_RUNNING,
       },
       trigger: null, // 즉시
     });
@@ -191,7 +243,41 @@ export async function clearRunNotification(): Promise<void> {
   }
 }
 
+/**
+ * 알림 액션 버튼이 눌렸을 때 부를 콜백을 등록한다. 해제 함수를 돌려준다.
+ *
+ * expo-notifications 의 응답 리스너는 **알림 탭·버튼 탭을 같은 경로로** 준다.
+ * 본문을 탭한 경우 `actionIdentifier` 가 기본값(`expo.modules.notifications.actions.DEFAULT`)
+ * 이므로, 우리가 등록한 id 셋에 없으면 무시한다 — 그래야 알림을 그냥 눌렀을 때
+ * 러닝이 멈추는 사고가 안 난다.
+ *
+ * 안드로이드 전용이지만 **플랫폼으로 막지 않는다** — 모듈이 없거나 리스너를 못 달면
+ * 조용히 no-op 해제 함수를 돌려준다(호출부가 분기하지 않아도 되게).
+ */
+export function onRunNotificationAction(cb: (action: RunAction) => void): () => void {
+  const m = mod();
+  if (!m || typeof m.addNotificationResponseReceivedListener !== 'function') return () => {};
+  try {
+    const sub = m.addNotificationResponseReceivedListener(res => {
+      const id = res?.actionIdentifier;
+      if (id === RUN_ACTION.pause || id === RUN_ACTION.resume || id === RUN_ACTION.stop) {
+        cb(id);
+      }
+    });
+    return () => {
+      try {
+        sub?.remove();
+      } catch {
+        /* 이미 해제됨 */
+      }
+    };
+  } catch {
+    return () => {};
+  }
+}
+
 /** 테스트 전용 — 채널 준비 플래그 초기화. */
 export function __resetRunNotificationChannel(): void {
   channelReady = false;
+  categoriesReady = false;
 }
