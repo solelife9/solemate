@@ -36,6 +36,7 @@
 		FA57F0000000000000A10002 /* Jost.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FA57F0000000000000A10001 /* Jost.ttf */; };
 		FE30A99D1AD1D3D691B196A3 /* LiveActivityModule.m in Sources */ = {isa = PBXBuildFile; fileRef = C87CE683AB3104A6AB2E5968 /* LiveActivityModule.m */; };
 		KEE60A11EE60A11EE60A0001 /* SoleMateWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C0FFEE0000000000000000B3 /* KeegoComplication.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C0FFEE0000000000000000A9 /* KeegoComplication.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +53,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = CE47520D2FEECEC400FCC92A;
 			remoteInfo = RunActivityExtension;
+		};
+		C0FFEE0000000000000000B5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0FFEE0000000000000000A1;
+			remoteInfo = KeegoComplication;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -74,6 +82,17 @@
 			dstSubfolderSpec = 13;
 			files = (
 				CE4752232FEECEC500FCC92A /* RunActivityExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE0000000000000000B2 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C0FFEE0000000000000000B3 /* KeegoComplication.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -118,6 +137,7 @@
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F140792D3E517E002AEDD348 /* SoleMate.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = SoleMate.release.xcconfig; sourceTree = "<group>"; };
 		FA57F0000000000000A10001 /* Jost.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = Jost.ttf; path = ../assets/fonts/Jost.ttf; sourceTree = "<group>"; };
+		C0FFEE0000000000000000A9 /* KeegoComplication.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KeegoComplication.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -134,6 +154,13 @@
 				Info.plist,
 			);
 			target = CE47520D2FEECEC400FCC92A /* RunActivityExtension */;
+		};
+		C0FFEE0000000000000000B1 /* Exceptions for "KeegoComplication" folder in "KeegoComplication" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C0FFEE0000000000000000A1 /* KeegoComplication */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -162,6 +189,18 @@
 			path = RunActivity;
 			sourceTree = "<group>";
 		};
+		C0FFEE0000000000000000A8 /* KeegoComplication */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C0FFEE0000000000000000B1 /* Exceptions for "KeegoComplication" folder in "KeegoComplication" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = KeegoComplication;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -187,6 +226,13 @@
 			files = (
 				CE4752122FEECEC400FCC92A /* SwiftUI.framework in Frameworks */,
 				CE4752102FEECEC400FCC92A /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE0000000000000000A6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -268,6 +314,7 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				CE4752132FEECEC400FCC92A /* RunActivity */,
 				CE19A1EB2FF150740030FFF0 /* SoleMateWatch Watch App */,
+				C0FFEE0000000000000000A8 /* KeegoComplication */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
@@ -290,6 +337,7 @@
 				13B07F961A680F5B00A75B9A /* SoleMate.app */,
 				CE47520E2FEECEC400FCC92A /* RunActivityExtension.appex */,
 				CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */,
+				C0FFEE0000000000000000A9 /* KeegoComplication.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -344,12 +392,14 @@
 				CE19A1E32FF150740030FFF0 /* Sources */,
 				CE19A1E42FF150740030FFF0 /* Frameworks */,
 				CE19A1E52FF150740030FFF0 /* Resources */,
+				C0FFEE0000000000000000B2 /* Embed Foundation Extensions */,
 				8490701E843EF9B4D6F2634A /* [Keego] Crashlytics dSYM 업로드 (워치) */,
 				C3515DBC4D093D7C4060B9DC /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C0FFEE0000000000000000B4 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				CE19A1EB2FF150740030FFF0 /* SoleMateWatch Watch App */,
@@ -377,6 +427,26 @@
 			name = RunActivityExtension;
 			productName = RunActivityExtension;
 			productReference = CE47520E2FEECEC400FCC92A /* RunActivityExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		C0FFEE0000000000000000A1 /* KeegoComplication */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0FFEE0000000000000000A2 /* Build configuration list for PBXNativeTarget "KeegoComplication" */;
+			buildPhases = (
+				C0FFEE0000000000000000A5 /* Sources */,
+				C0FFEE0000000000000000A6 /* Frameworks */,
+				C0FFEE0000000000000000A7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C0FFEE0000000000000000A8 /* KeegoComplication */,
+			);
+			name = KeegoComplication;
+			productName = KeegoComplication;
+			productReference = C0FFEE0000000000000000A9 /* KeegoComplication.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -415,6 +485,7 @@
 				13B07F861A680F5B00A75B9A /* SoleMate */,
 				CE47520D2FEECEC400FCC92A /* RunActivityExtension */,
 				CE19A1E62FF150740030FFF0 /* SoleMateWatch Watch App */,
+				C0FFEE0000000000000000A1 /* KeegoComplication */,
 			);
 		};
 /* End PBXProject section */
@@ -446,6 +517,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		CE47520C2FEECEC400FCC92A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE0000000000000000A7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -673,6 +751,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0FFEE0000000000000000A5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -686,6 +771,11 @@
 			isa = PBXTargetDependency;
 			target = CE47520D2FEECEC400FCC92A /* RunActivityExtension */;
 			targetProxy = CE4752212FEECEC500FCC92A /* PBXContainerItemProxy */;
+		};
+		C0FFEE0000000000000000B4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C0FFEE0000000000000000A1 /* KeegoComplication */;
+			targetProxy = C0FFEE0000000000000000B5 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1170,6 +1260,75 @@
 			};
 			name = Release;
 		};
+		C0FFEE0000000000000000A3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_ENTITLEMENTS = "KeegoComplication/KeegoComplication.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 23;
+				DEVELOPMENT_TEAM = LTWYG63SY7;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "KeegoComplication/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Keego;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app.watchkitapp.complication;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		C0FFEE0000000000000000A4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_ENTITLEMENTS = "KeegoComplication/KeegoComplication.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 23;
+				DEVELOPMENT_TEAM = LTWYG63SY7;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "KeegoComplication/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Keego;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app.watchkitapp.complication;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1205,6 +1364,15 @@
 			buildConfigurations = (
 				CE4752262FEECEC500FCC92A /* Debug */,
 				CE4752272FEECEC500FCC92A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0FFEE0000000000000000A2 /* Build configuration list for PBXNativeTarget "KeegoComplication" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0FFEE0000000000000000A3 /* Debug */,
+				C0FFEE0000000000000000A4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

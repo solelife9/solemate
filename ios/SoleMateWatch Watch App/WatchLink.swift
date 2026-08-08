@@ -18,6 +18,7 @@
 // 신발 목록·선택·심박존 파라미터는 UserDefaults 에 캐시해 폰이 없어도(단독 실행)
 // 마지막 동기화 상태로 동작한다. 'SoleMateWatch Watch App' 타깃 멤버십.
 import Foundation
+import WidgetKit  // 컴플리케이션 타임라인 갱신
 import Combine
 import WatchConnectivity
 import WatchKit
@@ -68,7 +69,12 @@ final class WatchLink: NSObject, ObservableObject {
   @Published private(set) var shoes: [WatchShoe] = []
   /// 시작 화면에서 마지막으로 고른 신발 id — 다음 실행 시 그 페이지에서 시작한다.
   @Published var selectedShoeId: String? {
-    didSet { defaults.set(selectedShoeId, forKey: Keys.selectedShoe) }
+    didSet {
+      defaults.set(selectedShoeId, forKey: Keys.selectedShoe)
+      // 고른 신발이 바뀌면 워치 페이스도 그 신발을 가리켜야 한다 — 안 그러면 페이스와
+      // 앱이 서로 다른 신발을 말한다(같은 데이터를 두 곳이 다르게 보여주는 것이 가장 나쁘다).
+      publishComplication()
+    }
   }
   /// 심박존 파라미터(폰 설정 미러 — Tanaka 최대심박·안정시심박). 0 = 미설정.
   private(set) var hrMax: Double = 0
@@ -89,6 +95,36 @@ final class WatchLink: NSObject, ObservableObject {
     static let hapticsOn = "keego_haptics_on_v1"
   }
 
+  // ── 컴플리케이션 공유 저장소 (2026-08-08) ──────────────────────────────────
+  // 워치 페이스 컴플리케이션은 **다른 프로세스**라 위 `defaults`(UserDefaults.standard)를
+  // 읽을 수 없다 — 컨테이너가 다르다. 그래서 App Group 에 한 벌 더 써 준다.
+  // 계약(키 이름)은 ios/KeegoComplication/KeegoComplication.swift 와 **정확히** 같아야 한다.
+  private enum Complication {
+    static let group = "group.com.keego.app"
+    static let kName = "wc_shoe_name"
+    static let kUsed = "wc_shoe_used_km"
+    static let kMax = "wc_shoe_max_km"
+  }
+
+  /// 현재 신발을 컴플리케이션이 읽을 수 있는 곳에 써 두고 워치 페이스를 갱신한다.
+  ///
+  /// 신발이 없거나 수명을 모르면 **지운다** — 남겨 두면 컴플리케이션이 옛 신발을 계속
+  /// 주장한다. 아이폰 위젯이 정확히 그 사고를 냈다(샘플 폴백 → 남의 신발이 홈 화면에).
+  private func publishComplication() {
+    guard let d = UserDefaults(suiteName: Complication.group) else { return }
+    if let s = selectedShoe, s.maxKm > 0 {
+      let name = s.model.isEmpty ? s.brand : s.model
+      d.set(name, forKey: Complication.kName)
+      d.set(s.usedKm, forKey: Complication.kUsed)
+      d.set(s.maxKm, forKey: Complication.kMax)
+    } else {
+      d.removeObject(forKey: Complication.kName)
+      d.removeObject(forKey: Complication.kUsed)
+      d.removeObject(forKey: Complication.kMax)
+    }
+    WidgetCenter.shared.reloadAllTimelines()
+  }
+
   override init() {
     super.init()
     // 오프라인 캐시 복원 — 폰 없이 켜도 마지막 동기화 상태로 시작한다.
@@ -106,6 +142,8 @@ final class WatchLink: NSObject, ObservableObject {
       WCSession.default.delegate = self
       WCSession.default.activate()
     }
+    // 폰이 한 번도 안 붙은 기기에서도 캐시로 페이스를 채운다.
+    publishComplication()
   }
 
   /// 폰이 마지막으로 알려 준 선택 신발 id(따라갈지 판단하는 기준값).
@@ -136,6 +174,7 @@ final class WatchLink: NSObject, ObservableObject {
       }
       shoes = parsed
       if let raw = try? JSONEncoder().encode(parsed) { defaults.set(raw, forKey: Keys.shoes) }
+      publishComplication() // 워치 페이스도 같이 최신으로
     }
     // ── 폰이 고른 신발 따라가기 ────────────────────────────────────────────
     // 왜: 예전엔 폰이 목록만 보내서, 워치는 **자기 스와이프 기록**으로만 신발을 골랐다.
