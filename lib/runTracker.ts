@@ -174,7 +174,13 @@ class RunTracker {
 
   // ── engine state (mirrors the refs RunActiveScreen used to own) ──
   private kf = new KalmanFilter();
-  private dist = 0; // km
+  private dist = 0; // km — 화면·저장에 쓰는 정본 거리(워치가 있으면 워치 값)
+  /**
+   * **폰이 스스로 잰 거리(km).** 워치가 기록자일 때도 계속 쌓인다 — 표시하지 않을 뿐이다.
+   * 워치와 나란히 두면 폰 GPS 정확도를 실측할 수 있다(가리지 않는다).
+   * 워치가 없으면 `dist` 와 같다.
+   */
+  private phoneDist = 0;
   // 거리 적산용 5점 중심 평활기 — 채택 좌표의 지터 톱니가 거리로 적산되는 것을
   // 소거한다(실측 +9% 과대 교정의 반쪽, 2026-07-11). dist 는 평활 폴리라인의
   // 증분으로만 늘어난다(~2 fix 지연·구간 종료 시 flush 로 무손실). pts(경로)는
@@ -303,29 +309,37 @@ class RunTracker {
   // ── 평활 거리 적산 심 ──────────────────────────────────────────────
   // dist 는 반드시 이 두 헬퍼를 통해서만 늘어난다(평활기 증분 = 단일 소스).
   //
-  // ⚠️ **워치가 기록자일 땐 여기서 거리를 더하지 않는다**(2026-08-09 진짜 미러링).
-  // 아래 feedWatchDistance 주석 참조 — 두 기기가 각자 재면 화면과 저장값이 갈린다.
-  // 경로·고도·페이스 계산은 그대로 돈다(평활기는 계속 밀어 넣는다) — 끊는 것은
-  // **거리 적산 한 줄**뿐이다.
+  // ⚠️ **워치가 기록자일 땐 `dist` 에 더하지 않는다**(2026-08-09 진짜 미러링).
+  // 화면·저장 거리는 워치가 정본이다 — 두 기기가 각자 재면 본 것과 남는 것이 갈린다.
+  //
+  // 다만 **폰이 스스로 잰 거리는 계속 센다**(`phoneDist`). 표시하지 않을 뿐 버리지 않는다.
+  // 이유: 워치를 찰 때마다 폰 값이 사라지면 **폰 GPS 가 얼마나 정확한지 영영 못 잰다.**
+  // 그러면 나중에 "폰이 워치보다 3% 짧다" 같은 걸 알아내 보정할 근거 자체가 없어진다.
+  // 워치는 폰 정확도를 가리는 뚜껑이 아니라, 대조할 기준선이어야 한다.
   private smoothPush(p: {lat: number; lon: number}) {
     const before = this.smoother.distKm();
     this.smoother.push(p);
+    const add = this.smoother.distKm() - before;
+    this.phoneDist += add;              // 항상 — 폰 자체 측정은 끊지 않는다
     if (this.watchLed()) return;
-    this.dist += this.smoother.distKm() - before;
+    this.dist += add;
   }
 
   /** 구간 경계(일시정지·재앵커·종료·권한동결): 꼬리 거리를 계상하고 체인을 끊는다. */
   private smoothFlush() {
     const before = this.smoother.distKm();
     this.smoother.flush();
+    const add = this.smoother.distKm() - before;
+    this.phoneDist += add;
     if (this.watchLed()) return;
-    this.dist += this.smoother.distKm() - before;
+    this.dist += add;
   }
 
   /** Begin a fresh run, clearing all engine state. */
   start(config: RunTrackerConfig) {
     this.kf.reset();
     this.dist = 0;
+    this.phoneDist = 0;
     // 워치 미러링 상태 — 새 런에서 반드시 지운다. 안 지우면 직전 러닝의 누적 거리가
     // 남아 "워치 값이 현재보다 크면 채택" 규칙에 걸려 **새 런이 지난 거리에서 시작**한다.
     this.watchKm = 0;
@@ -894,6 +908,14 @@ class RunTracker {
     if (km <= this.watchKm) return; // 워치 누적은 단조 — 역행 표본은 버린다
     this.watchKm = km;
     if (km > this.dist) this.dist = km;  // 절대 줄이지 않는다
+  }
+
+  /**
+   * 폰이 스스로 잰 거리(km) — 워치가 기록자여도 계속 쌓인다.
+   * 워치 값(getDistanceKm)과 대조하면 폰 GPS 정확도를 잴 수 있다.
+   */
+  getPhoneDistanceKm(): number {
+    return this.phoneDist;
   }
 
   /** 지금 거리의 출처 — 화면이 '워치로 측정 중'을 알릴 수 있게. */
