@@ -20,7 +20,7 @@ import {View, StyleSheet, Pressable, Linking, AppState, Platform} from 'react-na
 import {showDialog} from '../lib/dialog';
 import {Text, FONT_SCALE_CAP_HERO} from '../lib/text';
 import {Pedometer, Barometer} from 'expo-sensors';
-import {initElevState, feedAltitude, ElevState} from '../lib/elevation';
+import {initElevState, feedAltitude, relativeAltitudeFromPressure, ElevState} from '../lib/elevation';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Tts from 'react-native-tts';
 import {runVoice} from '../lib/runVoice/voice';
@@ -64,7 +64,7 @@ function openLocationSettingsAlert(message:string){
   ]);
 }
 
-export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,track=null,indoor=false,weightKg,strideM=1,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;goalMin?:number;pacePlan?:number[];targetZone?:number;track?:{lapM:number}|null;indoor?:boolean;weightKg:number;strideM?:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,track=null,indoor=false,weightKg,strideM=1,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;goalMin?:number;pacePlan?:number[];targetZone?:number;track?:{lapM:number}|null;indoor?:boolean;weightKg:number;strideM?:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number|null,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
   // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
@@ -95,8 +95,17 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   // 누적 고도 상승(m) — 엔진 state(elevGainM)에서 흘러온다. 복구 런은 스냅샷의 값을
   // 이어받는다(2026-08-07 — 예전엔 0에서 다시 시작해 앞의 상승분을 잃었다).
   // finElev는 정지 시 최종값을 고정한다.
-  const [elevGain,setElevGain]=useState(resume?.elevGainM??0);
-  const [finElev,setFinElev]=useState(0);
+  // ── 고도는 기압계로만 잰다 (2026-08-09) ────────────────────────────────────
+  // null = **모른다**(기압계 없음). 0 이 아니다 — 0 은 "평지를 달렸다"는 주장이고,
+  // 모르는 것과 평지는 다르다. 화면은 null 이면 '--' 를 띄우고, 저장은 필드를 비운다.
+  //
+  // 왜 GPS 고도로 폴백하지 않나: 가민·애플·스트라바·NRC 가 **아무도 폰 GPS 고도를
+  // 쓰지 않는다**(스트라바는 기압계 없는 기기에서 지형 DB 를 조회한다). 실측도 같은
+  // 말을 했다 — 3km 러닝에 GPS 3,262m vs 기압계 9m, 5km 에 GPS 1,814m vs 32m.
+  // 그 신호로 만든 숫자는 없느니만 못하다(Truth only).
+  const [elevGain,setElevGain]=useState<number|null>(resume?.elevGainM??null);
+  /** 완주 요약 고도(m). null = 기압계가 없어 모른다(0 '평지'와 구분한다). */
+  const [finElev,setFinElev]=useState<number|null>(0);
   // 심박(bpm). 아이폰 단독은 미측정 → 0('--'). Apple Watch 컴패니언(watchSession)이
   // WatchConnectivity로 보내는 실시간 심박을 구독해 채운다(워치 없으면 0 유지).
   const [heartRate,setHeartRate]=useState(0);
@@ -261,6 +270,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   const baroSub=useRef<any>(null);
   const baroElev=useRef<ElevState>(initElevState());
   const baroAvail=useRef(false);
+  /** 안드로이드 전용 — 러닝 시작 시점의 기압(hPa). 상대고도의 기준점. */
+  const baroRefHPa=useRef<number|null>(null);
   // CMPedometer 누적거리 구독 해제 함수(#16 거리 융합) — GPS 死구간 보정. 종료 시 정리.
   const pedDistUnsub=useRef<null|(()=>void)>(null);
   // 케이던스(spm) 순수 상태기계 — 가속도 피크검출+윈도우 정규화는 lib/cadence.ts.
@@ -366,7 +377,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
         // (togglePause → emitState → permissionRevoked=false) 배너가 조용히 사라졌다.
         // 내리는 건 명시적 지점(재허용 복귀·beginRun)이 하고, 여기선 올리기만 한다.
         if(s.permissionRevoked)setPermLost(true);
-        if(!baroAvail.current)setElevGain(s.elevGainM); // 기압계 가용 시 GPS 고도 양보(baro 권위)
+        // 기압계가 없으면 고도를 **채우지 않는다**(GPS 폴백 폐지 — 위 상태 선언 주석 참조).
+        // 기압계가 있으면 아래 Barometer 리스너가 setElevGain 을 부른다.
         setAccuracyM(s.accuracyM);
         // 지도는 일시정지에서만 렌더된다(mapShown = uiPaused && …) — 그때만 경로 스냅샷을
         // 만든다. 매 fix 마다 부르면 경로 전체를 1Hz 로 복사하게 된다(러닝이 길수록 커짐).
@@ -408,7 +420,9 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
         // 구간(랩) 페이스는 완주 시 랩 시계열(lapsToTrack)로 낸다.
         if(!trackMode&&Math.floor(s.dist)>splitsRef.current.length){
           const splitKm=splitsRef.current.length+1;
-          const gainNow=baroAvail.current?baroElev.current.gain:s.elevGainM;
+          // 기압계가 없으면 스플릿 고도도 0 이다 — 구간 고도는 숫자 자리가 고정이라
+          // '모름'을 담을 수 없다. 총합이 비어 있으면 화면이 고도 축 자체를 숨긴다.
+          const gainNow=baroAvail.current?baroElev.current.gain:0;
           splitsRef.current.push({km:splitKm,
             paceSec:Math.max(0,Math.round(s.elapsed-lastSplitRef.current.elapsed)),
             elevM:Math.max(0,Math.round(gainNow-lastSplitRef.current.elevM))});
@@ -813,8 +827,21 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
         Barometer.setUpdateInterval(1000);
         baroSub.current=Barometer.addListener((ev:any)=>{
           if(runTracker.pausedFlag())return;
-          const rel=ev?.relativeAltitude;
-          if(typeof rel!=='number'||!Number.isFinite(rel))return; // Android 등 미제공
+          // ── 상대고도 얻기: iOS 는 OS 가 주고, 안드로이드는 기압에서 만든다 ─────────
+          // expo-sensors 는 **안드로이드에서 relativeAltitude 를 주지 않는다**(pressure 만).
+          // 예전엔 여기서 그냥 return 해서 안드로이드 전체가 GPS 고도로 폴백했다 —
+          // 그런데 폰 GPS 고도는 업계가(가민·애플·스트라바) 아무도 안 쓰는 신호다.
+          // 기압만 있으면 상대고도는 만들 수 있다(lib/elevation 헤더 참조).
+          let rel=ev?.relativeAltitude;
+          if(typeof rel!=='number'||!Number.isFinite(rel)){
+            const p=ev?.pressure;
+            if(typeof p!=='number'||!Number.isFinite(p))return; // 기압도 없다 — 이 표본은 버린다
+            // 러닝 시작 시점의 기압을 기준으로 삼는다(iOS relativeAltitude 와 같은 규약).
+            if(baroRefHPa.current==null){baroRefHPa.current=p;return;} // 첫 표본 = 기준점
+            const h=relativeAltitudeFromPressure(p,baroRefHPa.current);
+            if(h==null)return;
+            rel=h;
+          }
           // 시각을 함께 넘긴다 — 상승률 상한(사람이 낼 수 없는 상승 거부)이 이걸로 작동한다.
           baroElev.current=feedAltitude(baroElev.current,rel,Date.now());
           // 엔진에도 같은 값을 넘긴다 — GAP 시계열이 화면과 **같은 고도 소스**를 쓰게
@@ -981,14 +1008,16 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     // (실측: 3km 러닝에 GPS 3,262m vs 기압계 9m vs NRC 20m) 쓰레기가 이겼다 — 스플릿의
     // '기압계 우선' 로직과도 모순돼 총합·마지막 구간이 오염됐다. 주머니 러닝의 기압계
     // 구독 정지로 인한 소량 유실은 감수한다(작게 틀리는 쪽 — 정확성 우선).
-    const finElevTotal=baroAvail.current?Math.round(baroElev.current.gain):runTracker.getElevationGain();
+    // 기압계가 없으면 **저장하지 않는다**(undefined). GPS 고도로 채우면 3,262m 같은
+    // 숫자가 기록에 영구히 남는다 — 지우는 것보다 안 만드는 게 낫다.
+    const finElevTotal=baroAvail.current?Math.round(baroElev.current.gain):undefined;
     // 마지막 정수 km 이후 남은 부분 구간(예: 5.6km 의 0.6km)을 스플릿에 한 줄 추가한다 —
     // 레코더는 정수 km 경계만 남겨 꼬리 구간이 통째 누락됐다. lastSplitRef 가 마지막 경계의
     // 경과초·누적고도를 들고 있어 그 차이로 구간 시간·고도를 per-km 페이스로 환산한다.
     // 트랙: per-km GPS 스플릿은 안 만든다(GPS 거리 미사용) — 페이스 곡선/PB 는 랩 시계열이 정본.
     // paceTrack = lapsToTrack(랩시각들, 확정랩거리 km) → 저장 시 paceTrack_<id>로 영속돼
     // 거리 PB(bestEfforts) 파이프라인이 그대로 먹는다(엔진 통합 테스트로 못박음).
-    const splitsFin=trackMode?[]:appendFinalSplit(splitsRef.current,fk,ft,lastSplitRef.current.elapsed,finElevTotal,lastSplitRef.current.elevM);
+    const splitsFin=trackMode?[]:appendFinalSplit(splitsRef.current,fk,ft,lastSplitRef.current.elapsed,finElevTotal??0,lastSplitRef.current.elevM);
     const paceTrackFin=trackMode?lapsToTrack(lapTimesRef.current,lapMRef.current/1000):runTracker.getPaceTrack().slice();
     const hrTrackFin=runTracker.getHrTrack().slice();
     const gapTrackFin=runTracker.getGapTrack().slice();
@@ -1020,7 +1049,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       }catch{/* 조회 실패 — 롤링 폴백 유지 */}
     }
     setFinCad(cadFin);
-    setFinElev(finElevTotal);
+    setFinElev(finElevTotal??null); // null = 모른다(기압계 없음)
     // ── 자동 저장(심사 #1, 2026-07-22 — Peak-End 복원) ─────────────────────────
     // 세리머니→리캡 직결: 감정의 정점(완주) 직후에 '저장/버리기' 행정 화면을 두지 않는다
     // (NRC·Strava·Apple Fitness 문법). 저장하기 탭 누락 = 기록 유실 경로도 함께 제거.
@@ -1039,7 +1068,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
           }
         }catch{/* 무해: 역지오코딩 실패 → 위치 라벨 없이 저장 */}
       }
-      await onSave(Math.round(fk*100)/100,ft,cadFin,'',routeFin,loc,splitsFin,finElevTotal,estimateCaloriesTotal(fk,ft,weightKg),paceTrackFin,hrTrackFin,gapTrackFin,
+      await onSave(Math.round(fk*100)/100,ft,cadFin,'',routeFin,loc,splitsFin,finElevTotal??null,estimateCaloriesTotal(fk,ft,weightKg),paceTrackFin,hrTrackFin,gapTrackFin,
         trackMode?{lapM:Math.round(lapMRef.current),laps:lapTimesRef.current.length,lapTimes:lapTimesRef.current.slice()}:null);
       hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
     }catch{
@@ -1213,7 +1242,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       targetPaceSec={pacePlan&&pacePlan.length?currentTargetPace(pacePlan,km):null}
       cadence={cadence}
       calories={liveCal}
-      elevationM={elevGain}
+      elevationM={elevGain??undefined}
       bpm={heartRate}
       targetZone={targetZone}
       zoneDeviation={zoneDeviation}

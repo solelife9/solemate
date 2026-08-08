@@ -3076,7 +3076,11 @@ function Main(){
           // 사용자가 의도한 별개 기록이다.
           const phoneIncoming={id:'incoming',shoe_id:activeRun.id,km,duration:dur,
             run_date:runDate,source:'gps',updatedAt:Date.now(),route:route||'',location:location||'',
-            cadence:cad||0,heart_rate:avgBpm||0,calories:cal||0,elevation_m:elevM||0};
+            cadence:cad||0,heart_rate:avgBpm||0,calories:cal||0,
+            // 고도는 **모를 수 있다**(기압계 없는 기기 — 2026-08-09). null 이면 필드를
+            // 아예 만들지 않는다. 0 으로 채우면 "평지를 달렸다"는 거짓 주장이 되고,
+            // 그 숫자가 기록에 영구히 남는다(화면은 없는 필드를 '--' 로 그린다).
+            ...(elevM!=null?{elevation_m:elevM}:{})};
           // runsForHrRef 는 매 렌더 runs 를 그대로 담는 거울이다(이름은 HR 유래지만
           // syncRunDetails 등도 같이 쓴다). 여기서 필요한 건 '지금 이 순간의 런 목록'이다.
           const watchDup=MERGE_PHONE_WATCH_RUNS
@@ -3093,7 +3097,7 @@ function Main(){
               try{await AsyncStorage.setItem('route_'+watchDup.id,route);}catch{/* 비치명적 */}
             }
           }
-          const newId=watchDup?watchDup.id:await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal,{startMs,id:runTracker.getRunId(),
+          const newId=watchDup?watchDup.id:await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM??undefined,cal,{startMs,id:runTracker.getRunId(),
             // 최대 심박은 **추정하지 않는다** — 방금 측정한 시계열에서 뽑는다.
             heartRateMax:hrTrack&&hrTrack.length>0?hrSummary(hrTrack).max:0});
           // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.

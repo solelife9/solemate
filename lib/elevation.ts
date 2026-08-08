@@ -43,6 +43,46 @@ export const ELEV_THRESHOLD_M = 3;
  */
 export const MAX_CLIMB_M_PER_MIN = 30;
 
+// ── 기압 → 상대고도 (2026-08-09) ─────────────────────────────────────────────
+//
+// 왜 필요한가 — **업계는 폰 GPS 고도를 쓰지 않는다**
+// ----------------------------------------------------------------------------
+// 가민·애플·스트라바·NRC 는 전부 **기압 고도계**가 1순위다. 기압계가 없는 기기에서
+// 스트라바는 GPS 고도를 쓰는 대신 **지형 고도 DB(DEM)를 조회**한다 — 즉 아무도
+// 폰 GPS 고도를 신뢰하지 않는다. 우리가 임계·상한·이동평균으로 씨름하던 그 신호는
+// 애초에 업계가 버린 신호다(2026-08-09 민우님 질문에서 드러났다).
+//
+// iOS 는 이미 정석이다 — `Barometer.relativeAltitude`(CMAltimeter)를 쓴다.
+// **안드로이드가 갭이었다**: expo-sensors 는 안드로이드에서 `relativeAltitude` 를 주지
+// 않고 `pressure`(hPa)만 준다. 그래서 그 자리에서 return 하고 GPS 고도로 폴백했다.
+// 기압만 있으면 상대고도는 만들 수 있다 — 그게 이 함수다.
+//
+// 공식: 국제 표준대기 기압고도식(안드로이드 `SensorManager.getAltitude` 와 같은 식).
+//     h = 44330 × (1 − (P / P₀)^(1/5.255))
+//
+// ⚠️ **절대 고도가 아니라 상대 고도를 만든다.** P₀ 에 표준 해면기압(1013.25)을 넣으면
+// 날씨에 따라 수십 m 가 통째로 어긋난다. 우리가 필요한 건 '얼마나 올라갔나'뿐이므로
+// **러닝 시작 시점의 기압을 기준(P₀)** 으로 삼는다. iOS 의 relativeAltitude 와 같은 규약이다.
+// (같은 이유로 러닝 중 날씨가 급변하면 둘 다 흔들린다 — 상승률 상한이 그걸 잡는다.)
+const BARO_EXP = 1 / 5.255;
+
+/**
+ * 기압(hPa)과 기준 기압(hPa)에서 **상대 고도**(m)를 낸다.
+ *
+ * @returns 기준보다 높으면 양수. 입력이 이상하면 null(호출부가 그 표본을 버린다).
+ */
+export function relativeAltitudeFromPressure(
+  pressureHPa: number,
+  refHPa: number,
+): number | null {
+  if (!Number.isFinite(pressureHPa) || !Number.isFinite(refHPa)) return null;
+  // 지구 지표의 기압 범위를 크게 벗어나면 센서 오류다(태풍 870, 시베리아 고기압 1085).
+  if (pressureHPa < 300 || pressureHPa > 1100) return null;
+  if (refHPa < 300 || refHPa > 1100) return null;
+  const h = 44330 * (1 - Math.pow(pressureHPa / refHPa, BARO_EXP));
+  return Number.isFinite(h) ? h : null;
+}
+
 export function initElevState(): ElevState {
   return {ref: null, gain: 0};
 }

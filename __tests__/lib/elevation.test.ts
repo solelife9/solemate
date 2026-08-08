@@ -135,3 +135,50 @@ describe('워치 고도 — 상승률 상한', () => {
     expect(elevationGainFrom([])).toBe(0);
   });
 });
+
+// ── 기압 → 상대고도 (2026-08-09) ─────────────────────────────────────────────
+// 왜 이 경로가 생겼나: 업계는 **아무도 폰 GPS 고도를 쓰지 않는다**(가민·애플·스트라바·
+// NRC 전부 기압계가 1순위, 스트라바는 기압계 없는 기기에서 지형 DB 를 조회한다).
+// iOS 는 이미 정석이었고(`Barometer.relativeAltitude`), **안드로이드가 갭이었다** —
+// expo-sensors 가 안드로이드에서 relativeAltitude 를 주지 않아 GPS 로 폴백했다.
+// 기압만 있으면 상대고도는 만들 수 있다.
+describe('relativeAltitudeFromPressure', () => {
+  const {relativeAltitudeFromPressure} = require('../../lib/elevation');
+
+  it('기압이 낮아지면 올라간 것이다', () => {
+    // 해면 근처에서 1hPa ≈ 8.4m. 1013 → 1000 은 대략 +110m.
+    const h = relativeAltitudeFromPressure(1000, 1013.25);
+    expect(h).toBeGreaterThan(100);
+    expect(h).toBeLessThan(120);
+  });
+
+  it('기준과 같으면 0 — 출발점은 항상 0 이다', () => {
+    expect(relativeAltitudeFromPressure(1013.25, 1013.25)).toBeCloseTo(0, 6);
+  });
+
+  it('기압이 높아지면 음수(내려갔다)', () => {
+    expect(relativeAltitudeFromPressure(1020, 1013.25)).toBeLessThan(0);
+  });
+
+  it('지구에 없는 기압은 센서 오류다 — null 로 버린다', () => {
+    for (const bad of [0, -5, 200, 1200, NaN, Infinity]) {
+      expect(relativeAltitudeFromPressure(bad, 1013.25)).toBeNull();
+    }
+    expect(relativeAltitudeFromPressure(1000, 0)).toBeNull();
+  });
+
+  it('절대 고도가 아니라 상대 고도다 — 기준을 바꾸면 값이 바뀐다', () => {
+    // 표준 해면기압을 기준으로 삼으면 날씨에 따라 수십 m 가 통째로 어긋난다.
+    // 그래서 **러닝 시작 시점의 기압**을 기준으로 쓴다(iOS relativeAltitude 와 같은 규약).
+    const a = relativeAltitudeFromPressure(1000, 1013.25);
+    const b = relativeAltitudeFromPressure(1000, 1005);
+    expect(a).not.toBeCloseTo(b as number, 1);
+  });
+
+  it('실제 러닝 규모의 오르막을 정상 범위로 낸다', () => {
+    // 100m 언덕 ≈ 12hPa 하강. 상승률 상한(30m/분)에 걸리지 않는 값이어야 한다.
+    const h = relativeAltitudeFromPressure(1001.25, 1013.25) as number;
+    expect(h).toBeGreaterThan(90);
+    expect(h).toBeLessThan(110);
+  });
+});
