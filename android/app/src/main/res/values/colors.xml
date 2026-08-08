@@ -1,4 +1,12 @@
 <resources>
     <!-- Keego brand: orange "K" on near-black. Launcher icon background. -->
     <color name="ic_launcher_background">#0A0A0A</color>
+
+    <!--
+      앱 배경색 — theme.ts 의 BG(#0A0A0A)와 **같은 값**이어야 한다.
+      스플래시(앱 시작 화면)와 창 배경에 쓴다. 값이 갈라지면 앱을 켤 때 아주 잠깐 다른 색이
+      비쳤다가 바뀌는 '두 번 칠하는' 느낌이 난다 — 회귀 가드가 대조한다
+      (__tests__/androidSplash.test.ts).
+    -->
+    <color name="keego_bg">#0A0A0A</color>
 </resources>

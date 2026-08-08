@@ -34,7 +34,8 @@ describe('남길 것과 남기지 않을 것', () => {
     ['NaN', {savedKm: NaN, phoneKm: 5}],
     ['음수', {savedKm: 5, phoneKm: -1}],
   ])('%s 는 남기지 않는다 — 틀린 기준선은 없는 것보다 나쁘다', async (_l, o) => {
-    expect(await saveDistanceRef('r3', {...(o as never), source: 'watch'})).toBe(false);
+    const bad = o as {savedKm: number; phoneKm: number};
+    expect(await saveDistanceRef('r3', {...bad, source: 'watch'})).toBe(false);
     expect(await loadDistanceRef('r3')).toBeNull();
   });
 

@@ -58,6 +58,13 @@ class MainActivity : ReactActivity() {
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
+    // ⚠️ **super 보다 먼저** 앱 테마로 갈아탄다.
+    // 매니페스트는 SplashTheme 을 걸어 두는데(프로세스 시작~첫 프레임 사이의 빈 창을
+    // 앱 배경색으로 칠하려고), 그대로 두면 그 테마가 앱이 도는 내내 창 테마로 남는다 —
+    // 시작 화면 배경(런처 아이콘 얹은 그림)이 화면 뒤에 계속 깔려 있게 된다.
+    // 안드로이드 표준 절차이고, 순서를 바꾸면(super 뒤) 첫 프레임이 이미 그려진 뒤라
+    // 적용이 늦거나 번쩍인다.
+    setTheme(R.style.AppTheme)
     super.onCreate(savedInstanceState)
     if (isHealthRationale(intent)) showPrivacyRationale()
   }

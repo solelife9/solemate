@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  시작 화면 배경 (API 26~30 전용 — 31+ 는 OS 가 직접 그린다, values-v31/styles.xml).
+
+  런처 아이콘을 가운데 얹는다. 아이콘이 곧 앱을 켰다는 신호이고, 홈 화면에서 누른 그
+  아이콘이 그대로 이어지는 것이 안드로이드 표준 감각이다(API 31+ 의 OS 스플래시도 같은 모양).
+  gravity="center" — 화면 비율이 어떻든 늘어나지 않게 한다.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:drawable="@color/keego_bg" />
+  <item>
+    <bitmap android:src="@mipmap/ic_launcher" android:gravity="center" />
+  </item>
+</layer-list>

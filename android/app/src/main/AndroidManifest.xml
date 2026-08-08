@@ -131,9 +131,14 @@
       <!-- location 타입 포그라운드 서비스(<service ... foregroundServiceType="location">)
            는 expo-location 모듈의 AndroidManifest 가 자동 머지하므로 여기서 직접
            선언하지 않는다(중복 선언 시 머지 충돌). -->
+      <!-- 시작 화면 테마(android:theme="@style/SplashTheme") — 프로세스가 뜨고 RN 이 첫
+           프레임을 그릴 때까지의 빈 창을 앱 배경색으로 칠한다. 지정 전에는 밝은 기본 배경이
+           떠서 다크 앱에 흰 번쩍임이 있었다. MainActivity.onCreate 가 곧바로 AppTheme 로
+           갈아탄다(안 하면 이 배경이 앱 내내 창 배경으로 남는다). -->
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
+        android:theme="@style/SplashTheme"
         android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
         android:launchMode="singleTask"
         android:windowSoftInputMode="adjustResize"

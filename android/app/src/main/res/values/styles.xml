@@ -4,6 +4,34 @@
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        <!--
+          창 배경을 앱 배경색으로 고정한다. 이게 없으면 RN 이 첫 프레임을 그리기 전 구간에서
+          **테마 기본 배경(밝은 회색/흰색)** 이 비친다. 다크 앱에서 흰 번쩍임은 첫인상을
+          정면으로 깎는다(실제로 E2E 스크린샷에 흰 화면이 찍혔다 — 2026-08-09).
+        -->
+        <item name="android:windowBackground">@color/keego_bg</item>
+    </style>
+
+    <!--
+      ── 시작 화면(스플래시) ──────────────────────────────────────────────────
+      앱을 켜면 OS 가 프로세스를 띄우고 RN 이 첫 프레임을 그릴 때까지 **빈 창**이 뜬다.
+      그 창을 무엇으로 칠할지 정하는 것이 이 테마다. 안 정하면 흰색이 뜬다.
+
+      **새 의존성을 쓰지 않았다**(androidx.core:core-splashscreen 불필요) —
+      minSdk 26 이라 두 갈래면 전부 덮인다:
+        · API 26~30 → windowBackground 로 칠한다(여기).
+        · API 31+   → OS 가 스플래시를 직접 그린다. 색·아이콘은 values-v31 에서 준다.
+      네이티브 의존성 사전 승인제(CLAUDE.md)를 건드리지 않는 쪽을 골랐다.
+
+      MainActivity 가 onCreate 에서 setTheme(AppTheme) 로 갈아탄다 — 안 하면 스플래시
+      배경이 앱 내내 창 배경으로 남는다.
+    -->
+    <style name="SplashTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:statusBarColor">@color/keego_bg</item>
+        <item name="android:navigationBarColor">@color/keego_bg</item>
+        <!-- 어두운 배경 위 밝은 아이콘 — 상태바 글자가 검정으로 나오면 안 보인다. -->
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
 </resources>
