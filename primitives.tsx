@@ -26,7 +26,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
-import type {TextInputProps} from 'react-native';
+import type {TextInputProps, PressableProps} from 'react-native';
 import {TextInput} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BlurView} from '@react-native-community/blur';
@@ -126,7 +126,7 @@ export function Stepper({
   ];
   return (
     <View style={[{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rv(14)}, style]}>
-      <Pressable onPress={onMinus} hitSlop={8} accessibilityRole="button"
+      <Pressable onPress={onMinus} hitSlop={8} accessibilityRole="button" android_ripple={{color: withAlpha(ACCENT, 0.12), borderless: false}}
         accessibilityLabel={minusLabel ?? `${suffix} 줄이기`} style={({pressed}) => btn(pressed)}>
         <Ionicons name="remove" size={ri(ICON.action)} color={T1} />
       </Pressable>
@@ -137,7 +137,7 @@ export function Stepper({
           {!!suffix && <Text style={{color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rv(2)}}>{suffix}</Text>}
         </View>
       )}
-      <Pressable onPress={onPlus} hitSlop={8} accessibilityRole="button"
+      <Pressable onPress={onPlus} hitSlop={8} accessibilityRole="button" android_ripple={{color: withAlpha(ACCENT, 0.12), borderless: false}}
         accessibilityLabel={plusLabel ?? `${suffix} 늘리기`} style={({pressed}) => btn(pressed)}>
         <Ionicons name="add" size={ri(ICON.action)} color={T1} />
       </Pressable>
@@ -184,6 +184,7 @@ export function Chip({
       accessibilityState={{selected, disabled}}
       accessibilityLabel={accessibilityLabel ?? label}
       testID={testID}
+      android_ripple={{color: withAlpha(ACCENT, 0.12), borderless: false}}
       style={({pressed}) => [
         {
           height: h, paddingHorizontal: rs(size === 'sm' ? SPACE.md : SPACE.lg),
@@ -628,6 +629,7 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{disabled}}
+      android_ripple={{color: withAlpha(ACCENT, 0.12), borderless: false}}
       style={({pressed}) => [
         btn.base,
         size === 'hero' && btn.hero,
@@ -673,6 +675,53 @@ const btn = StyleSheet.create({
   labelHero: {letterSpacing: -0.2}, // 큰 라벨은 자간을 살짝 좁혀(수제 CTA 들과 동일 시감)
   labelDim: {color: T3},
 });
+
+// ── Tap — **눌린 것이 보이는** 표준 누름 영역 (2026-08-08) ────────────────────
+//
+// 왜 만들었나
+// ----------------------------------------------------------------------------
+// 앱 전체에 `<Pressable>` 이 190개인데 그중 **158개가 눌림 피드백이 하나도 없었다.**
+// 감사에는 "안드로이드에 리플이 없다"로 적혀 있었는데, 세어 보니 그보다 나쁘다 —
+// **83%가 두 플랫폼 모두에서 무반응**이다. 눌러도 아무 일이 없으면 사용자는 한 번 더
+// 누르고, 그게 이중 실행이나 "안 되는 앱" 인상으로 돌아온다.
+//
+// 잘 만든 컨트롤(Chip·Button·Stepper·SegmentedControl)은 이미 피드백이 있었다.
+// 없는 것들은 화면에서 즉석으로 쓴 아이콘 버튼·행·카드다. 그래서 **표준을 하나 두고**
+// 그쪽으로 모은다 — 매번 손으로 `({pressed}) => ...` 를 적게 하면 또 빠진다.
+//
+// 무엇을 하나
+//  · 눌림: `MOTION.press`(scale 0.97 · opacity 0.92) — 이미 Chip 이 쓰는 정본 관례다.
+//    새 값을 만들지 않는다(같은 뜻에 값이 둘이면 화면마다 미세하게 달라진다).
+//  · 안드로이드: 여기에 **리플**을 더한다. OS 표준 피드백이라 없으면 "덜 만든 앱"으로
+//    읽힌다. 색은 무채 흰색 저알파 — DESIGN.md 의 모노크롬 체계를 깨지 않는다.
+//    (iOS 에는 리플 개념이 없다. `android_ripple` 은 iOS 에서 무시된다.)
+//  · 접근성: 축소 애니메이션을 원치 않는 사용자를 위해 reduce-motion 이면 scale 을 뺀다.
+//    투명도 변화는 남긴다 — 그건 모션이 아니라 상태 표시다.
+//
+// 쓰는 법: `<Pressable>` 을 `<Tap>` 으로 바꾸기만 하면 된다(나머지 props 그대로).
+// 이미 `({pressed}) => ...` 로 직접 피드백을 주고 있다면 바꾸지 않아도 된다.
+export function Tap({
+  style,
+  android_ripple,
+  /** 눌림 축소를 끈다 — 행 전체가 눌리는 큰 영역에서 화면이 출렁이지 않게. */
+  noScale,
+  ...rest
+}: PressableProps & {noScale?: boolean}) {
+  const reduceMotion = useReduceMotion();
+  return (
+    <Pressable
+      {...rest}
+      android_ripple={android_ripple ?? {color: withAlpha(ACCENT, 0.12), borderless: false}}
+      style={state => [
+        state.pressed && {
+          opacity: MOTION.press.opacity,
+          ...(noScale || reduceMotion ? null : {transform: [{scale: MOTION.press.scale}]}),
+        },
+        typeof style === 'function' ? style(state) : style,
+      ]}
+    />
+  );
+}
 
 // ── Card (GLASS surface · corner-fade hairline · radius) ──────────────────────
 // 유리 2위계(2026-07-09 사용자 확정, 2026-07-10 헤어라인 통일): 모든 카드가 같은 재질을
@@ -921,6 +970,7 @@ export function SegmentedControl({
             accessibilityRole={role}
             accessibilityState={{selected: on}}
             accessibilityLabel={labelFor ? labelFor(item, on) : item.label}
+            android_ripple={{color: withAlpha(ACCENT, 0.12), borderless: false}}
             style={({pressed}) => [
               seg.item,
               block ? seg.block : seg.hug,
