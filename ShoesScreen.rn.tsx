@@ -708,7 +708,7 @@ function ShoesScreen({
         onDelete={onDelete}
         onRetire={onRetire}
         onSetMaxKm={onSetMaxKm}
-        rawShoe={rawShoes?.find((rs) => rs.id === dShoe.id) ?? null}
+        rawShoe={rawShoes?.find((raw) => raw.id === dShoe.id) ?? null}
         rawRuns={rawRuns}
         progressionCtx={progressionCtx}
         equippedTitle={equippedTitle}

@@ -1472,8 +1472,9 @@ function Main(){
   // 러닝 리마인더 OS 체인(7일 원샷) 동기 — 설정·오늘 런 여부가 바뀔 때마다 갱신한다
   // (2026-07-05 신뢰 버그 수정: 설정만 있고 앱 닫힘 상태에서 안 울리던 반쪽 제거).
   const ranTodayForReminder=useMemo(()=>{
-    const today=ymdLocal(new Date());
-    return runs.some((r:any)=>String(r.run_date||'').slice(0,10)===today);
+    // 바깥의 today() 함수와 이름이 겹치지 않게 한다 — 겹치면 읽는 쪽이 함수인지 값인지 헷갈린다.
+    const todayYmd=ymdLocal(new Date());
+    return runs.some((r:any)=>String(r.run_date||'').slice(0,10)===todayYmd);
   },[runs]);
   useEffect(()=>{
     ensureForegroundHandler();
@@ -2656,8 +2657,10 @@ function Main(){
   useEffect(()=>{
     if((globalThis as any).__KEEGO_CAPTURE__) return;
     const fire=()=>{
-      const {effectiveId,startFromShoeId}=deepLinkCtx.current;
-      if(effectiveId){pendingWidgetStart.current=false;startFromShoeId(effectiveId);}
+      // ref 에 담아 둔 **최신 스냅샷**이다. 바깥 것과 같은 이름을 쓰면 이 effect 가 왜
+      // 빈 의존성 배열([])로도 최신 값을 보는지가 가려진다 — 이름으로 드러낸다.
+      const {effectiveId:curShoeId,startFromShoeId:curStart}=deepLinkCtx.current;
+      if(curShoeId){pendingWidgetStart.current=false;curStart(curShoeId);}
       else pendingWidgetStart.current=true; // 신발 로드 전 → 로드되면 아래 effect가 처리
     };
     const handle=(url:string|null)=>{if(url&&url.replace(/\/+$/,'')==='keego://start')fire();};
@@ -2818,11 +2821,11 @@ function Main(){
   // 온보딩 완료: 1회성 플래그 영속 + 화면에서 치운다. 온보딩의 등록 단계에서 고른
   // 신발(있으면)은 실제 백엔드 신발로 만들어 홈에 바로 반영한다(없으면 빈 홈으로).
   // setOnboarded(true)가 먼저라 addShoe의 비동기 shoes 갱신이 흐름을 끊지 않는다.
-  const completeOnboarding=(registered:RegisteredShoe|null,weightKg?:number)=>{
+  const completeOnboarding=(registered:RegisteredShoe|null,onboardWeightKg?:number)=>{
     setOnboarded(true);
     void AsyncStorage.setItem(ONBOARD_KEY,'1');
     // 온보딩에서 몸무게를 입력했으면 설정에 반영(칼로리+내구도 공용). 미입력이면 기본값 유지.
-    if(typeof weightKg==='number'&&weightKg>0){changeWeight(clampWeight(weightKg));}
+    if(typeof onboardWeightKg==='number'&&onboardWeightKg>0){changeWeight(clampWeight(onboardWeightKg));}
     if(registered&&authUser?.uid){
       addShoe(`${registered.brand} ${registered.model}`.trim(),registered.max||DEFAULT_MAX_KM,Math.round(registered.km),today(),undefined,'onboarding');
     }
@@ -3207,7 +3210,7 @@ function Main(){
         showDialog('메달 삭제','아카이브에서 사라져요.',[
           {text:'취소',style:'cancel'},
           {text:'삭제',style:'destructive',onPress:()=>{
-            const now=Date.now();
+            const deletedAt=Date.now(); // 바깥 now 는 Date 다 — 여기 것은 epoch ms
             // 사진도 함께 파기한다 — 클라우드에서도, 기기에서도. 사용자가 지운 사진이 서버에
             // 남아 있으면 그건 삭제가 아니다(처리방침 위반). 실패는 삼킨다(삭제 자체는 진행).
             const gone=medals.find(m=>m.id===id);
@@ -3217,8 +3220,8 @@ function Main(){
               void deletePersistedPhoto(gone.medalPhotoUri);
               void deletePersistedPhoto(gone.certPhotoUri);
             }
-            setMedals(cur=>cur.map(m=>m.id===id?{...m,deleted:true,updatedAt:now}:m));
-            void removeMedalStore(id,now);
+            setMedals(cur=>cur.map(m=>m.id===id?{...m,deleted:true,updatedAt:deletedAt}:m));
+            void removeMedalStore(id,deletedAt);
             showToast({message:'메달 삭제됨'});
           }},
         ]);

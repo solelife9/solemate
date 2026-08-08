@@ -5,7 +5,7 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "lint": "eslint . --max-warnings 209",
+    "lint": "eslint . --max-warnings 170",
     "start": "react-native start",
     "pretest": "node scripts/check-node.js",
     "test": "jest",

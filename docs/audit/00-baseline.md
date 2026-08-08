@@ -84,7 +84,7 @@
 | `console.log`로 실패 은폐 | **해결됨** | 프로덕션 소스 전체 2건. `babel-plugin-transform-remove-console` 적용 |
 | `lib/api.ts`·`lib/stats.ts` `any` 남용 | **해결됨** | `lib/api.ts` 파일 자체가 삭제됨(REST 제거). `lib/stats.ts`에 `: any`/`as any` **0건** |
 | `TIER_LABEL` 중복 정의 | **해결됨** | `theme.ts:161` 단일 정의, 사용처는 import만 |
-| `substr` deprecated | **미해결** | `App.tsx:701` `Math.random().toString(36).substr(2,9)` 1건 잔존 `NITPICK` |
+| `substr` deprecated | **해소(2026-08-08 대조)** | 코드에 `substr` 은 **0건**이다. `App.tsx:701` 은 지금 다른 코드다 — 어느 시점엔가 사라졌는데 이 줄만 '미해결'로 남아 있었다. 감사 기록이 코드보다 낡은 전형적 사례. |
 | 프로필 이름 하드코딩 '러너' | **부분** | `ProfileScreen.rn.tsx:62` `DEFAULT_PROFILE.name='러너'`. 다만 이제 사용자 입력 이름(`profile_name`)이 있고 `:550,563`에서 `profile?.name || '러너'` 폴백 — **가짜 어포던스가 아니라 정직한 기본값**이므로 실질 해소 |
 | AddShoe 기본 max=500 | **해결됨** | `lib/shoe.ts:85 DEFAULT_MAX_KM=600` + `:148-153 clampMaxKm(100~2000)` 단일 출처 |
 

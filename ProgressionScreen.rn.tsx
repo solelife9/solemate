@@ -55,6 +55,12 @@ import {
   type AchievementView,
 } from './lib/progression';
 import {rankGuidance} from './lib/progression/guidance';
+
+// 리스트 구분자. **렌더 안에서 정의하면 안 된다**(2026-08-08) — 매 렌더마다 새 컴포넌트
+// 타입이 되어 React 가 그 서브트리를 통째로 버리고 다시 만든다. 구분자는 상태가 없어서
+// 눈에 띄는 피해는 없었지만, 같은 실수를 상태 있는 컴포넌트에 하면 그때는 값이 사라진다.
+// 규칙(react/no-unstable-nested-components)이 잡아 준 자리다.
+const ItemGap = () => <View style={{height: SPACE.sm}} />;
 import {RANK_XP} from './lib/progression/rank';
 import {
   defaultProgressionState,
@@ -231,7 +237,7 @@ export default function ProgressionScreen({
           paddingBottom: insets.bottom + 28,
         }}
         // 간격: 구 ScrollView 의 gap(SPACE.lg 블록 사이 · SPACE.sm 카드 사이)을 그대로 재현한다.
-        ItemSeparatorComponent={() => <View style={{height: SPACE.sm}} />}
+        ItemSeparatorComponent={ItemGap}
         renderSectionHeader={({section}) => (
           <View style={[s.catHeader, {marginTop: SPACE.lg, marginBottom: SPACE.sm}]}>
             <Ionicons name={section.meta.icon as any} size={ri(ICON.tag)} color={T3} />

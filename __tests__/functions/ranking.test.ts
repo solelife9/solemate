@@ -10,7 +10,6 @@
 // Firestore 는 이 파일 안에서 최소 페이크로 대체한다(에뮬레이터 불필요) — 검증 대상이
 // Firestore 동작이 아니라 **우리 규칙**이기 때문이다.
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const {publishRanking, monthStats, CAPS} = require('../../functions/ranking.js');
 
 type Doc = Record<string, unknown>;

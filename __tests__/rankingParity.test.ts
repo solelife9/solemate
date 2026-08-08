@@ -11,7 +11,6 @@
 // 이 파일이 빨개졌다면 한쪽만 고친 것이다 — 둘 다 고쳐야 한다.
 import {computeRankingStats} from '../lib/progression/firestoreRanking';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const server = require('../functions/ranking.js') as {
   monthStats: (runs: unknown[], ym: string) => {distance: number; consistency: number};
   validYearMonth: (ym: unknown) => boolean;
@@ -87,7 +86,6 @@ describe('앱 ↔ 서버 점수 일치', () => {
       {id: '1', run_date: '2026-08-01', km: NaN},
       {id: '2', run_date: '2026-08-02', km: 'abc' as unknown as number},
       {id: '3', run_date: '', km: 5},
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       null as any,
     ]);
   });
@@ -106,7 +104,6 @@ describe('서버 입력 검증', () => {
   // 이 줄이 다시 열리면 서버 재계산이 통째로 무의미해진다 — 앱이 서버를 거치지 않고
   // 직접 쓰면 그만이기 때문이다. 에뮬레이터 없이도 걸리게 소스에서 본다.
   it('firestore.rules 가 리더보드 클라이언트 쓰기를 닫아 두고 있다', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const rules = require('fs').readFileSync(
       require('path').join(__dirname, '..', 'firestore.rules'),
       'utf8',
