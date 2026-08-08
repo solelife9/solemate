@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		1415864F5E793EAB9E0C8D4D /* WatchSessionModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 173792C31B98E655CA6BB81E /* WatchSessionModule.m */; };
+		A1B2C3D40001VISIONSWIFT0 /* VisionTextModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40003VISIONSWREF0 /* VisionTextModule.swift */; };
+		A1B2C3D40002VISIONOBJC00 /* VisionTextModule.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40004VISIONMMREF0 /* VisionTextModule.m */; };
 		1D2C2E1113DB93E83A09A552 /* PedometerDistanceModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F18E580F0B380430FE4DBCE /* PedometerDistanceModule.swift */; };
 		1FD016C018929E07724A8819 /* Pods_SoleMate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 32DD5CD7322D8A8F57770E83 /* Pods_SoleMate.framework */; };
 		2BBCC3659AFF917CE5CD098F /* RunActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96FBF53A281B69B063512CE9 /* RunActivityAttributes.swift */; };
@@ -115,6 +117,8 @@
 		5D13D234F4E1B2B118314B9C /* SoleMate.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = SoleMate.debug.xcconfig; sourceTree = "<group>"; };
 		5D21423DEB5B4B84B0F354E6 /* Barlow-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Barlow-Medium.ttf"; path = "../assets/fonts/Barlow-Medium.ttf"; sourceTree = "<group>"; };
 		5F1023D5EE8A6A5A16AC7F1B /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-SoleMate/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		A1B2C3D40003VISIONSWREF0 /* VisionTextModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/VisionTextModule.swift; sourceTree = "<group>"; };
+		A1B2C3D40004VISIONMMREF0 /* VisionTextModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/VisionTextModule.m; sourceTree = "<group>"; };
 		5F18E580F0B380430FE4DBCE /* PedometerDistanceModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/PedometerDistanceModule.swift; sourceTree = "<group>"; };
 		693862A40B02D61A30575D6E /* Pods-SoleMateWatch Watch App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SoleMateWatch Watch App.debug.xcconfig"; path = "Target Support Files/Pods-SoleMateWatch Watch App/Pods-SoleMateWatch Watch App.debug.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SoleMate/AppDelegate.swift; sourceTree = "<group>"; };
@@ -254,6 +258,8 @@
 				173792C31B98E655CA6BB81E /* WatchSessionModule.m */,
 				A1B2C3D4E5F60718293A4B5C /* HapticModule.swift */,
 				A1B2C3D4E5F60718293A4B5E /* HapticModule.m */,
+				A1B2C3D40003VISIONSWREF0 /* VisionTextModule.swift */,
+				A1B2C3D40004VISIONMMREF0 /* VisionTextModule.m */,
 				5F18E580F0B380430FE4DBCE /* PedometerDistanceModule.swift */,
 				00D679160E67979080F725FA /* PedometerDistanceModule.m */,
 			);
@@ -731,6 +737,8 @@
 				1415864F5E793EAB9E0C8D4D /* WatchSessionModule.m in Sources */,
 				A1B2C3D4E5F60718293A4B5D /* HapticModule.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5F /* HapticModule.m in Sources */,
+				A1B2C3D40001VISIONSWIFT0 /* VisionTextModule.swift in Sources */,
+				A1B2C3D40002VISIONOBJC00 /* VisionTextModule.m in Sources */,
 				1D2C2E1113DB93E83A09A552 /* PedometerDistanceModule.swift in Sources */,
 				F03FEBADF057ED013098902D /* PedometerDistanceModule.m in Sources */,
 			);
