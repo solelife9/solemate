@@ -25,6 +25,7 @@
 
 import { currentVdot, vdotLabel, type FitnessRun } from './vo2max';
 import { hrFitness, type HrSample } from './vo2maxHr';
+import { estimateMaxHR } from './hrZones';
 import { paceLoad, trimp, performanceChart, currentPmc, tsbLabel, type Sex, type PmcPoint } from './load';
 
 /**
@@ -79,6 +80,65 @@ export type FitnessSummary = {
   pmc: PmcPoint[];         // 전체 PMC 시계열(스파크라인 등)
   hasData: boolean;        // 유효 런이 하나라도 있어 표시할 가치가 있는가
 };
+
+/**
+ * 저장된 러닝 레코드 + 신체 설정 → `fitnessSummary` 입력.
+ *
+ * 왜 이 함수가 있나 (2026-08-08)
+ * ----------------------------------------------------------------------------
+ * 호출부마다 레코드 → 입력 매핑을 **따로 적고 있었고, 실제로 갈라졌다.**
+ *   · 마이 탭은 심박을 넘긴다(2026-08-04·08-07 수리 — 그전엔 안 넘겨서 심박 기반
+ *     VO2max 와 TRIMP 가 굶고 있었다).
+ *   · 홈(공개 프로필 스펙)은 지금도 `{km, durationS, runDate}` 만 넘긴다 → 거기서 나오는
+ *     `vo2max` 는 **항상 0**이다. 지금은 그 값을 화면에 쓰는 곳이 없어 사용자에게 보이는
+ *     피해는 없지만, **0 을 진짜 값인 양 공개 프로필 문서에 실어 보내고 있었다.**
+ *
+ * 같은 매핑이 두 곳에 있으면 한쪽만 고쳐진다 — 실제로 그렇게 됐다. 그래서 여기 하나로
+ * 모은다. 새 화면이 생겨도 같은 실수를 반복하지 않는다.
+ *
+ * ── 추측하지 않는 선 ──────────────────────────────────────────────────────
+ * 나이·안정시 심박은 미입력이면 **0**이다(설정 기본값이 0 — 허수를 채우지 않는다).
+ * 그때는 hrMax/hrRest 를 붙이지 않는다 → TRIMP 대신 페이스 부하로 간다. 없는 값을
+ * 지어내 부하를 계산하면 그건 틀린 숫자를 자신 있게 보여주는 것이다.
+ *
+ * 최대 심박은 Tanaka(208 − 0.7×나이) 추정을 쓴다. 실측 최대심박은 최대 노력 테스트가
+ * 있어야 얻는 값이라 대부분의 사용자에게 없고, 가민·폴라도 같은 방식으로 추정한다.
+ * **추정이라는 사실이 숨겨지지 않는 자리에서만** 쓴다(부하 계산 — 화면에 숫자로 안 뜬다).
+ */
+export function buildFitnessInput(
+  runs: readonly unknown[],
+  body: {age?: number; sex?: Sex; restHR?: number},
+): {runs: FitnessRunIn[]; opts: {sex: Sex; age: number}} {
+  const age = Number(body?.age) > 0 ? Math.round(Number(body.age)) : 0;
+  const restHR = Number(body?.restHR) > 0 ? Math.round(Number(body.restHR)) : 0;
+  const sex: Sex = body?.sex === 'female' ? 'female' : 'male';
+  // 나이가 없으면 추정도 못 한다 → 0(붙이지 않는다).
+  const estimated = age > 0 ? estimateMaxHR(age) : 0;
+  const mapped: FitnessRunIn[] = [];
+  for (const raw of Array.isArray(runs) ? runs : []) {
+    if (!raw || typeof raw !== 'object') continue;
+    const r = raw as Record<string, unknown>;
+    // 레코드는 저장 형태(`km`·`duration`·`run_date`·`heart_rate`)와 표시 형태
+    // (`dist`·`durationS`·`runDate`·`bpm`)가 섞여 들어온다 — 둘 다 받는다.
+    const km = Number(r.km ?? r.dist) || 0;
+    const durationS = Number(r.duration ?? r.durationS) || 0;
+    const runDate = String(r.run_date ?? r.runDate ?? '');
+    const hrAvg = Number(r.heart_rate ?? r.hrAvg ?? r.bpm) || 0;
+    // 최대 심박은 **그 러닝에서 실제로 관측된 값이 있으면 그걸 쓴다**(저장 시 hrTrack 에서
+    // 뽑아 둔다). 없을 때만 나이 추정으로 떨어진다 — 실측이 추정보다 항상 낫다.
+    const observedMax = Number(r.heart_rate_max ?? r.hrMax) || 0;
+    const hrMax = observedMax > 0 ? observedMax : estimated;
+    mapped.push({
+      km,
+      durationS,
+      runDate,
+      ...(hrAvg > 0 ? {hrAvg} : {}),
+      ...(hrAvg > 0 && hrMax > 0 ? {hrMax} : {}),
+      ...(hrAvg > 0 && restHR > 0 ? {hrRest: restHR} : {}),
+    });
+  }
+  return {runs: mapped, opts: {sex, age}};
+}
 
 /**
  * 런 히스토리 → 체력 종합. today 'YYYY-MM-DD'. windowDays 는 VO2max 추정 창(기본 42일).

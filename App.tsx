@@ -53,7 +53,7 @@ import type {CloudProvider} from './lib/cloudPort';
 import {mirrorRecords, pullRecords, mergePulled, isPayloadMirrored, stripRecordArrays, loadMarkers} from './lib/recordSync';
 import {retirementRecordsFromShoes, setShoeRetirement, migrateRetiredShoes} from './lib/shoeRetirement';
 import {buildPublicProfile, publishProfile, loadVisibility, saveVisibility, type ProfileVisibility} from './lib/publicProfile';
-import {fitnessSummary} from './lib/analytics/fitness';
+import {fitnessSummary, buildFitnessInput} from './lib/analytics/fitness';
 import {hrSummary} from './lib/analytics/hrZones';
 import SocialConsentScreen from './SocialConsentScreen.rn';
 import ForceUpdateScreen from './ForceUpdateScreen.rn';
@@ -839,10 +839,11 @@ function Main(){
   // 무엇보다 노력으로 못 바꾸는 값이라 비교 지표로 부적합하다(업적 원칙: 안전 정렬).
   const socialSpecInput=useMemo(()=>{
     const liveRuns=liveRecords(runs as any) as any[];
-    const fit=fitnessSummary(
-      liveRuns.map(r=>({km:Number(r?.km??0),durationS:Number(r?.duration??0),runDate:String(r?.run_date||'')})),
-      today(),
-    );
+    // 공용 매핑을 쓴다(2026-08-08). 예전엔 여기서 km·시간·날짜만 넘겨서 vo2max 가
+    // **항상 0** 이었고, 그 0 을 진짜 값인 양 공개 프로필 문서에 실어 보냈다.
+    // 마이 탭은 심박을 넘기는데 여기만 안 넘겨서 같은 사람의 같은 값이 두 갈래였다.
+    const fitIn=buildFitnessInput(liveRuns,{age,sex,restHR});
+    const fit=fitnessSummary(fitIn.runs,today(),fitIn.opts);
     let longestKm=0;
     let sumKmAll=0;
     let sumSec=0;
@@ -858,7 +859,10 @@ function Main(){
       longestKm,
       pb:distancePBs as Record<string,number|undefined>,
     };
-  },[runs,distancePBs]);
+    // age·sex·restHR 을 의존성에 넣는다(2026-08-08). 심박을 넘기기 시작하면서 이 값들이
+    // 결과를 바꾸는데, 빠져 있으면 **설정에서 나이를 고쳐도 공개 프로필의 체력이 옛
+    // 값에 머문다.** 런이 하나 더 쌓여야 비로소 갱신되는, 눈치채기 어려운 종류다.
+  },[runs,distancePBs,age,sex,restHR]);
 
   // ── 신발 마일리지 최고수위 (AUDIT 3 D-4) ──────────────────────────────────
   // usedKm 은 런 목록에서 매번 다시 계산하는 파생값이라, 런이 어떤 이유로든 사라지면

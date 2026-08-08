@@ -53,7 +53,7 @@ import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
 import { loadCloudAccount, clearCloudAccount, CLOUD_PROVIDER_LABEL } from './lib/cloudAccount';
 import type { RunBestEfforts } from './lib/bestEfforts';
 import { STANDARD_DISTANCES } from './lib/bestEfforts';
-import { fitnessSummary } from './lib/analytics/fitness';
+import { fitnessSummary, buildFitnessInput } from './lib/analytics/fitness';
 import { fmtTime } from './lib/format';
 // 몸무게가 러닝화 수명에 주는 효과를 설정 화면이 직접 밝히기 위한 단일 소스(UX 감사 ②).
 import { WEIGHT_DURABILITY_REF_KG, WEIGHT_WEAR_REASON_KO, weightDurabilityFactor } from './lib/shoe';
@@ -662,18 +662,13 @@ function ProfileScreen({
   // 훈련부하(TRIMP)가 한 번도 발동하지 않았다. 이제 레코드가 heart_rate_max 를 들고
   // 있고(저장 시 hrTrack 에서 측정), 없는 런은 예전처럼 페이스 기반으로 떨어진다.
   const vo2 = useMemo(
-    () => fitnessSummary(
-      (recapRuns as RecapRun[]).map((r) => ({
-        km: Number(r?.km ?? 0),
-        durationS: Number(r?.duration ?? 0),
-        runDate: String(r?.run_date || ''),
-        hrAvg: Number((r as {heart_rate?: number})?.heart_rate ?? 0),
-        hrMax: Number((r as {heart_rate_max?: number})?.heart_rate_max ?? 0),
-        hrRest: restHR,
-      })),
-      todayISO || '',
-      { age, sex: sex === 'female' ? 'female' : 'male' },
-    ),
+    () => {
+      // 매핑은 lib/analytics/fitness 의 공용 변환기가 소유한다(2026-08-08). 예전엔 이
+      // 화면과 홈이 각자 매핑했고, 실제로 갈라졌다(홈은 심박을 아예 안 넘겨 vo2max 가
+      // 늘 0 이었다). 여기 인라인으로 두면 다음 화면이 또 자기 버전을 만든다.
+      const fin = buildFitnessInput(recapRuns as RecapRun[], {age, sex, restHR});
+      return fitnessSummary(fin.runs, todayISO || '', fin.opts);
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [recapRuns.length, (recapRuns as RecapRun[])[recapRuns.length - 1]?.id, todayISO, restHR, age, sex],
   );

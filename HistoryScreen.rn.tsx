@@ -21,7 +21,7 @@ import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
-import { fitnessSummary } from './lib/analytics/fitness';
+import { fitnessSummary, buildFitnessInput } from './lib/analytics/fitness';
 import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance } from './lib/analytics/gap';
 import { estimateMaxHR, timeInZones, hrSummary, zoneBoundaries, HR_ZONE_LABEL, type HRZone } from './lib/analytics/hrZones';
 import { trimp, paceLoad, effortBand } from './lib/analytics/load';
@@ -1028,11 +1028,14 @@ function HistoryScreen({
   // 전체 런으로 산출한다. PMC 는 첫 런~오늘 하루씩 도는 루프라 runs 가 바뀔 때만 재계산(useMemo).
   const todayIso = ymdLocal(now);
   const fitness = useMemo(
-    () => fitnessSummary(
-      runs.map(r => ({ km: (r as any).km ?? r.dist, durationS: (r as any).duration ?? r.durationS, runDate: rd(r) })),
-      todayIso,
-      { sex }, // 성별 TRIMP 계수 — 개별 런 상세(RunDetail)와 동일 기준(점검 #19 발견 수리)
-    ),
+    () => {
+      // 매핑은 lib/analytics/fitness 의 공용 변환기가 소유한다(2026-08-08). 화면마다 따로
+      // 적으면 갈라진다 — 실제로 홈과 마이 탭이 서로 다른 심박 입력을 넘기고 있었다.
+      // (이 화면이 쓰는 건 thresholdPaceSec 뿐이라 심박이 결과를 바꾸지는 않는다. 그래도
+      //  같은 함수에 같은 방식으로 넣는다 — 다른 값을 쓰려면 이유가 있어야 한다.)
+      const fin = buildFitnessInput(runs as unknown[], {sex, age, restHR});
+      return fitnessSummary(fin.runs, todayIso, fin.opts);
+    },
     // runs 식별(길이+마지막 런 키)로 캐시 무효화 — 매 렌더 깊은 비교 회피.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [runs.length, runs[runs.length - 1]?.id, todayIso],

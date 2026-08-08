@@ -189,7 +189,11 @@ android {
         // 지역 변수로 분리 — `versionCode (…)` 공백이 Groovy 에서 인자 아닌 반환값 체이닝으로
         // 파싱돼 null.toString() 으로 터지던 것 방지(카카오 키와 동일 패턴).
         def keegoVersionCode = (project.findProperty('KEEGO_VERSION_CODE') ?: '1').toString().toInteger()
-        def keegoVersionName = (project.findProperty('KEEGO_VERSION_NAME') ?: '1.0.0').toString()
+        // ⚠️ iOS 의 MARKETING_VERSION 과 **같은 문자열**이어야 한다(2026-08-08 정합).
+        // 예전엔 iOS 가 `1.0`, 안드로이드 기본이 `1.0.0` 이라 두 스토어에 다른 버전이
+        // 올라갈 뻔했다. 사용자 문의·크래시 리포트가 버전으로 묶이는데 그게 갈리면
+        // "1.0 에서만 나는 버그"를 추적할 수 없다.
+        def keegoVersionName = (project.findProperty('KEEGO_VERSION_NAME') ?: '1.0').toString()
         versionCode keegoVersionCode
         versionName keegoVersionName
         // 카카오 네이티브 앱 키는 공개 저장소에 두지 않는다 — ~/.gradle/gradle.properties 의
