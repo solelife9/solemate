@@ -152,7 +152,7 @@ import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
 import {syncRemoteCatalog} from './lib/shoeCatalogRemote';
 import {setRemoteShoeDocs} from './lib/shoeCatalogStore';
 import {LoginScreen} from './LoginScreen.rn';
-import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones, stripSyncedRoutes, shouldSkipCloudSync, compactTombstones, SHOE_TOMBSTONE_KEEP} from './lib/cloudSync';
+import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones, stripSyncedRoutes, shouldSkipCloudSync, compactTombstones, compactShoeTombstones} from './lib/cloudSync';
 import {publishMyRanking,unpublishMyRanking} from './lib/progression/firestoreRankingStore';
 import {LEADERBOARD_PUBLISH_ENABLED, SOCIAL_PROFILE_PUBLISH_ENABLED, MERGE_PHONE_WATCH_RUNS} from './lib/featureFlags';
 import {genRunId, genShoeId} from './lib/genId';
@@ -1491,11 +1491,17 @@ function Main(){
   // serializeBackup→RN Share로 내보낸다.
   // audit a2: 묘비를 라이브 레코드 뒤에 합류시켜 동기(mergeCloudData)가 삭제를 전파하게 한다.
   // 라이브 배열은 묘비-free 이고 한 id 가 양쪽에 동시에 있지 않으므로 합집합이 깨끗하다.
-  // AUDIT 3 D-1: 묘비는 **껍데기로, 기한 안의 것만** 싣는다. 예전엔 지운 레코드 전체가
-  // 영구 보존돼 백업 문서가 단조 증가했고, 1MiB 벽에 닿으면 동기가 통째로 멎는 구조였다.
-  // 신발 묘비는 name 을 남긴다 — 지난 기록의 신발 이름 표시에 실제로 쓰인다(buildNameById).
+  // AUDIT 3 D-1: 묘비는 **껍데기로** 싣는다. 예전엔 지운 레코드 전체가 영구 보존돼 백업
+  // 문서가 단조 증가했고, 1MiB 벽에 닿으면 동기가 통째로 멎는 구조였다.
+  //
+  // ⚠️ 신발과 런은 **정리 규칙이 다르다**(2026-08-08, 감사 Q-10):
+  //   · 런 묘비  — 나이(90일 TTL)로 떨어뜨린다. 러닝을 지울 때마다 쌓여 개수 위험이 실재한다.
+  //   · 신발 묘비 — **나이로 떨어뜨리지 않는다.** name 이 삭제 뒤에도 계속 쓰이는 데이터라
+  //     (그 신발로 달린 과거 기록이 실제 모델명을 보여주는 유일한 근거), TTL 로 지우면
+  //     3개월 뒤 그 기록들에서 신발 이름이 영구히 사라진다. 대신 개수로 막는다
+  //     (compactShoeTombstones — 실측 98B/건이라 상한 500건이 문서의 4.7%).
   const backupData={
-    shoes:[...shoes,...compactTombstones(tombstones.shoes,Date.now(),SHOE_TOMBSTONE_KEEP)],
+    shoes:[...shoes,...compactShoeTombstones(tombstones.shoes)],
     runs:[...runs,...compactTombstones(tombstones.runs,Date.now())],
     // 신체지표(체중·나이·성별·안정시심박)도 포함 — 재설치·기기변경 시 심박존(Tanaka/
     // Karvonen)·칼로리·TRIMP 가 틀어지지 않게(유실 0). updated_at 은 병합 LWW 판정 기준.

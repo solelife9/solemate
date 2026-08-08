@@ -502,3 +502,59 @@ export function compactTombstones<T extends object>(
 
 /** 신발 묘비에서 추가로 보존하는 필드 — 지난 기록의 신발 이름 표시에 쓰인다. */
 export const SHOE_TOMBSTONE_KEEP = ['name'] as const;
+
+// ── 신발 묘비는 **나이로 떨어뜨리지 않는다** (2026-08-08, 감사 Q-10) ──────────
+//
+// 신발 묘비의 `name` 은 삭제 뒤에도 계속 **쓰이는 데이터**다 — 그 신발로 달린 과거
+// 기록이 "삭제된 신발" 대신 실제 모델명을 보여주는 유일한 근거다.
+// 그런데 90일 TTL 이 그 묘비를 통째로 떨어뜨렸다. 결과: 신발을 지운 지 3개월이 지나면
+// **그 신발로 달린 모든 기록에서 이름이 영구히 사라진다.** 러닝 기록 자체는 남는데
+// 무엇을 신고 뛰었는지만 없어지는 것이라, 사용자 입장에선 기록이 훼손된 것과 같다.
+// 이름을 남기려고 SHOE_TOMBSTONE_KEEP 을 일부러 뒀는데 TTL 이 그걸 되돌리고 있었다.
+//
+// TTL 의 목적은 **문서가 터져 모든 기기의 동기가 멎는 것**을 막는 것이다. 그 위험의
+// 실체는 개수이고, 신발 묘비는 그 대상이 아니다 — 실측 98B/건이라 500건이 48KB,
+// Firestore 문서 상한 1MB 의 **4.7%** 다. 반면 런 묘비는 러닝을 지울 때마다 쌓이므로
+// 위험이 실재한다(그쪽 TTL 은 그대로 둔다).
+//
+// 그래서 신발 묘비는 **나이 대신 개수**로 막는다. 상한을 넘으면 오래된 것부터 버린다 —
+// 오래된 신발일수록 그 신발로 달린 기록도 오래됐고, 사용자가 덜 들여다본다.
+
+/**
+ * 보존할 신발 묘비 최대 개수. 넘으면 오래된 것부터 버린다.
+ *
+ * 500 = 실측 98B × 500 ≈ 48KB(문서 상한의 4.7%). 사람이 평생 등록했다 지우는 러닝화가
+ * 500켤레를 넘기는 일은 없다고 봐도 되지만, 상한 자체는 둔다 — 자동화·버그로 무한히
+ * 쌓이는 경로가 생겨도 문서가 터지지 않게.
+ */
+export const SHOE_TOMBSTONE_MAX = 500;
+
+/**
+ * 신발 묘비 전용 정리. **나이로 떨어뜨리지 않고 개수로만 막는다.**
+ *
+ * live 레코드는 하나도 건드리지 않는다(참조까지 그대로) — `compactTombstones` 와 같은 계약.
+ * 묘비는 코어 3필드 + `name` 으로 줄인다.
+ *
+ * 상한을 넘으면 `updatedAt` 이 오래된 것부터 버린다. 시각을 모르는 묘비는 **남기는 쪽**으로
+ * 친다(0 이 아니라 무한대로 정렬) — 언제 지웠는지 모른다는 뜻이고, 그때 버리면 삭제가
+ * 취소돼 지운 신발이 되살아난다(`isTombstoneFresh` 와 같은 원칙).
+ */
+export function compactShoeTombstones<T extends object>(
+  records: readonly T[],
+  max: number = SHOE_TOMBSTONE_MAX,
+): T[] {
+  if (!Array.isArray(records)) return [];
+  const live: T[] = [];
+  const dead: T[] = [];
+  for (const r of records) (isDeleted(r) ? dead : live).push(r);
+
+  let kept = dead;
+  if (dead.length > max) {
+    const at = (r: T) => {
+      const v = recordUpdatedAt(r);
+      return Number.isFinite(v) && v > 0 ? v : Number.POSITIVE_INFINITY; // 시각 불명 = 남긴다
+    };
+    kept = [...dead].sort((a, b) => at(b) - at(a)).slice(0, max);
+  }
+  return [...live, ...kept.map(r => slimTombstone(r, SHOE_TOMBSTONE_KEEP))];
+}
