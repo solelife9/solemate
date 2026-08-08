@@ -47,7 +47,13 @@ function boot(readRecords: jest.Mock) {
     insertRecords: jest.fn().mockResolvedValue([]),
     openHealthConnectSettings: jest.fn(),
   };
-  jest.doMock('react-native-health-connect', () => api, {virtual: true});
+  // ⚠️ `{virtual: true}` 를 쓰지 않는다(2026-08-08). 이 패키지는 **실제로 설치돼 있다** —
+  // virtual 은 '존재하지 않는 모듈'을 위한 옵션이라, 실재하는 패키지에 쓰면 목이 해석된
+  // 경로가 아닌 **이름**으로 등록된다. 이 파일만 돌 때는 우연히 맞아떨어지지만, 앞선
+  // 스위트가 진짜 모듈을 한 번 require 해 두면(예: healthFacade.test) 대상 코드의
+  // `require('react-native-health-connect')` 가 **진짜 모듈**로 해석돼 목을 비껴간다.
+  // 그러면 readRecords 가 한 번도 안 불리고 테스트가 순서에 따라 빨개진다.
+  jest.doMock('react-native-health-connect', () => api);
   const rn = require('react-native');
   rn.Platform.OS = 'android';
   // ⚠️ 저장소도 **부팅 뒤 인스턴스**를 써야 한다. jest.resetModules() 가 AsyncStorage 목까지
