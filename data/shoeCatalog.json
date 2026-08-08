@@ -8283,7 +8283,7 @@
       "heel": 37,
       "forefoot": 31
     },
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -8314,7 +8314,7 @@
       "heel": 39,
       "forefoot": 33
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "discontinued": false,
     "searchAliases": [
       "뉴발란스",
@@ -8416,7 +8416,7 @@
       "heel": 38,
       "forefoot": 30
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -8478,7 +8478,7 @@
       "heel": 33,
       "forefoot": 25
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -11166,7 +11166,7 @@
       "heel": 32,
       "forefoot": 24
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -11239,7 +11239,7 @@
     "drop": null,
     "plate": "none",
     "stackHeight": null,
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
@@ -11292,7 +11292,7 @@
       "heel": 35,
       "forefoot": 29
     },
-    "releaseYear": null,
+    "releaseYear": 2024,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
@@ -11535,7 +11535,7 @@
       "heel": 32,
       "forefoot": 22
     },
-    "releaseYear": null,
+    "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
