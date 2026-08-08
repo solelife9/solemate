@@ -33,7 +33,7 @@ const withYear = SHOES.filter(s => s.releaseYear != null);
  * 채워진 최소 개수(래칫). 채운 값이 사라지면 여기서 걸린다.
  * **올리기만 한다** — 내릴 일이 생겼다면 그건 데이터를 잃은 것이다.
  */
-const YEARS_FILLED_FLOOR = 242; // 2026-08-08: 191 → 231(ASICS·2026캘린더) → 242(Nike 11)
+const YEARS_FILLED_FLOOR = 251; // 2026-08-08: 191 → 231 → 242(Nike) → 251(Adidas·Hoka)
 
 describe('출시연도 — 값의 타당성', () => {
   test(`채워진 연도가 최소 ${YEARS_FILLED_FLOOR}건 (래칫 — 줄면 데이터를 잃은 것)`, () => {
