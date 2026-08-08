@@ -6,7 +6,7 @@
   ios/KeegoComplication/KeegoComplication.entitlements 와 **같은 이름**이어야 한다.
 
   이 그룹은 Apple 개발자 포털에서 워치 앱(com.keego.app.watchkitapp)과
-  컴플리케이션(…​.complication) 두 번들 ID 모두에 등록돼야 서명이 통과한다.
+  컴플리케이션(….watchkitapp.widget) 두 번들 ID 모두에 등록돼야 서명이 통과한다.
 -->
 <plist version="1.0">
 <dict>
