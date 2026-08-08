@@ -183,11 +183,18 @@ export const watchSession = {
    * applicationContext 라 워치가 꺼져 있어도 다음 실행 때 도착·캐시된다(오프라인 폴백).
    * 네이티브 미지원/구버전이면 no-op.
    */
-  updateShoes(shoes: WatchShoePayload[], hr?: {max?: number; rest?: number}): void {
+  /**
+   * @param selectedShoeId 폰이 **지금 뛰려는 신발**. 워치는 자기 스와이프 기록으로만
+   *   신발을 골랐기 때문에, 폰에서 다른 신발을 고르면 두 기기가 서로 다른 신발로
+   *   세션을 열었다 → 병합 조건(shoe_id 동일)이 깨져 같은 러닝이 두 건 남고
+   *   **신발이 이중 차감**된다(2026-08-08). 빈 문자열이면 워치가 무시한다.
+   */
+  updateShoes(shoes: WatchShoePayload[], hr?: {max?: number; rest?: number}, selectedShoeId?: string | null): void {
     if (!available || !M?.updateShoeContext) return;
     try {
       M.updateShoeContext({
         shoes,
+        selectedShoeId: selectedShoeId ? String(selectedShoeId) : '',
         hrMax: hr?.max && hr.max > 0 ? Math.round(hr.max) : 0,
         hrRest: hr?.rest && hr.rest > 0 ? Math.round(hr.rest) : 0,
       });

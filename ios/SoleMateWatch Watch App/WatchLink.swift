@@ -81,6 +81,9 @@ final class WatchLink: NSObject, ObservableObject {
   private enum Keys {
     static let shoes = "keego_shoes_v1"
     static let selectedShoe = "keego_selected_shoe_v1"
+    /// 폰이 마지막으로 알려 준 선택 신발 id. **워치의 선택과 별개로 보관한다** —
+    /// 폰 값이 *바뀌었을 때만* 따라가기 위해서다(아래 apply 참조).
+    static let phoneSelectedShoe = "keego_phone_selected_shoe_v1"
     static let hrMax = "keego_hr_max_v1"
     static let hrRest = "keego_hr_rest_v1"
     static let hapticsOn = "keego_haptics_on_v1"
@@ -94,6 +97,7 @@ final class WatchLink: NSObject, ObservableObject {
       shoes = cached
     }
     selectedShoeId = defaults.string(forKey: Keys.selectedShoe)
+    lastPhoneSelectedShoeId = defaults.string(forKey: Keys.phoneSelectedShoe)
     hrMax = defaults.double(forKey: Keys.hrMax)
     hrRest = defaults.double(forKey: Keys.hrRest)
     // 캐시된 햅틱 설정 복원 — 키 부재(최초 실행)면 기본 ON.
@@ -103,6 +107,9 @@ final class WatchLink: NSObject, ObservableObject {
       WCSession.default.activate()
     }
   }
+
+  /// 폰이 마지막으로 알려 준 선택 신발 id(따라갈지 판단하는 기준값).
+  private var lastPhoneSelectedShoeId: String?
 
   /// 현재 선택된 신발(마지막 선택 → 목록 밖이면 첫 신발 폴백). 목록이 비면 nil.
   var selectedShoe: WatchShoe? {
@@ -129,6 +136,25 @@ final class WatchLink: NSObject, ObservableObject {
       }
       shoes = parsed
       if let raw = try? JSONEncoder().encode(parsed) { defaults.set(raw, forKey: Keys.shoes) }
+    }
+    // ── 폰이 고른 신발 따라가기 ────────────────────────────────────────────
+    // 왜: 예전엔 폰이 목록만 보내서, 워치는 **자기 스와이프 기록**으로만 신발을 골랐다.
+    // 폰에서 다른 신발을 고르고 워치로 러닝을 시작하면 두 기기가 서로 다른 신발로 세션을
+    // 열고, 병합 조건(shoe_id 동일)이 깨져 같은 러닝이 두 건 남는다 → **이중 차감**.
+    //
+    // 지키는 선 둘:
+    //  · **러닝 중에는 절대 바꾸지 않는다.** 달리는 도중 신발이 바뀌면 그 세션의 기록이
+    //    엉뚱한 신발에 붙는다. 다음 컨텍스트에서 다시 따라가면 된다.
+    //  · **폰 값이 *바뀌었을 때만* 따라간다.** 매번 덮어쓰면 워치에서 손목으로 스와이프해
+    //    고른 신발이 다음 동기화에 조용히 되돌아간다(사용자가 한 선택을 지우면 안 된다).
+    if let sel = context["selectedShoeId"] as? String, !sel.isEmpty,
+       sel != lastPhoneSelectedShoeId {
+      lastPhoneSelectedShoeId = sel
+      defaults.set(sel, forKey: Keys.phoneSelectedShoe)
+      if !WorkoutManager.shared.isActive {
+        selectedShoeId = sel
+        defaults.set(sel, forKey: Keys.selectedShoe)
+      }
     }
     if let v = (context["hrMax"] as? NSNumber)?.doubleValue, v > 0 {
       hrMax = v

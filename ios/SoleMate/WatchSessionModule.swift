@@ -49,15 +49,29 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
   override func supportedEvents() -> [String]! { return ["onHeartRate", "onWatchRun", "onWatchHrTrack", "onWatchStop"] }
   override func startObserving() {
     hasListeners = true
-    // 구독 전에 도착해 버퍼된 런·심박기록·정지 재생(JS 가 runId·시간창·cmdAt 으로 방어).
+    // 구독 전에 도착해 버퍼된 정지·런·심박기록 재생(JS 가 runId·시간창·cmdAt 으로 방어).
+    //
+    // ⚠️ **순서가 중요하다: stops → runs → hrs.** 예전엔 runs 가 먼저였고, 그게 같은
+    // 러닝을 두 건으로 만들었다(2026-08-08).
+    //
+    //   runs 먼저 → 워치 런이 도착하는 시점에 **폰 런은 아직 저장 전**이다(정지를 아직
+    //   안 흘렸으므로 러닝이 살아 있다). 그래서 lib/runMerge 의 시간창 병합이 붙을
+    //   대상을 못 찾고 새 레코드를 만든다. 뒤이어 stops 가 폰 런을 저장하면 두 건이 된다
+    //   — 폰 저장 경로의 watchDup 검사는 그 사이 React 상태가 전파됐어야 성립하는데,
+    //   같은 틱 안에서는 보장되지 않는다.
+    //
+    //   stops 먼저 → 폰 런이 먼저 확정 저장되고, 이어서 도착한 워치 런을 runMerge 가
+    //   시간창으로 찾아 **합친다**. 상태 전파 타이밍에 기대지 않는다.
+    //
+    // hrs 는 런에 붙는 사이드카라 runs 뒤여야 한다(붙일 런이 있어야 한다).
     DispatchQueue.main.async {
       guard self.hasListeners else { return }
+      let stops = self.pendingStops; self.pendingStops = []
+      stops.forEach { self.sendEvent(withName: "onWatchStop", body: $0) }
       let runs = self.pendingRuns; self.pendingRuns = []
       runs.forEach { self.sendEvent(withName: "onWatchRun", body: $0) }
       let hrs = self.pendingHrTracks; self.pendingHrTracks = []
       hrs.forEach { self.sendEvent(withName: "onWatchHrTrack", body: $0) }
-      let stops = self.pendingStops; self.pendingStops = []
-      stops.forEach { self.sendEvent(withName: "onWatchStop", body: $0) }
     }
   }
   override func stopObserving() { hasListeners = false }
@@ -144,6 +158,10 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
     guard WCSession.isSupported() else { return }
     var patch: [String: Any] = [:]
     if let shoes = payload["shoes"] as? [[String: Any]] { patch["shoes"] = shoes }
+    // 폰이 **지금 뛰려는 신발**. 워치는 이걸 몰라서 마지막 스와이프 신발로 세션을 열었고,
+    // 신발이 다르면 병합 조건(shoe_id 동일)이 깨져 같은 러닝이 두 건 남았다(이중 차감).
+    // 빈 문자열은 보내지 않는다 — 컨텍스트는 통째 교체라 빈 값이 유효한 선택을 지운다.
+    if let sel = payload["selectedShoeId"] as? String, !sel.isEmpty { patch["selectedShoeId"] = sel }
     if let hrMax = payload["hrMax"] as? NSNumber { patch["hrMax"] = hrMax.doubleValue }
     if let hrRest = payload["hrRest"] as? NSNumber { patch["hrRest"] = hrRest.doubleValue }
     guard !patch.isEmpty else { return }

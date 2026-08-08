@@ -168,9 +168,10 @@ describe('updateShoes — 활성 신발/심박존 파라미터 푸시', () => {
     const shoes = [
       {id: 's1', brand: 'Nike', model: 'Pegasus 41', lifePct: 62, condition: '양호', usedKm: 190, maxKm: 500},
     ];
-    ws.updateShoes(shoes, {max: 187.4, rest: 52});
+    ws.updateShoes(shoes, {max: 187.4, rest: 52}, 's1');
     expect(mockModule.updateShoeContext).toHaveBeenCalledWith({
       shoes,
+      selectedShoeId: 's1',
       hrMax: 187,
       hrRest: 52,
     });
@@ -179,7 +180,24 @@ describe('updateShoes — 활성 신발/심박존 파라미터 푸시', () => {
   it('심박 파라미터 미설정이면 0 으로 보낸다(워치가 미설정으로 해석)', () => {
     const ws = loadWatchSession();
     ws.updateShoes([]);
-    expect(mockModule.updateShoeContext).toHaveBeenCalledWith({shoes: [], hrMax: 0, hrRest: 0});
+    expect(mockModule.updateShoeContext).toHaveBeenCalledWith(
+      {shoes: [], selectedShoeId: '', hrMax: 0, hrRest: 0});
+  });
+
+  // 폰이 고른 신발을 워치에 알려주지 않으면 두 기기가 다른 신발로 세션을 열고,
+  // 병합 조건(shoe_id 동일)이 깨져 같은 러닝이 두 건 남는다 → 신발 이중 차감(N-2).
+  it('선택 신발이 없으면 빈 문자열 — 워치가 무시한다(유효한 선택을 지우지 않게)', () => {
+    const ws = loadWatchSession();
+    ws.updateShoes([], undefined, null);
+    expect(mockModule.updateShoeContext).toHaveBeenCalledWith(
+      expect.objectContaining({selectedShoeId: ''}));
+  });
+
+  it('선택 신발 id 는 문자열로 정규화해 보낸다', () => {
+    const ws = loadWatchSession();
+    ws.updateShoes([], undefined, 42 as unknown as string);
+    expect(mockModule.updateShoeContext).toHaveBeenCalledWith(
+      expect.objectContaining({selectedShoeId: '42'}));
   });
 
   it('네이티브가 던져도 앱으로 전파하지 않는다(graceful)', () => {

@@ -2009,10 +2009,14 @@ function Main(){
   //    를 워치에 푸시한다. 워치 시작 화면이 이 목록을 좌우 스와이프로 넘기고, 남은 수명
   //    %·컨디션 도트를 그린다. applicationContext 라 워치가 꺼져 있어도 다음 실행 때
   //    도착·캐시된다. 직렬화 문자열을 dep 으로 써 내용이 실제로 바뀔 때만 전송한다.
-  const watchShoesJson=JSON.stringify(buildWatchShoes(homeShoes,age,restHR));
+  //    ⚠️ **선택된 신발 id 도 함께 보낸다**(2026-08-08). 예전엔 목록만 보내서, 워치는
+  //    자기 스와이프 기록으로만 신발을 골랐다. 폰에서 다른 신발을 고르면 두 기기가 서로
+  //    다른 신발로 세션을 열고, 병합 조건(shoe_id 동일)이 깨져 같은 러닝이 두 건 남는다
+  //    — 그러면 신발이 이중 차감된다.
+  const watchShoesJson=JSON.stringify({...buildWatchShoes(homeShoes,age,restHR),selectedShoeId:effectiveId??''});
   useEffect(()=>{
     const p=JSON.parse(watchShoesJson);
-    watchSession.updateShoes(p.shoes,p.hr);
+    watchSession.updateShoes(p.shoes,p.hr,p.selectedShoeId);
   },[watchShoesJson]);
   // ①'' 폰 최근 러닝 → 워치 기록(HistoryView) 동기화. 워치가 폰 런 + 워치 런을 합쳐 최신순으로
   //    보여준다(runId 중복 제거는 워치 RecentRuns). 최근 10개만, 내용이 실제 바뀔 때만 전송.
