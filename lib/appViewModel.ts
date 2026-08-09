@@ -22,10 +22,14 @@ export function toUiShoe(s: any, runs: any[], weightKg: number): Shoe {
   // 한다(2026-07-11 단일화 — 3단계 condition 필드 폐지).
   const h = shoeHealth(s, runs);
   const {brand, model} = parseShoeName(s.name);
+  // 표시 이름은 **별명이 있으면 별명**이다(2026-08-09). 별명이 없으면 예전과 같다.
+  // 카탈로그 정체성(s.name)은 건드리지 않으므로 스펙·카테고리 조회는 계속 맞는다 —
+  // 같은 모델 두 켤레를 구별하려고 이름을 바꾸면 스펙이 끊기던 버그의 수리다.
+  const nick = typeof s.nickname === 'string' ? s.nickname.trim() : '';
   return {
     id: s.id,
     brand: brand || s.name,
-    model: model || (brand ? '' : s.name),
+    model: nick || model || (brand ? '' : s.name),
     used: Math.round(h.usedKm),
     // max = 몸무게 반영 유효 권장수명(링·%·교체판정 표시값). maxBase = 편집용 기저(오염 방지).
     // 몸무게 미설정이면 계수 1 → 유효=기저(기존과 동일). start_km 은 유효 수명에 무관(주행거리).

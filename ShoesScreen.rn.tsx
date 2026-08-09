@@ -114,7 +114,11 @@ function ShoeDetail({
   const injury = assessShoeInjuryRisk(shoe);
 
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(`${shoe.brand} ${shoe.model}`.trim());
+  // 편집 대상은 **모델 이름 부분만**이다(2026-08-09). 브랜드는 아래 헤더가 따로 보여주므로
+  // 여기에 브랜드까지 넣으면 저장 후 "ASICS ASICS Novablast 5" 처럼 두 번 나온다.
+  // 저장하면 카탈로그 정체성(BackendShoe.name)이 아니라 **별명(nickname)** 으로 들어간다 —
+  // 이름을 바꿔도 공식 스펙·카테고리 조회가 끊기지 않는다(그 버그의 수리).
+  const [name, setName] = useState(shoe.model);
   // 신발 수명(교체거리 max_km) 편집 — 등록 후에도 바꿀 수 있게(무거운 러너·트레일·모델
   // 오선택 보정). ±50km 스텝을 clampMaxKm(100~2000)로 보정해 onSetMaxKm 로 즉시 반영.
   const [maxEditOpen, setMaxEditOpen] = useState(false);
@@ -201,8 +205,9 @@ function ShoeDetail({
   const keepsakeReady = !retired && !!rawShoe && !!progressionCtx;
 
   const saveName = () => {
-    const v = name.trim();
-    if (shoe.id && v) onRename?.(shoe.id, v);
+    // 빈 값도 넘긴다 — 별명을 **지우고** 기본 모델명으로 돌아가는 유일한 방법이다.
+    // (예전엔 빈 값을 무시해서, 한 번 붙인 이름에 갇혔다.)
+    if (shoe.id) onRename?.(shoe.id, name.trim());
     setEditing(false);
   };
   // 보관/복원: 런 기록을 보존한 채 신발만 선택목록에서 숨기거나 되돌린다.
@@ -289,7 +294,9 @@ function ShoeDetail({
           <View style={[s.card, { padding: rs(16), gap: rv(12) }]}>
             <GlassEdge glints={false} radius={RADIUS.lg} />
             <Text style={s.dHeroLabel}>신발 이름</Text>
-            <Input value={name} onChangeText={setName} style={s.editInput} accessibilityLabel="신발 이름" autoFocus />
+            <Input value={name} onChangeText={setName} style={s.editInput}
+              placeholder="예) Novablast 5 (파랑)" accessibilityLabel="신발 이름" autoFocus />
+            <Text style={s.dHeroHint}>같은 모델을 두 켤레 가지고 있다면 여기서 구별해 주세요. 비우면 원래 이름으로 돌아가요.</Text>
             <View style={{ flexDirection: 'row', gap: rv(10) }}>
               <Tap onPress={() => setEditing(false)} style={[s.editBtn, { backgroundColor: CARD_HI }]}><Text style={[s.editBtnTxt, { color: T2 }]}>취소</Text></Tap>
               <Button label="저장" onPress={saveName} style={s.editBtn} />
@@ -919,6 +926,8 @@ const s = StyleSheet.create({
   confChipText: { fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 0.1 },
 
   dHeroLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize },
+  // 이름 편집 보조 설명 — 같은 모델 두 켤레를 구별하는 용도임을 그 자리에서 알린다.
+  dHeroHint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize },
   maxEditToggle: { width: rs(26), height: rs(26), borderRadius: rs(8), backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
   maxStepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(20), marginTop: rv(14) },
   maxStepVal: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', fontVariant: ['tabular-nums'], minWidth: rs(96), textAlign: 'center' },
