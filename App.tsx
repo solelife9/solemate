@@ -118,17 +118,11 @@ import {
   loadPendingRuns, overlayPendingRuns, removePendingRun,
   RunSnapshot,
 } from './lib/runPersistence';
-import {Unit, kmToDisplay, displayNum} from './lib/units';
+import {kmToDisplay, displayNum} from './lib/units';
 import {
-  AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts, saveWeight,
-  saveAge, saveSex, saveRestHR, Sex,
-  loadSettingsUpdatedAt, saveSettingsUpdatedAt,
-  clampGoal, clampWeight, DEFAULT_SETTINGS,
-  loadHaptics, loadTelemetry,
+  AlertSettings, clampWeight, loadHaptics, loadTelemetry,
 } from './lib/settings';
-import {
-  settingsTsOf, shouldApplySettings, pickRestorableSettings, nextSettingsTs,
-} from './lib/settingsRestore';
+import {useSettings} from './hooks/useSettings';
 import {detectPRs, PRKind} from './lib/records';
 import {runInsights} from './lib/runInsights';
 import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
@@ -143,8 +137,7 @@ import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
 import {assessTrainingLoad, loadRatioPhraseKo, LOAD_WORD, LoadLevel} from './lib/trainingLoad';
 import {
-  getNotifSettings, setNotifSettings, dueNotifications,
-  DEFAULT_NOTIF_SETTINGS, type NotifSettings, type NotifState, type ShoeForecast,
+  dueNotifications, type NotifState, type ShoeForecast,
 } from './lib/notifications';
 import {presentDue, setupPushMessaging, shouldPrimePushPermission, markPushPrimed, primePushPermission, type PushWiring} from './lib/pushMessaging';
 import {syncRunReminder, ensureForegroundHandler} from './lib/localReminder';
@@ -427,26 +420,13 @@ function Main(){
   // 복구 모드: 'review'=스냅샷을 done 화면에 띄워 저장만, 'continue'=GPS 재가동해 이어 달리기.
   const [resumeMode,setResumeMode]=useState<'review'|'continue'>('review');
   // ── 사용자 설정(ProfileScreen 설정 4행이 구동) ─────────────────────────────
-  // 거리 단위(표시 전용 — 저장 표준은 항상 km), 주간 목표(km), 신발 교체 알림.
-  // loadSettings로 AsyncStorage(settings_unit/goal_weekly_km/settings_alerts)에서
-  // 복원하고, 변경 시 즉시 영속 + 상태 갱신해 전 화면에 반영한다.
-  const [unit,setUnit]=useState<Unit>(DEFAULT_SETTINGS.unit);
-  const [goalWeeklyKm,setGoalWeeklyKm]=useState(DEFAULT_SETTINGS.goalWeeklyKm);
-  const [alerts,setAlerts]=useState<AlertSettings>({...DEFAULT_SETTINGS.alerts});
-  // 푸시 알림 설정(신규 notif_settings 키 — 기존 settings_alerts 와 별개). getNotifSettings
-  // 로 복원하고, ProfileScreen 의 변경을 changeNotifSettings 가 즉시 영속 + 상태 반영한다.
-  const [notifSettings,setNotifSettingsState]=useState<NotifSettings>(DEFAULT_NOTIF_SETTINGS);
-  // 체중(kg) — 러닝 칼로리 추정에 쓴다(설정에서 조정, 기본 65). 표시 단위와 무관.
-  const [weightKg,setWeightKg]=useState(DEFAULT_SETTINGS.weightKg);
-  // 신체지표(심박존용) — 나이→최대심박(Tanaka), 안정심박→Karvonen 존, 성별→TRIMP 계수.
-  // 0/기본은 '미설정'(폴백으로 동작). 설정에서 조정.
-  const [age,setAge]=useState(DEFAULT_SETTINGS.age);
-  const [sex,setSex]=useState<Sex>(DEFAULT_SETTINGS.sex);
-  const [restHR,setRestHR]=useState(DEFAULT_SETTINGS.restHR);
-  // 설정 블록 최종 수정 시각(epoch ms, 0=미수정) — 클라우드 병합 last-write-wins 판정.
-  // ref 미러는 동기 왕복(await) 중의 편집을 applyBackupPayload 가 즉시 보게 한다(클로버 가드).
-  const [settingsTs,setSettingsTs]=useState(0);
-  const settingsTsRef=useRef(0);
+  // 값·변경(즉시 영속)·수정시각(LWW)·부팅 복원·클라우드 병합 적용은 전부 useSettings 가
+  // 진다(2026-08-09 분해). 예전엔 이 셋이 이 파일 안에서 400줄씩 떨어져 있어, 설정을
+  // 하나 더할 때마다 세 곳을 정확히 같이 고쳐야 했다 — 빠뜨리면 동기에서만 조용히 어긋난다.
+  const settings=useSettings();
+  const {unit,goalWeeklyKm,alerts,notifSettings,weightKg,age,sex,restHR,settingsTs}=settings;
+  const {changeUnit,changeGoal,changeAlerts,changeWeight,changeAge,changeSex,changeRestHR,
+    changeNotifSettings}=settings;
   // 개인 챌린지 목록(거리·연속일). 신규 키(K_CHALLENGES)로 영속하며 런 기록에서
   // 진행률을 파생한다(lib/challenges). 기존 키와 분리돼 데이터 파괴 위험이 없다.
   const [challenges,setChallenges]=useState<Challenge[]>([]);
@@ -772,14 +752,6 @@ function Main(){
     })();
   },[]);
 
-  // 푸시 알림 설정 복원(신규 키 — 네트워크 무관, 1회). 손상/부재는 getNotifSettings 가
-  // 기본값으로 graceful 폴백하므로 별도 방어가 필요 없다(기존 settings_alerts 불변).
-  useEffect(()=>{
-    (async()=>{
-      try{setNotifSettingsState(await getNotifSettings());}catch(e){reportIssue('notif settings load',e);}
-    })();
-  },[]);
-
   // 이미 표시한 푸시 알림 key 집합(당일 1회). 메모리 캐시 + 영속을 함께 들고, 포그라운드
   // 진입마다 같은 알림이 반복 표시되는 것을 막는다(checkShoeAlerts 의 신발별 추적과 같은 톤).
   const presentedNotifKeys=useRef<Set<string>>(new Set());
@@ -1059,12 +1031,7 @@ function Main(){
     // 설정 복원은 네트워크와 무관하므로 fetch try 밖에서 먼저 읽는다(오프라인에서도
     // 단위/목표/알림이 사용자가 마지막에 정한 값으로 뜬다). 알림 판정에 갓 읽은
     // alerts 설정을 직접 넘긴다(setAlerts state 갱신 전이라 클로저가 옛값일 수 있음).
-    const st=await loadSettings();
-    setUnit(st.unit);setGoalWeeklyKm(st.goalWeeklyKm);setAlerts(st.alerts);setWeightKg(st.weightKg);
-    setAge(st.age);setSex(st.sex);setRestHR(st.restHR);
-    // 설정 수정 시각 복원 — 클라우드 병합 LWW 판정 기준(ref 는 동기 왕복 중에도 최신).
-    const stTs=await loadSettingsUpdatedAt();
-    settingsTsRef.current=stTs;setSettingsTs(stTs);
+    const st=await settings.hydrateFromLocal();
     // Stage 3(Firestore 정본 부팅): 로컬 캐시로 즉시 'ready'. 원격 복원은 runCloudSync
     // effect(authUser.uid)가 pull→merge→push 로 수행한다 — 재설치/기기변경 데이터 복구 포함.
     // REST 콜드대기/에러 카드가 사라진다(부팅은 로컬 캐시 로드라 실패하지 않는다). 첫 실행/
@@ -1462,23 +1429,6 @@ function Main(){
     }catch(e){reportIssue('shoe replacement alerts',e);}
   }
 
-  // ── 설정 변경(영속 + 상태 갱신) — ProfileScreen 설정 행이 호출 ──────────────
-  // 각 setter는 즉시 setState로 화면을 갱신하고 saveX로 AsyncStorage에 영속한다.
-  // bumpSettingsTs: 사용자가 설정을 바꿀 때마다 수정 시각을 올린다 — 클라우드 병합
-  // last-write-wins + 동기 왕복 중 편집 클로버 가드(applyBackupPayload)의 판정 기준.
-  const bumpSettingsTs=()=>{
-    const ts=syncNowMs(); // AUDIT 3 D-2 — 설정 LWW 도 같은 기준을 쓴다
-    settingsTsRef.current=ts;setSettingsTs(ts);void saveSettingsUpdatedAt(ts);
-  };
-  const changeUnit=(u:Unit)=>{setUnit(u);void saveUnit(u);bumpSettingsTs();};
-  const changeGoal=(km:number)=>{const v=clampGoal(km);setGoalWeeklyKm(v);void saveGoal(v);bumpSettingsTs();};
-  const changeAlerts=(a:AlertSettings)=>{setAlerts(a);void saveAlerts(a);bumpSettingsTs();};
-  const changeWeight=(kg:number)=>{setWeightKg(kg);void saveWeight(kg);bumpSettingsTs();};
-  const changeAge=(v:number)=>{setAge(v);void saveAge(v);bumpSettingsTs();};
-  const changeSex=(v:Sex)=>{setSex(v);void saveSex(v);bumpSettingsTs();};
-  const changeRestHR=(v:number)=>{setRestHR(v);void saveRestHR(v);bumpSettingsTs();};
-  // 푸시 알림 설정 변경: 즉시 상태 반영 + 신규 notif_settings 키에만 영속(기존 키 불변).
-  const changeNotifSettings=(s:NotifSettings)=>{setNotifSettingsState(s);void setNotifSettings(s);};
   // 러닝 리마인더 OS 체인(7일 원샷) 동기 — 설정·오늘 런 여부가 바뀔 때마다 갱신한다
   // (2026-07-05 신뢰 버그 수정: 설정만 있고 앱 닫힘 상태에서 안 울리던 반쪽 제거).
   const ranTodayForReminder=useMemo(()=>{
@@ -1555,30 +1505,10 @@ function Main(){
         return next;
       });
     }
-    // 설정 복원(단위·목표·알림 + 체중·나이·성별·안정시심박) — LWW 클로버 가드(2026-07-16).
-    // 병합 결과의 updated_at 이 현재(ref, 동기 왕복 중 편집 포함)보다 오래됐으면 통째로
-    // 스킵한다 — 과거엔 stale 스냅샷을 무조건 change* 로 되돌려서, 동기 중 바꾼 단위가
-    // 원위치되는 클로버가 있었다. 명시적 가져오기(preserveExtras=false)는 사용자 의사가
-    // '백업으로 교체'이므로 가드 없이 적용하고 수정 시각을 지금으로 올린다(이후 동기에서 승리).
-    // 상태 반영은 change* 가 아니라 저수준 set+save 로 — change* 는 bumpSettingsTs 를 불러
-    // 복원을 '이 기기의 새 편집'으로 둔갑시키고, 그러면 다른 기기의 더 최신 편집을 이긴다.
-    const st:any=data.settings||{};
-    const mergedTs=settingsTsOf(st);
-    const forceSettings=!preserve; // 명시적 import 교체
-    if(shouldApplySettings(mergedTs,settingsTsRef.current,forceSettings)){
-      const pick=pickRestorableSettings(st,{alerts});
-      if(pick.unit!==undefined){setUnit(pick.unit);void saveUnit(pick.unit);}
-      if(pick.goalWeeklyKm!==undefined){setGoalWeeklyKm(pick.goalWeeklyKm);void saveGoal(pick.goalWeeklyKm);}
-      if(pick.alerts!==undefined){setAlerts(pick.alerts);void saveAlerts(pick.alerts);}
-      if(pick.weightKg!==undefined){setWeightKg(pick.weightKg);void saveWeight(pick.weightKg);}
-      if(pick.age!==undefined){setAge(pick.age);void saveAge(pick.age);}
-      if(pick.sex!==undefined){setSex(pick.sex);void saveSex(pick.sex);}
-      if(pick.restHR!==undefined){setRestHR(pick.restHR);void saveRestHR(pick.restHR);}
-      const nextTs=nextSettingsTs(forceSettings,mergedTs,settingsTsRef.current,Date.now());
-      if(nextTs>0&&nextTs!==settingsTsRef.current){
-        settingsTsRef.current=nextTs;setSettingsTs(nextTs);void saveSettingsUpdatedAt(nextTs);
-      }
-    }
+    // 설정 복원(단위·목표·알림 + 체중·나이·성별·안정시심박) — LWW 클로버 가드는
+    // useSettings 안에 있다(판정·저수준 set+save·수정시각 승계까지 한 덩어리).
+    // preserve=false(명시적 import 교체)가 곧 force 다.
+    settings.applyCloudSettings(data.settings,!preserve);
     // 진척 복원(은퇴 신발·랭크·업적 seen) — 동기 왕복(await) 중 만든 로컬 진척(은퇴·언락·
     // 포인트)을 잃지 않게 함수형 updater 로 현재 상태(prev)와 재병합한다. 과거엔 blind replace
     // (setProgState(data.progression))라, mergeCloudData 가 쓴 값이 **동기 시작 시점 스냅샷**
