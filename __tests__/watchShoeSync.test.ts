@@ -26,8 +26,10 @@ const WATCH_LINK = 'ios/SoleMateWatch Watch App/WatchLink.swift';
 describe('N-2 — 폰이 고른 신발이 워치까지 간다', () => {
   test('JS 가 선택 신발 id 를 전달한다', () => {
     expect(read('lib/watchSession.ts')).toContain('selectedShoeId');
-    // App.tsx 가 실제로 넘겨야 의미가 있다(포트만 열고 안 부르면 그대로다).
-    expect(read('App.tsx')).toMatch(/updateShoes\([^)]*selectedShoeId/);
+    // 호출부가 실제로 넘겨야 의미가 있다(포트만 열고 안 부르면 그대로다).
+    // 2026-08-09 분해로 App.tsx → hooks/useWatchSync.ts 로 옮겼다. 가드는 그대로 —
+    // 검사 대상 파일만 따라 옮긴다(계약을 느슨하게 하지 않는다).
+    expect(read('hooks/useWatchSync.ts')).toMatch(/updateShoes\([^)]*selectedShoeId/);
   });
 
   test('폰 네이티브가 컨텍스트에 실어 보낸다', () => {
