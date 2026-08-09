@@ -25,9 +25,9 @@ import {calibrateStride} from './lib/strideLength';
 import {saveDistanceRef} from './lib/distanceRef';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
-import HistoryScreen, {PeriodSummary, PeriodChart} from './HistoryScreen.rn';
-import ShoesScreen, {ShoeTotals} from './ShoesScreen.rn';
-import ProfileScreen, {Profile, Badge, PersonalRecord} from './ProfileScreen.rn';
+import HistoryScreen from './HistoryScreen.rn';
+import ShoesScreen from './ShoesScreen.rn';
+import ProfileScreen from './ProfileScreen.rn';
 import RunEngine from './screens/RunEngine';
 import AddShoeScreen from './AddShoeScreen.rn';
 import OnboardingScreen, {RegisteredShoe} from './OnboardingScreen.rn';
@@ -84,17 +84,14 @@ import {challengeProgress} from './lib/challenges';
 
 // 러닝 중 화면이 OS 자동잠금으로 꺼지지 않게 하는 태그(손에 들고/암밴드로 지표를 흘끗 보는
 // 시나리오용). 시작 시 활성, 종료/언마운트 시 해제. 주머니(화면 off)는 백그라운드 추적이 책임.
-import {fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
-import {
-  sumKm, avgPaceLabel, totalTimeLabel, durationLabel, summaryOf, maxDayStreak,
-  weekBuckets, monthBuckets, yearBuckets,
-} from './lib/stats';
+import {fmtTime, getMonday, ymdLocal} from './lib/format';
+import {sumKm, avgPaceLabel, weekBuckets} from './lib/stats';
 import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, effectiveMaxKm, raiseHighWater, lowerHighWater, detectMileageDrops} from './lib/shoe';
 // 한 러닝은 한 기록 — 폰·워치 중복 저장 병합(신발 이중 차감 차단).
 import {findMergeTarget, mergeRuns} from './lib/runMerge';
 // 상승 고도는 폰이 한 벌 규칙으로 계산한다(워치는 원자료만 보낸다).
 import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
-import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
+import {mostRecentShoeId} from './lib/shoeRecommend';
 import {recommendRotation} from './lib/rotation';
 import {
   CACHE_SHOES_KEY, CACHE_RUNS_KEY, loadBootCache, writeBootCache,
@@ -108,7 +105,7 @@ import {
   loadPendingRuns, overlayPendingRuns, removePendingRun,
   RunSnapshot,
 } from './lib/runPersistence';
-import {kmToDisplay, displayNum} from './lib/units';
+import {kmToDisplay} from './lib/units';
 import {
   AlertSettings, clampWeight, loadHaptics, loadTelemetry,
 } from './lib/settings';
@@ -116,6 +113,7 @@ import {useSettings} from './hooks/useSettings';
 import {useHeartRateRepair} from './hooks/useHeartRateRepair';
 import {useWatchSync} from './hooks/useWatchSync';
 import {useRunEntryGate} from './hooks/useRunEntryGate';
+import {useDerivedStats} from './hooks/useDerivedStats';
 import {detectPRs, PRKind} from './lib/records';
 import {runInsights} from './lib/runInsights';
 import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
@@ -133,7 +131,7 @@ import {
 } from './lib/notifications';
 import {presentDue, setupPushMessaging, shouldPrimePushPermission, markPushPrimed, primePushPermission, type PushWiring} from './lib/pushMessaging';
 import {syncRunReminder, ensureForegroundHandler} from './lib/localReminder';
-import {weeklyProgress, personalRecords} from './lib/goals';
+import {weeklyProgress} from './lib/goals';
 import {BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
 import {ExtChallenge, challengeExtProgress, extChallengesToContext, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
@@ -2244,83 +2242,13 @@ function Main(){
     [runs.length,(runs as any[])[runs.length-1]?.id,today()],
   );
 
-  // ── history summary + chart per period ─────────────────────
-  const monthRuns=useMemo(()=>runs.filter(r=>String(r.run_date).startsWith(ymdLocal(now).slice(0,7))),[runs,now]);
-  const yearRuns=useMemo(()=>runs.filter(r=>String(r.run_date).startsWith(String(now.getFullYear()))),[runs,now]);
-  // 기간 요약: 거리(km)만 표시 단위로 환산하고 나머지(횟수/페이스/시간)는 그대로.
-  const mkSummary=useCallback((list:any[]):PeriodSummary=>({...summaryOf(list),km:kmToDisplay(sumKm(list),unit).toFixed(1)}),[unit]);
-  const summary:Record<string,PeriodSummary>=useMemo(()=>({
-    '주':mkSummary(weekRuns),'월':mkSummary(monthRuns),'년':mkSummary(yearRuns),'전체':mkSummary(runs),
-  }),[weekRuns,monthRuns,yearRuns,runs,mkSummary]);
-  // 차트 데이터도 표시 단위로 환산(막대 높이·우측 km 눈금 라벨이 함께 단위를 따른다).
-  // week chart: daily Mon..Sun
-  const weekData=useMemo(()=>weekBuckets(runs,mon).map(v=>displayNum(v,unit,1)),[runs,mon,unit]);
-  // month chart: weekly buckets
-  const monthData=useMemo(()=>monthBuckets(monthRuns,now.getFullYear(),now.getMonth()),[monthRuns,now]);
-  const weekCount=monthData.length;
-  // year chart: monthly Jan..Dec
-  const yearData=useMemo(()=>yearBuckets(yearRuns),[yearRuns]);
-  const chart:Record<string,PeriodChart>=useMemo(()=>({
-    '주':{title:'일별 거리',data:weekData,labels:['월','화','수','목','금','토','일']},
-    '월':{title:'주간 거리',data:monthData.map(v=>displayNum(v,unit,1)),labels:Array.from({length:weekCount},(_,i)=>`${i+1}주`)},
-    '년':{title:'월별 거리',data:yearData.map(v=>displayNum(v,unit,0)),labels:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']},
-  }),[weekData,monthData,yearData,weekCount,unit]);
-
-  // ── per-shoe totals (for shoe detail) ──────────────────────
-  // 신발마다 런 전량을 훑는 O(신발×런) — homeForecasts 와 같은 이유로 메모한다(Q-12).
-  const shoeTotals:Record<number,ShoeTotals>=useMemo(()=>{
-  const acc:Record<number,ShoeTotals>={};
-  shoes.forEach((s,i)=>{
-    const list=runs.filter(r=>r.shoe_id===s.id);
-    // 마지막 착용일(런에서 파생) → 한국어 표기. 미착용이면 undefined로 둬 화면에서 생략.
-    const worn=lastWornDate(s.id,runs);
-    // 누적 러닝 시간은 서버 truth(run_time, 초)를 우선한다 — 다른 기기의 미동기 런까지
-    // 반영된 값. 없으면 로컬 런 로그 합산으로 폴백한다(audit#9/#10).
-    const serverSec=Number(s.run_time);
-    const useServer=Number.isFinite(serverSec)&&serverSec>0;
-    const totalSec=useServer?serverSec:list.reduce((a,r)=>a+(Number(r.duration)||0),0);
-    const totalTime=useServer?durationLabel(serverSec):totalTimeLabel(list);
-    // 신발별 평균 페이스(기록 있는 런만, lib/stats). 신발끼리 페이스 비교용으로 상세·목록에 노출.
-    acc[i]={totalRuns:list.length,totalTime,totalSec,avgPace:avgPaceLabel(list),lastWorn:worn?fmtKDate(worn).date:undefined};
+  // ── 파생 통계(기록·신발·프로필 화면이 읽는 값) ──────────────────────────────
+  // 전부 읽기 전용 파생값이라 useDerivedStats 로 옮겼다(2026-08-09 분해).
+  // `now` 를 날짜 단위로 안정화해 넘기는 계약이 여기 걸려 있다 — 아래 §now 주석 참조.
+  const {summary,chart,shoeTotals,profile,badges,records}=useDerivedStats({
+    runs,shoes,unit,now,mon,weekRuns,
+    progState,profileName,homeProgression,contextChallenges,
   });
-  return acc;
-  },[shoes,runs]);
-
-  // ── profile ─────────────────────────────────────────────────
-  const totalKm=useMemo(()=>Math.round(sumKm(runs)),[runs]);
-  const totalSec=runs.reduce((a,r)=>a+(r.duration||0),0);
-  const firstDate=runs.length?runs.reduce((m:string,r:any)=>r.run_date<m?r.run_date:m,runs[0].run_date):'';
-  const since=firstDate?(()=>{const d=new Date(firstDate+'T00:00:00');return `${d.getFullYear()}년 ${d.getMonth()+1}월부터`;})():'';
-  const streak=useMemo(()=>maxDayStreak(runs.map(r=>r.run_date).filter(Boolean)),[runs]);
-  // 프로필 신원 블록(스펙): Rank·장착 타이틀 + 업적 수·은퇴 신발 수. getProgression 은
-  // homeProgression 과 동일 참조라 메모 히트(재계산 없음). 은퇴 수는 영속 레코드 권위.
-  const profView=getProgression(runs,shoes,progState??undefined,undefined,contextChallenges);
-  const achievementCount=profView.achievements.filter(a=>a.unlocked).length;
-  const profile:Profile={
-    name:profileName||DEFAULT_PROFILE_NAME, since, totalKm:displayNum(sumKm(runs),unit,0), totalRuns:runs.length,
-    totalTime:String(Math.round(totalSec/3600)),
-    // 신원 칩은 진척 시스템의 단일 Rank(티어)로 통일 — 옛 '러닝 레벨 N'(km/100) 폐기.
-    rankTier:homeProgression.tier,
-    equippedTitle:homeProgression.equippedTitle,
-    achievementCount,
-    retiredShoes:progState?.retiredShoes?.length??0,
-  };
-  const badges:Badge[]=useMemo(()=>[
-    {icon:'trophy',label:'100km',on:totalKm>=100},
-    {icon:'flame',label:'7일 연속',on:streak>=7},
-    {icon:'flash',label:'10회 달성',on:runs.length>=10},
-    {icon:'map',label:'하프',on:runs.some(r=>parseFloat(String(r.km))>=21.1)},
-  ],[totalKm,streak,runs]);
-  // 개인 기록(PR) 프로필 카드: 1km/5km 최고 기록·최장 거리. 거리·시간이 모두 양수인
-  // 런만 산정에 쓴다(personalRecords 순수함수). 거리 최고는 전부 '완주 시간' 표기로 통일
-  // (러닝 관례 — 과거 1km 만 페이스 /km 라 5km 와 섞였다, 사용자 지적 2026-07-16).
-  const prRuns=runs.map(r=>({run_date:String(r.run_date),km:parseFloat(String(r.km))||0,durationS:r.duration||0}));
-  const pr=useMemo(()=>personalRecords(prRuns),[prRuns]);
-  const records:PersonalRecord[]=useMemo(()=>[
-    {icon:'flash-outline',label:'1km 최고 기록',value:pr.fastest1k!=null?fmtTime(Math.round(pr.fastest1k)):'--',unit:''},
-    {icon:'timer-outline',label:'5km 최고 기록',value:pr.fastest5k!=null?fmtTime(Math.round(pr.fastest5k)):'--',unit:''},
-    {icon:'trending-up-outline',label:'최장 거리',value:pr.longest!=null?String(displayNum(pr.longest,unit,2)):'--',unit:pr.longest!=null?unit:''},
-  ],[pr,unit]);
 
   // ── actions ─────────────────────────────────────────────────
   // i는 homeUiShoes(보관 신발 제외 목록)의 인덱스 — 원본 신발로 되짚어 시작한다.
