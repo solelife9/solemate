@@ -25,6 +25,8 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
   private let healthStore = HKHealthStore()
   // 폰 → 워치 applicationContext 의 마지막 병합 상태(통째-교체 API 보호용).
   private var outboundContext: [String: Any] = [:]
+  /// 활성화 전에 보내려다 실패한 컨텍스트가 있는가(활성화 콜백에서 흘려보낸다).
+  private var contextPending = false
   // JS 구독 전에 도착한 완주 런 버퍼 — 큐 배달(transferUserInfo)은 앱 콜드런치 직후
   // RN 이 아직 구독하기 전에 올 수 있다. 심박(bpm)은 순간값이라 버리지만, 런 페이로드를
   // 떨어뜨리면 신발 차감이 유실되므로 리스너가 붙을 때까지 들고 있다가 재생한다.
@@ -212,9 +214,39 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
   }
 
   // outboundContext 에 병합 후 전송 — cmd 폴백과 신발 목록이 서로를 지우지 않는다.
+  /// 폰 → 워치 컨텍스트 푸시.
+  ///
+  /// ⚠️ **활성화 전에는 반드시 실패한다**(2026-08-09 실기기 발견). `updateApplicationContext`
+  /// 는 세션이 `.activated` 가 아니면 throw 하는데, 예전엔 `try?` 로 삼키고 끝이었다.
+  /// JS 쪽은 **내용이 바뀔 때만** 보내므로(watchShoesJson 이 dep), 콜드런치에서 한 번
+  /// 놓치면 **영영 다시 보내지 않는다.** 그 결과 워치 첫 실행이 "iPhone에서 Keego 앱을
+  /// 켜세요"에 멈춰 있고, 폰을 켜도 아무 일이 일어나지 않았다 — 사용자에겐 앱이 고장 난
+  /// 것으로 보인다(민우님이 실제로 그 상태를 밟았다).
+  ///
+  /// 그래서 **보낸 것이 아니라 보낼 것을 들고 있다가**, 활성화가 끝나면 흘려보낸다.
+  /// outboundContext 는 어차피 마지막 상태를 병합 유지하므로 재전송할 재료가 이미 있다.
   private func pushContext(_ patch: [String: Any]) {
     for (k, v) in patch { outboundContext[k] = v }
-    try? WCSession.default.updateApplicationContext(outboundContext)
+    flushContext()
+  }
+
+  /// outboundContext 를 실제로 내보낸다. 활성화 전이면 표식만 남기고 조용히 돌아간다.
+  private func flushContext() {
+    guard WCSession.isSupported() else { return }
+    let session = WCSession.default
+    guard session.activationState == .activated else {
+      contextPending = true   // 활성화되면 다시 시도한다
+      return
+    }
+    guard !outboundContext.isEmpty else { return }
+    do {
+      try session.updateApplicationContext(outboundContext)
+      contextPending = false
+    } catch {
+      // 여기서 실패하는 경우는 페이로드가 규격을 벗어났을 때다(비직렬화 값 등).
+      // 재시도해도 같은 결과라 표식을 남기지 않는다 — 무한 재시도가 더 나쁘다.
+      contextPending = false
+    }
   }
 
   // 폰 → 워치: 러닝 시작 시 워치 워크아웃을 자동 실행한다. HKHealthStore.startWatchApp 이
@@ -261,7 +293,19 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
   }
 
   // 필수 델리게이트 스텁(iOS 측). 비활성 후 재활성으로 멀티-워치 전환을 견딘다.
-  func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {}
+  func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+    // 활성화 전에 놓친 컨텍스트를 여기서 흘려보낸다(위 pushContext 주석 참조).
+    // JS 는 내용이 바뀔 때만 보내므로, 이 자리가 없으면 콜드런치에서 놓친 한 번이 영구 유실이다.
+    guard activationState == .activated, contextPending else { return }
+    flushContext()
+  }
   func sessionDidBecomeInactive(_ session: WCSession) {}
   func sessionDidDeactivate(_ session: WCSession) { WCSession.default.activate() }
+  /// 워치가 페어링되거나 앱이 설치되면(둘 다 여기로 온다) 컨텍스트를 다시 밀어 준다.
+  /// **워치에 앱을 방금 깐 경우가 정확히 이 자리다** — 그 전에 보낸 컨텍스트는 받을 주체가
+  /// 없었고, JS 는 내용이 안 바뀌면 다시 보내지 않는다.
+  func sessionWatchStateDidChange(_ session: WCSession) {
+    guard session.isPaired, session.isWatchAppInstalled else { return }
+    flushContext()
+  }
 }

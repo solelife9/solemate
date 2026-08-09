@@ -33,19 +33,21 @@ const LINES = SRC.replace(/\n$/, '').split('\n').length;
  * 내리기만 한다.
  * · 3408 — 2026-08-09 분해 착수 시점
  * · 3338 — 설정 클러스터 → `hooks/useSettings.ts`
+ * · 3221 — 심박 보강 → `hooks/useHeartRateRepair.ts`
  */
-const MAX_LINES = 3338;
+const MAX_LINES = 3221;
 
 /**
  * 한 컴포넌트가 지는 상태·부수효과의 상한. 내리기만 한다.
  * · 착수: useState 53 · useEffect 45 · useMemo 36 · useRef 20
- * · useSettings 분리 뒤: useState 44 · useEffect 44 · useRef 19
+ * · useSettings 뒤: useState 44 · useEffect 44 · useRef 19
+ * · useHeartRateRepair 뒤: useEffect 41 · useRef 18
  */
 const MAX_HOOKS: Record<string, number> = {
   useState: 44,
-  useEffect: 44,
+  useEffect: 41,
   useMemo: 36,
-  useRef: 19,
+  useRef: 18,
 };
 
 const countHook = (name: string) =>
