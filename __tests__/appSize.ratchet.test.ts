@@ -35,8 +35,9 @@ const LINES = SRC.replace(/\n$/, '').split('\n').length;
  * · 3338 — 설정 클러스터 → `hooks/useSettings.ts`
  * · 3221 — 심박 보강 → `hooks/useHeartRateRepair.ts`
  * · 3074 — 워치·홈위젯 연동 → `hooks/useWatchSync.ts`
+ * · 2946 — 러닝 시작 관문 → `hooks/useRunEntryGate.ts`
  */
-const MAX_LINES = 3074;
+const MAX_LINES = 2946;
 
 /**
  * 한 컴포넌트가 지는 상태·부수효과의 상한. 내리기만 한다.
@@ -44,10 +45,11 @@ const MAX_LINES = 3074;
  * · useSettings 뒤: useState 44 · useEffect 44 · useRef 19
  * · useHeartRateRepair 뒤: useEffect 41 · useRef 18
  * · useWatchSync 뒤: useEffect 37 · useRef 17
+ * · useRunEntryGate 뒤: useEffect 36
  */
 const MAX_HOOKS: Record<string, number> = {
   useState: 44,
-  useEffect: 37,
+  useEffect: 36,
   useMemo: 36,
   useRef: 17,
 };
