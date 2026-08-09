@@ -12,6 +12,8 @@
 import {RunTracker, RawFix} from '../../lib/runTracker';
 
 // ── 시드 RNG (mulberry32) + 가우시안(Box-Muller) ────────────────────────────
+/* eslint-disable no-bitwise -- mulberry32 는 32비트 정수 연산이 알고리즘 자체다.
+   비트 연산을 걷어내면 다른 난수가 되고, 그러면 시드 재현성이 깨진다. */
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {

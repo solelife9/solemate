@@ -121,7 +121,7 @@ export function calibrateStride(runs: readonly StrideCalRun[] | null | undefined
     return {strideM: DEFAULT_STRIDE_M, source: 'default', samples: 0};
   }
   samples.sort((a, b) => a - b);
-  const mid = samples.length >> 1;
+  const mid = Math.floor(samples.length / 2);
   const median = samples.length % 2 ? samples[mid] : (samples[mid - 1] + samples[mid]) / 2;
   return {
     strideM: Math.min(STRIDE_MAX_M, Math.max(STRIDE_MIN_M, median)),

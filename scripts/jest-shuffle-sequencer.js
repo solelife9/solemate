@@ -18,6 +18,8 @@
 //    오히려 디버깅이 어려워진다. **오염 사냥용 별도 명령**이다(`npm run test:shuffle`).
 const Sequencer = require('@jest/test-sequencer').default;
 
+/* eslint-disable no-bitwise -- mulberry32 는 32비트 정수 연산이 알고리즘 자체다.
+   비트 연산을 걷어내면 다른 난수가 되고, 그러면 seed 재현성이 깨진다. */
 /** 재현 가능한 난수(mulberry32) — seed 하나로 같은 순서를 다시 만든다. */
 function rng(seed) {
   let a = seed >>> 0;
@@ -47,7 +49,6 @@ class ShuffleSequencer extends Sequencer {
     const seed = Number(process.env.JEST_SHUFFLE_SEED) || Math.floor(Math.random() * 1e9);
     // 실패했을 때 그 순서를 그대로 되살릴 수 있게 **반드시 출력한다.**
     // 이게 없으면 "가끔 빨간" 실행이 그냥 미스터리로 남는다.
-    // eslint-disable-next-line no-console
     console.log(`[shuffle] JEST_SHUFFLE_SEED=${seed}`);
     const rand = rng(seed);
     const arr = [...tests];

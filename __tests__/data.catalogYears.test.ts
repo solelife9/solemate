@@ -26,7 +26,6 @@ const SHOES: Shoe[] = Array.isArray(parsed)
   ? parsed
   : (Object.values(parsed).find(Array.isArray) as Shoe[]);
 
-const named = (s: Shoe) => [s.model, s.version, s.variant].filter(Boolean).join(' ');
 const withYear = SHOES.filter(s => s.releaseYear != null);
 
 /**

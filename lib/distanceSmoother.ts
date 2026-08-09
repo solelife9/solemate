@@ -58,7 +58,7 @@ export class DistanceSmoother {
       return;
     }
     this.buf.push(p);
-    const half = (this.w - 1) >> 1;
+    const half = Math.floor((this.w - 1) / 2);
     // 중심 c 는 머리에서 좁힌 반경 r=min(half,c)의 미래점(c+r)까지 모여야 방출 가능.
     for (;;) {
       const c = this.nextC;
@@ -74,7 +74,7 @@ export class DistanceSmoother {
    *  않도록 체인을 끊는다. */
   flush() {
     if (this.w > 1) {
-      const half = (this.w - 1) >> 1;
+      const half = Math.floor((this.w - 1) / 2);
       const n = this.buf.length;
       for (let c = this.nextC; c < n; c++) {
         const r = Math.min(half, c, n - 1 - c);

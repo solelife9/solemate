@@ -155,13 +155,15 @@ function ShoeDetail({
       const t = new Date(y, m - 1, d).getTime();
       return Number.isFinite(t) ? t : null;
     };
-    const now = Date.now();
-    const cut = now - 28 * 86400000;
+    // 주입된 now(테스트 시간 고정 seam)를 함께 쓴다 — 옆 카드는 이미 그 값을 받는데
+    // 여기만 벽시계를 읽으면 같은 화면의 '최근 4주'가 서로 다른 기준을 보게 된다.
+    const nowMs = now ?? Date.now();
+    const cut = nowMs - 28 * 86400000;
     let shoe4w = 0;
     let all4w = 0;
     for (const r of runs) {
       const t = parse(r.runDate);
-      if (t == null || t < cut || t > now) continue;
+      if (t == null || t < cut || t > nowMs) continue;
       all4w += r.dist;
       if (r.shoe === idx) shoe4w += r.dist;
     }
@@ -175,7 +177,7 @@ function ShoeDetail({
       firstWornLabel = `${d.getMonth() + 1}월 ${d.getDate()}일부터`;
     }
     return { longest, weeklyAvg, sharePct, firstWornLabel };
-  }, [shoeRuns, runs, idx]);
+  }, [shoeRuns, runs, idx, now]);
 
 
   // 키프세이크 은퇴 플로우: 수명 도달 신발만 [계속 사용]/[은퇴]를 노출한다(자동 은퇴 절대

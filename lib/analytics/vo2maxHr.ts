@@ -166,7 +166,7 @@ function daysAgoIso(today: string, days: number): string {
 function median(xs: number[]): number {
   if (!xs.length) return 0;
   const a = [...xs].sort((p, q) => p - q);
-  const mid = a.length >> 1;
+  const mid = Math.floor(a.length / 2);
   return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
 }
 

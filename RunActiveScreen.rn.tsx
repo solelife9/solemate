@@ -478,14 +478,14 @@ export default function RunActiveScreen({
         Animated.timing(toastO, { toValue: 1, duration: MOTION.dur.base, useNativeDriver: true }),
       ]).start();
     }
-    const t = setTimeout(() => {
+    const hideTimer = setTimeout(() => {
       if (noMotion) { toastO.setValue(0); return; }
       Animated.parallel([
         Animated.timing(toastY, { toValue: -120, duration: MOTION.dur.base, useNativeDriver: true }),
         Animated.timing(toastO, { toValue: 0, duration: 280, useNativeDriver: true }),
       ]).start();
     }, 3200);
-    return () => clearTimeout(t);
+    return () => clearTimeout(hideTimer);
   }, [met, celebrated, toastY, toastO, noMotion]);
 
   // ── km 달성 모멘트(모션 #4, 2026-07-12) — km 를 넘는 순간 링 안 거리 숫자가 한 번

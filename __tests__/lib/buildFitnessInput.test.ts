@@ -87,9 +87,7 @@ describe('opts', () => {
 // ── 스윕: 새 화면이 자기 매핑을 만들지 못하게 ────────────────────────────────
 describe('매핑은 한 곳에만 있다', () => {
   it('화면이 fitnessSummary 에 직접 배열을 조립하지 않는다', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const {readFileSync, readdirSync} = require('fs');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const {join} = require('path');
     const ROOT = join(__dirname, '..', '..');
     const files = readdirSync(ROOT).filter((f: string) => f.endsWith('.tsx'));

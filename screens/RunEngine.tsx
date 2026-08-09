@@ -340,7 +340,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   // 종료 시 병합에서 워치 값이 이겨 본 것과 남는 것이 달라졌다. 이제 폰이 그 값을
   // 그대로 표시·저장한다. 엔진이 단조성·정지·끊김(20초)을 전부 책임진다
   // (runTracker.feedWatchDistance) — 여기서는 흘려보내기만 한다.
-  useEffect(()=>watchSession.onWatchDistance(km=>runTracker.feedWatchDistance(km)),[]);
+  useEffect(()=>watchSession.onWatchDistance(watchKm=>runTracker.feedWatchDistance(watchKm)),[]);
 
   useEffect(()=>{
     // 'review' 복구는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.
@@ -933,12 +933,11 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       // 여기서 상태를 다시 판정할 필요가 없다 — 다만 **엇갈림 방어**는 둔다: 알림이
       // 3초 스로틀로 갱신되므로, 그 사이 화면에서 이미 토글했으면 버튼이 한 박자 낡았다.
       // 그때 토글을 그대로 실행하면 사용자가 원한 것과 반대가 된다.
-      const paused=runTracker.pausedFlag();
-      if(action===RUN_ACTION.pause&&paused)return;   // 이미 멈춰 있다 — 무시
-      if(action===RUN_ACTION.resume&&!paused)return; // 이미 달리는 중 — 무시
+      const pausedNow=runTracker.pausedFlag();
+      if(action===RUN_ACTION.pause&&pausedNow)return;   // 이미 멈춰 있다 — 무시
+      if(action===RUN_ACTION.resume&&!pausedNow)return; // 이미 달리는 중 — 무시
       handlePauseRef.current();
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
   const watchStopHandledRef=useRef(false);
   useEffect(()=>watchSession.onWatchStop(cmdAtMs=>{

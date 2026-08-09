@@ -123,7 +123,7 @@ function clamp(x: number, lo: number, hi: number): number {
 function median(sorted: number[]): number | null {
   const n = sorted.length;
   if (!n) return null;
-  const mid = n >> 1;
+  const mid = Math.floor(n / 2);
   return n % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
