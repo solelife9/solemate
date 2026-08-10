@@ -102,3 +102,36 @@ describe('화면 갱신 — 거리가 오래 멈춰 있지 않는다', () => {
     });
   }
 });
+
+describe('도플러가 없는 기기에서도 거리는 멈추지 않는다 (안드로이드 안전선)', () => {
+  // 안드로이드 `Location.getSpeed()` 는 값이 없으면 **0.0 을 돌려준다**(있는지는 hasSpeed()
+  // 로만 안다). 0 을 '정지'로 읽으면 그런 기기에서 거리가 통째로 멈춘다 — 잘못된 거리보다
+  // 비교할 수 없이 나쁘다. 그래서 정확히 0 은 '모름'으로 보고 위치 경로가 이어받는다.
+  /** 원래 도플러 값을 받아 그 fix 에 실제로 실을 speed 를 정한다. */
+  const run = (speedOf: (original: number | null | undefined, i: number) => number | null) => {
+    const samples = sampleTruth(WALK);
+    const fixes = makeFixes(samples, NOISE_TYPICAL, 11).map((f, i) => ({
+      ...f, coords: {...f.coords, speed: speedOf(f.coords.speed, i)},
+    }));
+    return {km: runEngine(fixes).distKm, truth: truthKm(samples)};
+  };
+
+  test('speed 가 항상 0 이어도(안드로이드 미제공) 거리가 쌓인다', () => {
+    const {km, truth} = run(() => 0);
+    expect(km).toBeGreaterThan(truth * 0.7); // 위치 경로로 정상 계상
+  });
+
+  test('speed 가 항상 null 이어도(구형/무효) 거리가 쌓인다', () => {
+    const {km, truth} = run(() => null);
+    expect(km).toBeGreaterThan(truth * 0.7);
+  });
+
+  test('도플러가 중간에 끊겼다 돌아와도 오차가 커지지 않는다 — 전환에 구멍/이중계산이 없다', () => {
+    // 200~400초 구간만 도플러 무효(터널·신호불량). 앞뒤는 정상 도플러.
+    const {km, truth} = run((orig, i) => (i > 200 && i < 400 ? null : orig ?? null));
+    const errPct = ((km - truth) / truth) * 100;
+    // 구멍이 있으면 크게 깎이고, 이중계산이 있으면 크게 부푼다. 둘 다 아니어야 한다.
+    expect(errPct).toBeGreaterThanOrEqual(-3);
+    expect(errPct).toBeLessThanOrEqual(3);
+  });
+});

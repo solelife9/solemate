@@ -384,6 +384,12 @@ class RunTracker {
     const s = fix.coords.speed;
     if (typeof s !== 'number' || !Number.isFinite(s) || s < 0) return null;
     if (s > MAX_SEG_SPEED_MPS) return null;        // 명백한 이상치 — 위치 게이트와 같은 상한
+    // ⚠️ **정확히 0 은 '정지'가 아니라 '모름'이다.** 안드로이드 `Location.getSpeed()` 는
+    // 값이 없을 때 0.0f 를 돌려주고, 있는지 없는지는 `hasSpeed()` 로만 구분된다.
+    // 0 을 정지로 읽으면 속도를 안 주는 기기에서 **거리가 통째로 멈춘다** — 잘못된 거리보다
+    // 비교할 수 없이 나쁘다(Iron Law). 모름이면 아래 위치 경로가 그대로 맡는다.
+    // 진짜 정지는 이 값이 정확히 0 이 아니라 작은 양수로 온다(속도도 크기라 잡음이 정류된다).
+    if (s === 0) return null;
     return s < CURRENT_PACE_MIN_SPEED_MPS ? 0 : s;
   }
 
