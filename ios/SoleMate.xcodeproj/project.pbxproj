@@ -12,6 +12,8 @@
 		A1B2C3D40001VISIONSWIFT0 /* VisionTextModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40003VISIONSWREF0 /* VisionTextModule.swift */; };
 		A1B2C3D40002VISIONOBJC00 /* VisionTextModule.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40004VISIONMMREF0 /* VisionTextModule.m */; };
 		1D2C2E1113DB93E83A09A552 /* PedometerDistanceModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F18E580F0B380430FE4DBCE /* PedometerDistanceModule.swift */; };
+		AC01C7E0000000000000001F /* ActivityRecognitionModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC01C7E0000000000000003F /* ActivityRecognitionModule.swift */; };
+		AC01C7E0000000000000002F /* ActivityRecognitionModule.m in Sources */ = {isa = PBXBuildFile; fileRef = AC01C7E0000000000000004F /* ActivityRecognitionModule.m */; };
 		1FD016C018929E07724A8819 /* Pods_SoleMate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 32DD5CD7322D8A8F57770E83 /* Pods_SoleMate.framework */; };
 		2BBCC3659AFF917CE5CD098F /* RunActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96FBF53A281B69B063512CE9 /* RunActivityAttributes.swift */; };
 		482D1634C3074355BD2B9DB7 /* Barlow-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5D21423DEB5B4B84B0F354E6 /* Barlow-Medium.ttf */; };
@@ -103,6 +105,8 @@
 
 /* Begin PBXFileReference section */
 		00D679160E67979080F725FA /* PedometerDistanceModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/PedometerDistanceModule.m; sourceTree = "<group>"; };
+		AC01C7E0000000000000003F /* ActivityRecognitionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/ActivityRecognitionModule.swift; sourceTree = "<group>"; };
+		AC01C7E0000000000000004F /* ActivityRecognitionModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/ActivityRecognitionModule.m; sourceTree = "<group>"; };
 		0523DFC08B56481FAAB32589 /* PretendardVariable.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = PretendardVariable.ttf; path = ../assets/fonts/PretendardVariable.ttf; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* SoleMate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SoleMate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SoleMate/Images.xcassets; sourceTree = "<group>"; };
@@ -262,6 +266,8 @@
 				A1B2C3D40004VISIONMMREF0 /* VisionTextModule.m */,
 				5F18E580F0B380430FE4DBCE /* PedometerDistanceModule.swift */,
 				00D679160E67979080F725FA /* PedometerDistanceModule.m */,
+				AC01C7E0000000000000003F /* ActivityRecognitionModule.swift */,
+				AC01C7E0000000000000004F /* ActivityRecognitionModule.m */,
 			);
 			name = SoleMate;
 			sourceTree = "<group>";
@@ -741,6 +747,8 @@
 				A1B2C3D40002VISIONOBJC00 /* VisionTextModule.m in Sources */,
 				1D2C2E1113DB93E83A09A552 /* PedometerDistanceModule.swift in Sources */,
 				F03FEBADF057ED013098902D /* PedometerDistanceModule.m in Sources */,
+				AC01C7E0000000000000001F /* ActivityRecognitionModule.swift in Sources */,
+				AC01C7E0000000000000002F /* ActivityRecognitionModule.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
