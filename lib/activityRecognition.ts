@@ -45,6 +45,15 @@ export interface ActivitySample {
  */
 export const VEHICLE_CONFIDENCE_MIN = 66;
 
+/**
+ * 최근 분류를 다시 물어보는 주기(ms).
+ *
+ * OS 활동 인식은 원래 느린 신호다 — iOS `CMMotionActivityManager` 도 Android
+ * `ActivityRecognitionClient` 도 분류가 바뀌는 데 수십 초가 걸린다. 1초마다 물어도
+ * 같은 답이 오고 배터리만 쓴다. 10초면 차량 확정 최단 시간(20초)보다 촘촘하다.
+ */
+export const ACTIVITY_POLL_MS = 10000;
+
 const UNKNOWN: ActivitySample = {kind: 'unknown', confidence: 0};
 
 type NativeAR = {

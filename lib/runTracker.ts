@@ -23,6 +23,12 @@ import {DistanceSmoother} from './distanceSmoother';
 import {calcDist, acceptSegment, segmentSpeedMps} from './geo';
 import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS, PACE_TRACK_MIN_STEP_KM, STEP_SIGNAL_FRESH_MS, STEP_STILL_GATE_MS, STEP_GATE_MAX_SPEED_MPS, AUTO_PAUSE_STEP_STALL_MS, AUTO_PAUSE_BACKDATE_CAP_MS, AUTO_PAUSE_STEP_MAX_KALMAN_MPS, AUTO_RESUME_SPEED_MPS} from './engineConstants';
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
+import {
+  feedVehicleSample,
+  initVehicleState,
+  isVehicleNow,
+  VehicleState,
+} from './vehicleDetect';
 import {gpsStallStatus, GPS_STALL_THRESHOLD_MS} from './gpsHealth';
 import {saveSnapshot} from './runPersistence';
 import {recordError} from './crashlytics';
@@ -225,6 +231,19 @@ class RunTracker {
   private autoAnchor: {lat: number; lon: number} | null = null;
   private autoAnchorMs = 0;
   private autoPauseState: AutoPauseState = initAutoPauseState();
+
+  // ── 차량 감지(2026-08-10 배선) ────────────────────────────────────────────
+  // 걸음 정지 게이트(아래 stillGated)는 차가 **빠를 때 일부러 풀린다** — 걸음 센서가
+  // 동결된 진짜 러너의 거리를 죽이지 않으려는 안전선이다. 그 구멍이 곧 2026-08-07
+  // 사고 경로였다(차 안에서 2.56km 가 쌓여 「1km 최고」를 차지). 그래서 게이트가
+  // 풀린 구간을 여기서 따로 세어 두고, 저장 시점에 **묻는다**(지우지 않는다).
+  private vehicleState: VehicleState = initVehicleState();
+
+  /** OS 활동 인식 판정(1순위). 화면이 주기적으로 밀어 넣는다. null = 모름. */
+  private osVehicleVerdict: boolean | null = null;
+
+  /** 지금 이 구간이 차량으로 판정됐는가(표시용). */
+  private vehicleFlag = false;
   private elev: ElevState = initElevState();
   // 걸음 정지 게이트 상태(feedSteps 가 갱신) — 걸음수가 늘지 않는 동안 거리 적산을
   // 동결해 도심 신호대기 팬텀을 차단한다. 표본이 안 오면(-1/0) 게이트는 꺼져 있다.
@@ -373,6 +392,9 @@ class RunTracker {
     this.autoAnchor = null;
     this.autoAnchorMs = 0;
     this.autoPauseState = initAutoPauseState();
+    this.vehicleState = initVehicleState();
+    this.osVehicleVerdict = null;
+    this.vehicleFlag = false;
     this.elev = initElevState();
     this.lastStepCount = -1;
     this.lastStepIncreaseMs = 0;
@@ -738,6 +760,10 @@ class RunTracker {
       this.emit({type: 'firstFix', lat: f.lat, lon: f.lon});
     }
 
+    // 이 fix 가 실제로 더한 거리/시간을 재기 위한 기준점(차량 감지에 넘긴다).
+    const distBefore = this.dist;
+    const vehDtMs = this.lastGoodMs ? Math.max(0, ts - this.lastGoodMs) : 0;
+
     if (this.lastGood) {
       const d = calcDist(this.lastGood.lat, this.lastGood.lon, f.lat, f.lon);
       const dtSec = this.lastGoodMs ? Math.max((ts - this.lastGoodMs) / 1000, 0) : 0;
@@ -821,8 +847,46 @@ class RunTracker {
       this.elev = feedAltitude(this.elev, trustedAltitude(fix), ts);
     }
 
+    // ── 차량 감지: 이 fix 가 더한 거리/시간을 먹인다 ──────────────────────────
+    // **1순위는 OS 활동 인식**(CLAUDE.md '업계 표준 정석') — `isVehicleNow` 가 순서를
+    // 소유하므로 여기서 다시 쓰지 않는다. 걸음 신호는 걸음 게이트와 같은 소스를 쓴다.
+    {
+      const vres = feedVehicleSample(this.vehicleState, {
+        nowMs: recvNow,
+        speedMps: this.kf.speedMps(),
+        // 걸음 표본이 아예 없으면(권한 거부·센서 없음) 가를 근거가 없다 — 그 경우
+        // 아래 stepsFresh 가 false 라 feedVehicleSample 이 판정을 접는다.
+        // (feedSteps 는 첫 표본에서 두 시각을 함께 세우므로 둘은 항상 같이 산다.)
+        msSinceStepIncrease: recvNow - this.lastStepIncreaseMs,
+        stepsFresh:
+          this.lastStepSampleMs > 0 && recvNow - this.lastStepSampleMs <= STEP_SIGNAL_FRESH_MS,
+        segKm: Math.max(0, this.dist - distBefore),
+        segMs: vehDtMs,
+      });
+      this.vehicleState = vres.state;
+      this.vehicleFlag = isVehicleNow(this.osVehicleVerdict, vres.isVehicle);
+    }
+
     this.persist();
     this.emitState();
+  }
+
+  /**
+   * OS 활동 인식 판정을 밀어 넣는다(1순위). 화면이 주기적으로 부른다.
+   * true=차량 · false=사람 · null=모름(백스톱 휴리스틱에 맡긴다).
+   */
+  setOsActivityVerdict(v: boolean | null) {
+    this.osVehicleVerdict = v === true || v === false ? v : null;
+  }
+
+  /** 저장 시점 판정용 누적 상태. */
+  getVehicleState(): VehicleState {
+    return {...this.vehicleState};
+  }
+
+  /** 지금 차량 구간으로 보이는가(표시용). */
+  vehicleFlagged(): boolean {
+    return this.vehicleFlag;
   }
 
   // ── time + dead-zone (recomputed by the UI's 1s ticker) ───────────

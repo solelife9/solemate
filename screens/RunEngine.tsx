@@ -33,6 +33,16 @@ import {PAUSE_MOVE_NUDGE_STEPS, PAUSE_MOVE_NUDGE_POLL_MS, NO_FIX_WARN_SEC} from 
 import {simplifyRoute} from '../lib/geo';
 import {appendFinalSplit} from '../lib/splits';
 import {runTracker} from '../lib/runTracker';
+import {
+  requestActivityPermission,
+  startActivityUpdates,
+  stopActivityUpdates,
+  currentActivity,
+  vehicleFromActivity,
+  activityRecognitionAvailable,
+  ACTIVITY_POLL_MS,
+} from '../lib/activityRecognition';
+import {vehicleVerdict} from '../lib/vehicleDetect';
 import {haversineM, calibrateLapM, lapsToTrack} from '../lib/laps';
 import {requestRunPermissions, startTracking, stopTracking, isPermissionError, hasForegroundPermission, RunPermissions} from '../lib/locationService';
 import {showRunNotification, clearRunNotification, onRunNotificationAction, RUN_ACTION} from '../lib/runNotification';
@@ -268,6 +278,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   // 기압 고도계(iOS Barometer.relativeAltitude) — GPS 고도(노이즈 큼)보다 정확한 고도 상승.
   // 사용 가능하면 baroAvail=true 가 되고, 이때부턴 화면/저장 고도를 기압계 누적으로 쓴다.
   const baroSub=useRef<any>(null);
+  // OS 활동 인식 폴링(차량 감지 1순위) — 종료 시 정리한다.
+  const arSub=useRef<ReturnType<typeof setInterval>|null>(null);
   const baroElev=useRef<ElevState>(initElevState());
   const baroAvail=useRef(false);
   /** 안드로이드 전용 — 러닝 시작 시점의 기압(hPa). 상대고도의 기준점. */
@@ -748,6 +760,28 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     // 재진입 시 중복 인터벌이 남지 않게 먼저 정리한다(아래 재개 경로와 같은 규약).
     clearInterval(timer.current);
     timer.current=setInterval(()=>runTracker.tick(),1000);
+
+    // ── OS 활동 인식 구독(차량 감지 **1순위**) ─────────────────────────────
+    // CLAUDE.md '업계 표준 정석': 차량 판정은 우리 휴리스틱이 아니라 OS 가 먼저 답한다
+    // (iOS CMMotionActivityManager · Android ActivityRecognitionClient). 나이키·스트라바·
+    // 애플이 모두 그걸 쓰고, 전용 하드웨어와 수년치 학습이 들어가 있어 어떤 규칙보다 정확하다.
+    //
+    // 실패는 전부 조용히 삼킨다 — 모듈이 없거나 권한을 거부해도 `runTracker` 의 백스톱
+    // 휴리스틱이 그대로 돌고, 러닝은 어떤 경우에도 멈추지 않는다(Iron Law).
+    if(activityRecognitionAvailable()){
+      void (async()=>{
+        try{
+          await requestActivityPermission();
+          if(!(await startActivityUpdates()))return;
+          const poll=async()=>{
+            try{runTracker.setOsActivityVerdict(vehicleFromActivity(await currentActivity()));}
+            catch{/* 한 번의 조회 실패로 러닝을 흔들지 않는다 */}
+          };
+          void poll();
+          arSub.current=setInterval(()=>{void poll();},ACTIVITY_POLL_MS);
+        }catch{/* 구독 실패 — 백스톱만으로 계속한다 */}
+      })();
+    }
     // 케이던스(걸음수): OS 걸음 센서(CMPedometer)의 누적 걸음수를 **주기 조회(폴링)**로
     // 받아 분당 비율 spm 을 산출한다. watchStepCount 스트림은 expo-sensors 네이티브가
     // OnAppEntersBackground 에서 stopUpdates() 해 화면을 잠그면(주머니 러닝) 끊긴다 —
@@ -899,6 +933,9 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     if(stepSub.current){clearInterval(stepSub.current);stepSub.current=null;}
     if(stepWatch.current){try{stepWatch.current.remove?.();}catch{/* 이미 해제 */}stepWatch.current=null;}
     if(baroSub.current){try{baroSub.current.remove();}catch{/* noop */}baroSub.current=null;}
+    // OS 활동 인식 해제 — 러닝이 끝나면 반드시 끊는다(배터리·프라이버시).
+    if(arSub.current){clearInterval(arSub.current);arSub.current=null;}
+    void stopActivityUpdates();
     if(pedDistUnsub.current){try{pedDistUnsub.current();}catch{/* noop */}pedDistUnsub.current=null;}
     pedometerDistance.stop(); // CMPedometer 스트림 종료(#16 융합) — 배터리·프라이버시
 
@@ -1010,6 +1047,36 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       return;
     }
     stop();
+
+    // ── 차량 구간 확인(2026-08-07 사고의 마지막 관문) ─────────────────────────
+    // 차 안에서 켜 둔 앱이 2.56km 러닝으로 저장돼 프로필의 「1km 최고」를 차지한 적이 있다.
+    // 걸음 정지 게이트는 **차가 빠를 때 일부러 풀리므로**(센서 동결된 진짜 러너 보호)
+    // 그 구간을 못 막는다. 그래서 여기서 묻는다.
+    //
+    // **자동으로 지우지 않는다**(Iron Law — 사용자 데이터 파괴 금지). 오판이면 진짜 러닝을
+    // 우리 손으로 버리는 것이고, 판단은 사용자만 할 수 있다. 앱의 역할은 모른 척하지 않는 것까지다.
+    {
+      const veh=vehicleVerdict(runTracker.getVehicleState(),fk);
+      if(veh.ask){
+        const keep=await new Promise<boolean>(resolve=>{
+          showDialog(
+            '차를 타고 이동하셨나요?',
+            `이번 러닝에서 약 ${veh.km.toFixed(2)}km 가 차량 이동으로 보여요. 그대로 저장하면 기록과 최고 기록에 함께 반영돼요.`,
+            [
+              {text:'그대로 저장',onPress:()=>resolve(true)},
+              {text:'저장하지 않기',style:'destructive',onPress:()=>resolve(false)},
+            ],
+          );
+        });
+        if(!keep){
+          void clearSnapshot();
+          trackRunDiscard('user');
+          onDiscard();
+          return;
+        }
+      }
+    }
+
     // 저장으로 이어지는 완주만 계측한다(위 거리 가드에서 버려진 런은 제외). 거리·시간은
     // 버킷으로만 나간다(심사 B-12 최소 수집).
     trackRunSave({km:fk,durationSec:ft,device:'phone',hadGps:runTracker.getPointCount()>1});
