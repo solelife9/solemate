@@ -1205,7 +1205,11 @@ describe('GAP 시계열의 고도 소스', () => {
     expect(gap[gap.length - 1].e).toBe(12);
   });
 
-  test('기압계가 스테일하면 GPS 로 폴백한다 — 오래된 값을 계속 쓰지 않는다', () => {
+  // 2026-08-10 계약 변경: 기압계가 없거나 스테일하면 **GPS 로 폴백하지 않는다.**
+  // 예전엔 폴백했는데, 그 때문에 상승 고도는 `--`(기압계 없음)인 러닝에서 같은 화면이
+  // "오르막 코스 — 평지였다면 2'39\"" 라고 단정했다(민우님 실측). 상승 고도 쪽 GPS 폴백은
+  // 63de810 이 이미 폐지했고, 여기만 남아 두 개의 고도 진실을 만들고 있었다.
+  test('기압계가 스테일하면 그 점은 고도 없이 넘어간다 — GPS 로 지어내지 않는다', () => {
     const {t, set} = makeEngine();
     t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
     let ts = 100000;
@@ -1215,8 +1219,21 @@ describe('GAP 시계열의 고도 소스', () => {
     t.ingestFix(fixAlt(37.5008, ts, 500));
     t.stop();
 
-    const gap = t.getGapTrack();
-    expect(gap[gap.length - 1].e).toBe(500);
+    // GPS 고도(500)가 시계열에 들어가면 안 된다. 신뢰할 고도가 없으면 점을 안 남긴다.
+    expect(t.getGapTrack().some(p => p.e === 500)).toBe(false);
+  });
+
+  test('기압계가 아예 없으면 고도 시계열이 비어 GAP 이 계산되지 않는다', () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    let ts = 100000;
+    // 기압계 표본을 한 번도 안 준다(기압계 없는 기기 = 안드로이드 상당수).
+    for (let i = 0; i < 3; i++) { set((ts += 2000)); t.ingestFix(fixAlt(37.5, ts, 500)); }
+    for (let i = 1; i <= 4; i++) { set((ts += 3000)); t.ingestFix(fixAlt(37.5 + i * 0.0003, ts, 500)); }
+    t.stop();
+
+    expect(t.getDistanceKm()).toBeGreaterThan(0); // 거리는 정상
+    expect(t.getGapTrack()).toEqual([]);          // 고도는 없다 — 0 이 아니라 없음
   });
 
   test('복구는 고도 상승을 이어받는다 — 0 에서 다시 시작하지 않는다', () => {
@@ -1229,5 +1246,50 @@ describe('GAP 시계열의 고도 소스', () => {
     const {t} = makeEngine();
     t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
     expect(t.getElevationGain()).toBe(0);
+  });
+});
+
+// ─── 캐시된 위치 차단 (2026-08-10 실기기) ─────────────────────────────────────
+// OS 가 추적 시작 순간 던져 주는 '마지막으로 알던 위치'는 몇 분 전 좌표일 수 있다.
+// 그게 경로 0번이 되면 지도가 사용자가 있지도 않았던 곳에서 시작한다(민우님 실측:
+// 엘에스로에서 시작했는데 지도는 회사 입구에서 시작).
+describe('캐시된 위치(런 시작 이전 시각)는 이 런의 것이 아니다', () => {
+  test('경로가 그 좌표에서 시작하지 않는다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+
+    // 60초 전에 캐시된 위치(1km 남짓 떨어진 곳) — 추적을 켜자마자 도착한다.
+    t.ingestFix(fix(37.51, LON, 5, 40000));
+    // 실제 시작 지점부터의 진짜 fix 들.
+    clearWarmup(t);
+    t.ingestFix(fix(37.5003, LON, 5, 107000));
+    t.ingestFix(fix(37.5006, LON, 5, 110000));
+
+    const route = t.getPoints();
+    expect(route.length).toBeGreaterThan(0);
+    // 첫 점이 캐시 좌표(37.51)가 아니라 실제 시작점(37.5)이어야 한다.
+    expect(route[0].lat).toBeCloseTo(37.5, 3);
+  });
+
+  test('캐시 좌표가 de-dupe 기준을 앞당겨 진짜 fix 를 막지 않는다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    // 버린 fix 가 lastFixTs 를 올려 두면 이후 정상 fix 가 전부 '오래된 것'으로 몰려
+    // 거리가 영영 0 이 된다 — 버리되 흔적을 남기지 않아야 한다.
+    t.ingestFix(fix(37.51, LON, 5, 40000));
+    clearWarmup(t);
+    t.ingestFix(fix(37.5003, LON, 5, 107000));
+    t.ingestFix(fix(37.5006, LON, 5, 110000));
+    expect(t.getDistanceKm()).toBeGreaterThan(0);
+  });
+
+  test('t0 이후의 fix 는 도착이 늦어도 받는다 (주머니 러닝 묶음 배달 보호)', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    clearWarmup(t);
+    // 시각은 t0 이후인데 한참 뒤에 묶여 도착한 fix 들 — 나이로 잘랐다면 여기서 거리가 멎는다.
+    t.ingestFix(fix(37.5003, LON, 5, 107000));
+    t.ingestFix(fix(37.5006, LON, 5, 110000));
+    expect(t.getDistanceKm()).toBeGreaterThan(0);
   });
 });

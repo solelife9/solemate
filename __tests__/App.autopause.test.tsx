@@ -24,6 +24,7 @@
  */
 
 import React from 'react';
+import {runTracker} from '../lib/runTracker';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import * as Location from 'expo-location';
 import App from '../App';
@@ -126,9 +127,17 @@ async function startRun() {
   // expo watchPositionAsync(options, callback, errorHandler) → callback is arg 1.
   const onPos = calls[calls.length - 1][1] as (p: any) => void;
 
+  // GPS fix 의 timestamp 는 **앱과 같은 시계**(epoch ms)다 — 엔진이 '런 시작 이전 시각의
+  // 위치 = 캐시된 위치'를 버린다(2026-08-10, 지도가 엉뚱한 곳에서 시작하던 버그). 테스트도
+  // 그 현실을 그대로 모델링해야 한다.
+  //
+  // 기준을 `Date.now()` 로 잡으면 안 된다: 위 카운트다운이 가짜 타이머로 6초를 진행시킨
+  // 뒤 실제 시계로 돌아오므로, 런 시작 시각이 '지금'보다 **미래**에 있다. 실제 시작
+  // 시각을 읽어 기준으로 삼는다. 호출부는 100000·102000 같은 읽기 쉬운 상대 시각을 그대로 쓴다.
+  const tsBase = runTracker.getStartMs() - 100000;
   const emit = (lat: number, lon: number, accuracy: number, timestamp: number) =>
     act(() => {
-      onPos({coords: {latitude: lat, longitude: lon, accuracy}, timestamp});
+      onPos({coords: {latitude: lat, longitude: lon, accuracy}, timestamp: tsBase + timestamp});
     });
 
   return {renderer, root, emit, km: () => readKm(root)};
@@ -227,8 +236,20 @@ test('displayed elapsed timer freezes while auto-paused — never advances, neve
     // 계약 진화(2026-07-18 소급 정산): 오토포즈 전환 '순간'에는 감지 지연분(상한 10s)만큼
     // 타이머가 뒤로 정리될 수 있다 — 멈춘 시점부터 일시정지로 계상하는 정확 회계(비교런
     // +30s 근본수정). 여전히 음수/쓰레기 금지·상한 밖 되감김 금지, 이후 동결은 불변.
-    expect(elapsedAtPause).toBeGreaterThanOrEqual(Math.max(0, elapsedRunning - 10));
-    expect(elapsedAtPause).toBeLessThanOrEqual(elapsedRunning);
+    // 2026-08-10: 단언을 양방향 밴드로 고쳤다. 바로 위 NOTE(#3)가 이미 "elapsedAtPause
+    // may step UP to the true run time" 이라고 적어 뒀는데 단언은 `<= elapsedRunning`,
+    // 즉 **위로는 못 간다**로 걸려 있었다. 서로 반대였다.
+    //
+    // 그게 통과하던 이유가 따로 있었다: 이 파일의 fix 시각이 앱 시계와 다른 기준이라
+    // (100000 vs Date.now()), 소급 정산의 `max(pauseStart − 10s, lastDefiniteMove)` 가
+    // **언제나 하한(10s 되감기)에 붙었다.** 즉 소급 정산 경로가 한 번도 진짜로 실행된 적이
+    // 없었고, 단언은 그 부작용을 계약으로 굳혀 두고 있었다. 시계를 현실화하니 드러났다.
+    //
+    // 진짜 계약: 전환 순간엔 감지 지연분(상한 10s)만큼 뒤로 정리되거나, 스톨로 잡아 뒀던
+    // 시간이 실제 러닝 시간으로 되돌아오며 앞으로 갈 수 있다. 어느 쪽이든 그 밴드 밖으로
+    // 튀면 안 되고, **이후 동결**(아래)이 이 테스트의 본론이다.
+    expect(Math.abs(elapsedAtPause - elapsedRunning)).toBeLessThanOrEqual(10);
+    expect(elapsedAtPause).toBeGreaterThanOrEqual(0);
     expect(Number.isInteger(elapsedAtPause)).toBe(true);
 
     // Now burn 30s of wall time WHILE PAUSED. The interval keeps firing but the

@@ -60,6 +60,13 @@ function trustedAltitude(fix: RawFix): number | null {
 // 스냅샷 쓰기 주기(ms) — persist() 주석 참조. 스칼라는 자주, 경로는 드물게.
 // 3000: 구 인터벌과 같은 주기(복구 정확도 불변). 15000: 경로 모양의 최대 손실 구간 —
 // 거리·시간은 스칼라가 3초 주기로 지키므로 이 값이 커져도 기록의 정확도는 그대로다.
+/**
+ * 캐시된 위치로 보고 버릴 수 있는 fix 의 **한 런당 상한**. 구독 직후 OS 가 주는
+ * '마지막으로 알던 위치'는 보통 한 개라 2 면 넉넉하고, 시계 가정이 깨졌을 때
+ * 거리가 통째로 멎는 것을 막는 상한이기도 하다(ingestFix 안전 밸브).
+ */
+const MAX_STALE_FIX_DROPS = 2;
+
 const STATE_WRITE_MS = 3000;
 /**
  * 기압계 고도를 '신선하다'고 볼 최대 지연(ms). 구독 주기가 1초라 5초면 넉넉하다.
@@ -213,6 +220,8 @@ class RunTracker {
   private lastGoodMs = 0;
   private lastRecvMs = 0;
   private lastFixTs = 0; // de-dupe guard: highest fix timestamp processed
+  // 런 시작 이전 시각(=캐시된 위치)이라 버린 fix 수. 안전 밸브 — ingestFix 주석 참조.
+  private staleDrops = 0;
   private autoAnchor: {lat: number; lon: number} | null = null;
   private autoAnchorMs = 0;
   private autoPauseState: AutoPauseState = initAutoPauseState();
@@ -360,6 +369,7 @@ class RunTracker {
     this.lastGoodMs = 0;
     this.lastRecvMs = 0;
     this.lastFixTs = 0;
+    this.staleDrops = 0;
     this.autoAnchor = null;
     this.autoAnchorMs = 0;
     this.autoPauseState = initAutoPauseState();
@@ -608,6 +618,33 @@ class RunTracker {
     // (a second delivery path echoing the same physical fix) are ignored so
     // distance is never double-counted.
     if (ts > 0 && ts <= this.lastFixTs) return;
+
+    // ── 캐시된 위치 차단 (2026-08-10 실기기) ──────────────────────────────────
+    // OS 는 위치 추적을 켜는 순간 **마지막으로 알던 위치를 즉시 하나 준다.** 위성을 새로
+    // 잡은 값이 아니라 몇 분 전 좌표일 수 있다. 그걸 그대로 받으면 그 점이 경로의 0번이
+    // 되어, 지도가 **사용자가 있지도 않았던 곳에서 시작**한다.
+    //
+    // 민우님 실측(2026-08-10): 엘에스로에서 러닝을 시작했는데 지도는 회사 입구에서
+    // 시작했다. 그 사이 거리가 통째로 경로에 그려졌다.
+    //
+    // 판정은 추측이 아니라 정의로 한다 — **런이 시작되기 전 시각의 위치는 이 런의 것이
+    // 아니다.** t0 는 start() 시점(복구면 원래 런의 시작)이라 이 비교가 정확하다.
+    //
+    // ⚠️ '도착했을 때 몇 초 지났는가'로 재지 않는다. 백그라운드 배달은 여러 fix 를 묶어
+    // 늦게 주므로, 나이로 자르면 **주머니 러닝에서 정상 fix 를 버려 거리가 멎는다**
+    // (이 저장소가 예전에 겪은 사고다 — GPS background-tracking fix).
+    //
+    // 🔒 안전 밸브: **한 런에서 최대 MAX_STALE_FIX_DROPS 개만** 버린다. 이 게이트는 두
+    // 시계(fix 시각 · 앱 시각)가 같은 기준이라는 가정 위에 서 있는데, 어떤 기기·경로에서
+    // 그 가정이 깨지면 게이트가 **모든 fix 를 버려 거리가 영영 0** 이 된다. 잘못된 시작점
+    // 하나보다 러닝 전체를 잃는 쪽이 비교할 수 없이 나쁘다(Iron Law — 거리 유실 금지).
+    // 캐시 위치는 구독 직후 한 개가 오는 게 보통이라 상한이 낮아도 실효가 있고, 상한을
+    // 넘긴 뒤에도 워밍업(WARMUP_FIXES)이 거리는 계속 지킨다.
+    if (ts > 0 && this.t0 > 0 && ts < this.t0 && this.staleDrops < MAX_STALE_FIX_DROPS) {
+      this.staleDrops++;
+      return;
+    }
+
     if (ts > 0) this.lastFixTs = ts;
 
     // 무신호 간격(gap)을 측정한다. 도착 시점에 이미 일시정지였다면 그 시간은 pausedMs 가
@@ -718,10 +755,16 @@ class RunTracker {
           this.paceTrack.push({d: this.dist, t: tNow});
           // 같은 점의 raw GPS 고도를 GAP 시계열에 적립(고도 없는 fix 는 건너뜀 — 거리 기준
           // 매칭이라 빠져도 인접 구간 경사는 옳게 계산된다).
-          // **기압계가 있으면 그쪽이 정본이다** — 화면의 상승 고도와 같은 소스를 써야
-          // 한 러닝 안에서 두 개의 고도 진실이 생기지 않는다(2026-08-07 감사).
-          // 없으면 예전처럼 GPS 고도(수직 정확도 게이트 통과분)를 쓴다.
-          const alt = this.freshBaroAlt(ts) ?? trustedAltitude(fix);
+          // **기압계만 쓴다** — 화면의 상승 고도와 같은 소스여야 한 러닝 안에 두 개의
+          // 고도 진실이 생기지 않는다(2026-08-07 감사).
+          //
+          // 2026-08-10 실기기에서 그 두 진실이 실제로 드러났다: 상승 고도는 `--`(기압계
+          // 없음)인데 같은 화면이 "오르막 코스 — 평지였다면 2'39\"" 라고 단정했다. GPS
+          // 고도 폴백이 여기만 남아 있었기 때문이다(63de810 이 상승 고도 쪽 폴백만 폐지).
+          //
+          // 190m 걷는 동안 GPS 고도는 ±5~10m 흔들린다 — 가짜 언덕을 만들기에 충분하다.
+          // 모르는 것은 만들지 않는다: 기압계가 없으면 GAP 도 없다(카드가 조용히 빠진다).
+          const alt = this.freshBaroAlt(ts);
           if (alt != null) {
             this.gapTrack.push({d: this.dist, t: tNow, e: alt});
           }

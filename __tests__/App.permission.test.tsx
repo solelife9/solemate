@@ -18,6 +18,7 @@
  */
 
 import React from 'react';
+import {runTracker} from '../lib/runTracker';
 import {Linking, AppState} from 'react-native';
 import * as dialogLib from '../lib/dialog';
 import ReactTestRenderer, {act} from 'react-test-renderer';
@@ -159,7 +160,9 @@ test('mid-run permission revocation stops tracking (no further distance) and gui
 
     // Accumulate some real distance first (warmup at P0 then accepted segments).
     const LON = 127.0;
-    let t = 100000;
+    // GPS fix 시각은 앱과 같은 시계다 — 엔진이 '런 시작 이전 = 캐시된 위치'를 버린다
+    // (2026-08-10). 카운트다운이 가짜 타이머로 앞서 가므로 실제 시작 시각을 기준으로 잡는다.
+    let t = runTracker.getStartMs();
     await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: t}));
     await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: (t += 2000)}));
     await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: (t += 2000)}));
@@ -210,7 +213,9 @@ test('권한 회수 후 설정 재허용 + 앱 복귀(AppState active)하면 트
   try {
     const {renderer, root} = await startRun();
     const LON = 127.0;
-    let t = 100000;
+    // GPS fix 시각은 앱과 같은 시계다 — 엔진이 '런 시작 이전 = 캐시된 위치'를 버린다
+    // (2026-08-10). 카운트다운이 가짜 타이머로 앞서 가므로 실제 시작 시각을 기준으로 잡는다.
+    let t = runTracker.getStartMs();
     const onPos = watchMock().mock.calls[0][1] as (p: any) => void;
     const onError = watchMock().mock.calls[0][2] as (r: string) => void;
     await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: t}));

@@ -408,13 +408,20 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
   // 정밀 GAP: 표본주파수 노이즈를 스무딩+빈평균으로 누른 뒤 경사보정. 고도변화 없으면 실제
   // 평균페이스와 같아(항등) 굳이 노출 안 함 — 실제 페이스(초/km)와 1초 이상 다를 때만 보여준다.
   const gapSec = useMemo(() => {
+    // 상승 고도를 모르면 경사도 모른다 (2026-08-10 실기기).
+    // 상승 고도가 `--` 인 러닝에서 "오르막 코스 — 평지였다면 2'39\"" 가 떴다. 그 기록의
+    // 고도 시계열은 GPS 고도로 만들어진 것이었고(그때는 폴백이 있었다), GPS 고도는
+    // 걷는 190m 동안에도 ±5~10m 흔들려 가짜 언덕을 만든다.
+    // 엔진 쪽 폴백은 없앴지만 **이미 저장된 기록에는 그 시계열이 남아 있다** — 화면도
+    // 같은 규칙을 지켜야 옛 기록에서 거짓말이 계속 보이지 않는다.
+    if (run.elev == null) return null;
     if (gapTrack.length < 2) return null;
     const g = gradeAdjustedPaceSec(resampleByDistance(smoothElevation(gapTrack, 60), 0.1));
     if (g == null) return null;
     const actual = (run.durationS || 0) > 0 && run.dist > 0 ? (run.durationS || 0) / run.dist : 0;
     if (actual > 0 && Math.abs(g - actual) < 1) return null; // 평지(차이 미미)면 숨김
     return Math.round(g);
-  }, [gapTrack, run.durationS, run.dist]);
+  }, [gapTrack, run.durationS, run.dist, run.elev]);
   // 심박 시계열(hrTrack_<id>, App.onSave 가 워치 HR 을 영속). 있으면 HR존 분포·평균/최대·
   // 트레이닝효과(TRIMP)를 산출한다. 워치 미연동이면 빈값 → 카드 자동 숨김.
   const [hrTrack, setHrTrack] = useState<{ t: number; bpm: number }[]>([]);

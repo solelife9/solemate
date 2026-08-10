@@ -13,6 +13,7 @@
  */
 
 import React from 'react';
+import {runTracker} from '../lib/runTracker';
 import * as dialogLib from '../lib/dialog';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import * as Location from 'expo-location';
@@ -130,9 +131,17 @@ async function startRunWithDistance() {
   expect(calls.length).toBeGreaterThan(0);
   // expo watchPositionAsync(options, callback, errorHandler) → callback is arg 1.
   const onPos = calls[calls.length - 1][1] as (p: any) => void;
+  // GPS fix 의 timestamp 는 **앱과 같은 시계**(epoch ms)다 — 엔진이 '런 시작 이전 시각의
+  // 위치 = 캐시된 위치'를 버린다(2026-08-10, 지도가 엉뚱한 곳에서 시작하던 버그). 테스트도
+  // 그 현실을 그대로 모델링해야 한다.
+  //
+  // 기준을 `Date.now()` 로 잡으면 안 된다: 위 카운트다운이 가짜 타이머로 6초를 진행시킨
+  // 뒤 실제 시계로 돌아오므로, 런 시작 시각이 '지금'보다 **미래**에 있다. 실제 시작
+  // 시각을 읽어 기준으로 삼는다. 호출부는 100000·102000 같은 읽기 쉬운 상대 시각을 그대로 쓴다.
+  const tsBase = runTracker.getStartMs() - 100000;
   const emit = (lat: number, lon: number, accuracy: number, timestamp: number) =>
     act(() => {
-      onPos({coords: {latitude: lat, longitude: lon, accuracy}, timestamp});
+      onPos({coords: {latitude: lat, longitude: lon, accuracy}, timestamp: tsBase + timestamp});
     });
 
   // Clear warmup at P0, then two accepted ~33m segments → dist > 0.
