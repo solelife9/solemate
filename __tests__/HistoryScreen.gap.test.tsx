@@ -46,11 +46,11 @@ async function openDetail(root: ReactTestRenderer.ReactTestInstance, needle: str
   await act(async () => { hits[0].props.onPress(); });
   await flush();
 }
-async function renderDetail(gapKey?: string, gapVal?: unknown) {
+async function renderDetail(gapKey?: string, gapVal?: unknown, run = RUN('r1')) {
   if (gapKey) await AsyncStorage.setItem(gapKey, JSON.stringify(gapVal));
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
-    renderer = ReactTestRenderer.create(<HistoryScreen shoes={[SHOE]} runs={[RUN('r1')]} unit="km" />);
+    renderer = ReactTestRenderer.create(<HistoryScreen shoes={[SHOE]} runs={[run]} unit="km" />);
   });
   await flush();
   await openDetail(renderer.root, 'Pegasus 41');
@@ -75,5 +75,17 @@ describe('HistoryScreen RunDetail — GAP', () => {
   test('gapTrack 이 없으면 숨긴다(옛 런/고도 미측정)', async () => {
     const root = await renderDetail();
     expect(textOf(root)).not.toContain('경사 보정 페이스');
+  });
+
+  // 2026-08-10 민우님 실기기: 상승 고도가 `--` 인데 같은 화면이 "오르막 코스 — 평지였다면
+  // 2'39\"" 라고 단정했다. 그 러닝의 고도 시계열은 GPS 고도로 만들어진 것이었고(그때는
+  // 폴백이 있었다), GPS 수직 오차는 51초 동안 19m 씩 흘러 **10% 급경사로 둔갑**한다.
+  // 엔진 폴백은 없앴지만 이미 저장된 기록에는 그 시계열이 남아 있다 — 화면도 같은 규칙을
+  // 지켜야 옛 기록에서 거짓말이 계속 보이지 않는다.
+  test('상승 고도를 모르면(--) 경사도 주장하지 않는다 — 시계열이 있어도 숨긴다', async () => {
+    const noElev = {...RUN('r1'), elev: null} as any;
+    const root = await renderDetail('gapTrack_r1', UPHILL, noElev);
+    expect(textOf(root)).not.toContain('경사 보정 페이스');
+    expect(textOf(root)).not.toContain('오르막 코스');
   });
 });

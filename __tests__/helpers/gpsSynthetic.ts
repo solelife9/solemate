@@ -165,6 +165,13 @@ export const NOISE_OPEN: NoiseProfile = {name: 'open', sigmaM: 3, tauS: 40, whit
 /** 빌딩 협곡/수풀 — 나쁜 조건 상한. */
 export const NOISE_URBAN: NoiseProfile = {name: 'urban', sigmaM: 8, tauS: 15, whiteM: 2.4, accM: 10};
 
+/**
+ * 도플러 속도 잡음(축별 m/s) — 프로파일별. 위치 잡음(σ 수 m)과 **자릿수가 다르다**:
+ * 수신기가 반송파 주파수 편이로 속도를 직접 재기 때문이다(위치 차분이 아니다).
+ * GNSS 통상 0.05~0.15 m/s; 도심 반사까지 감안해 urban 은 넉넉히 잡았다.
+ */
+export const DOPPLER_SIGMA_MPS: Record<string, number> = {open: 0.06, typical: 0.12, urban: 0.25};
+
 export const ORIGIN_LAT = 37.5;
 export const ORIGIN_LON = 127.0;
 const M_PER_DEG_LAT = 111320;
@@ -178,24 +185,37 @@ export function makeFixes(
 ): RawFix[] {
   const rng = mulberry32(seed);
   const gauss = makeGaussian(rng);
+  // 도플러 속도용 잡음(축별). **위치 잡음과 독립이다** — 수신기가 위성 반송파의 주파수
+  // 편이로 직접 재는 값이라 위치 해와 오차원이 다르다(GNSS 통상 0.05~0.15 m/s).
+  const vGauss = makeGaussian(mulberry32(seed ^ 0x5eed));
+  const vSigma = DOPPLER_SIGMA_MPS[profile.name] ?? 0.12;
   const rho = Math.exp(-1 / profile.tauS);
   const c = Math.sqrt(1 - rho * rho) * profile.sigmaM;
   let bx = gauss() * profile.sigmaM;
   let by = gauss() * profile.sigmaM;
   const mPerDegLon = M_PER_DEG_LAT * Math.cos((ORIGIN_LAT * Math.PI) / 180);
-  return samples.map(s => {
+  return samples.map((s, i) => {
     bx = rho * bx + c * gauss();
     by = rho * by + c * gauss();
     const ex = bx + gauss() * profile.whiteM;
     const ey = by + gauss() * profile.whiteM;
     const acc = Math.max(3, profile.accM + gauss() * 1.5);
+    // ── OS 도플러 속도(m/s) ────────────────────────────────────────────────
+    // 예전엔 `speed: null` — "OS 가 속도를 안 준다"는 **거짓 가정**이었고, 그래서
+    // 이 하네스로는 속도를 쓰는 어떤 설계도 검증할 수 없었다(2026-08-10).
+    // 참 속도 벡터에 축별 잡음을 얹고 **크기**를 취한다 — OS 가 주는 speed 와 같은
+    // 성질이다(크기라서 정지 근처에서는 0 이 아니라 양으로 정류된다는 점까지 같다).
+    const prev = i > 0 ? samples[i - 1] : s;
+    const tvx = s.x - prev.x; // 1Hz 샘플이라 m/s
+    const tvy = s.y - prev.y;
+    const speed = Math.hypot(tvx + vGauss() * vSigma, tvy + vGauss() * vSigma);
     return {
       coords: {
         latitude: ORIGIN_LAT + (s.y + ey) / M_PER_DEG_LAT,
         longitude: ORIGIN_LON + (s.x + ex) / mPerDegLon,
         accuracy: acc,
         altitude: null,
-        speed: null,
+        speed,
       },
       timestamp: t0Ms + s.t * 1000,
     };
