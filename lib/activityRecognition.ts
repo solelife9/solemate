@@ -16,8 +16,17 @@
 // 없으면 **조용히 'unknown' 을 돌려준다** — 앱은 백스톱으로 계속 동작하고, 모듈이
 // 붙는 순간 자동으로 1순위가 켜진다. 호출부는 그 차이를 몰라도 된다.
 //
-// ⚠️ 네이티브 모듈(`KeegoActivityRecognition`)은 **아직 없다.** 이 파일은 그 계약을
-// 먼저 고정하고 폴백을 정의한다 — 모듈이 들어오면 이 파일은 한 줄도 안 바뀐다.
+// 네이티브 모듈(`KeegoActivityRecognition`) 현황 — **플랫폼마다 다르다**(2026-08-10):
+//   · Android — 있다. `KeegoActivityRecognitionModule.kt`(ActivityRecognitionClient).
+//   · iOS     — **아직 없다.** `CMMotionActivityManager` 래퍼를 안 만들었다. 그래서
+//               아이폰에서는 이 파사드가 늘 'unknown' 을 돌려주고, 차량 판정은
+//               백스톱 휴리스틱(`lib/vehicleDetect`)만으로 돈다. 안전한 방향이긴 하나
+//               1순위가 없는 상태다 — 정작 2026-08-07 사고가 난 기기가 아이폰이었다.
+//               (권한 `NSMotionUsageDescription` 은 Info.plist 에 이미 있고 Core Motion 은
+//                시스템 프레임워크라 새 의존성은 0 이다. 남은 건 래퍼 한 개.)
+//
+// 모듈이 없으면 **조용히 'unknown'** 이고, 붙는 순간 자동으로 1순위가 켜진다 —
+// 호출부는 한 줄도 바뀌지 않는다.
 // ============================================================================
 import {NativeModules, Platform} from 'react-native';
 
