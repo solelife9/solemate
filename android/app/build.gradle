@@ -184,16 +184,46 @@ android {
         applicationId "com.keego.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // 버전 체계: CI/로컬에서 ~/.gradle/gradle.properties 또는 -P 로 덮어쓸 수 있게(스토어
-        // 업로드마다 versionCode 를 올려야 한다). 미설정 시 기본값. versionName 은 SemVer.
+        // 버전 체계: 정본은 **android/gradle.properties** 다(저장소에 기록된다).
+        // CI 는 `-PKEEGO_VERSION_CODE=…` 로 여전히 덮어쓸 수 있다.
+        //
+        // ⚠️ **기본값을 두지 않는다.** 예전엔 미설정 시 조용히 `1` 로 떨어졌는데, 그게
+        // 2026-08-10 에 실제로 물었다: 문서화된 명령으로 빌드한 APK 가 versionCode 1 이라
+        // 폰 설치가 INSTALL_FAILED_VERSION_DOWNGRADE 로 거부됐다(폰은 22). Play 에 올렸다면
+        // 그냥 반려다. 잘못된 값으로 **성공하는 빌드**보다 여기서 멈추는 편이 낫다.
+        //
         // 지역 변수로 분리 — `versionCode (…)` 공백이 Groovy 에서 인자 아닌 반환값 체이닝으로
         // 파싱돼 null.toString() 으로 터지던 것 방지(카카오 키와 동일 패턴).
-        def keegoVersionCode = (project.findProperty('KEEGO_VERSION_CODE') ?: '1').toString().toInteger()
+        // ⚠️ **findProperty 를 쓰지 않는다.** Gradle 은 `~/.gradle/gradle.properties`(개발자
+        // 홈)가 프로젝트 파일을 **이긴다.** 그래서 홈에 남은 낡은 값이 저장소 값을 조용히
+        // 덮었다 — 2026-08-11 실측: 홈 `14`/`1.0.0` 이 저장소 `23`/`1.0` 을 이기고 있었고,
+        // 그 결과 **폰에 versionName 1.0.0 이 깔려 있었다**(iOS 는 1.0). 아래 주석이
+        // 2026-08-08 부터 "같아야 한다"고 요구하던 바로 그 불일치가 이미 나가 있었던 것이다.
+        //
+        // 그래서 저장소 파일을 **직접 읽는다.** 홈 값은 무시된다(있어도 무해해진다).
+        // 명령줄 `-P` 만 예외로 이긴다 — `startParameter.projectProperties` 에는
+        // **명령줄로 넘긴 것만** 들어 있어서 홈 파일과 정확히 구분된다.
+        def repoProps = new Properties()
+        file("${rootDir}/gradle.properties").withInputStream { repoProps.load(it) }
+        def cliProps = project.gradle.startParameter.projectProperties
+        def repoVersionCode = repoProps.getProperty('KEEGO_VERSION_CODE')
+        if (repoVersionCode == null) {
+            throw new GradleException(
+                'android/gradle.properties 에 KEEGO_VERSION_CODE 가 없습니다.\n' +
+                '  예전엔 이 값이 없으면 조용히 1 로 빌드돼, 폰 설치는 거부되고\n' +
+                '  Play 업로드는 반려됐습니다(원인이 빌드 명령에 안 보여 찾기 어렵습니다).')
+        }
+        def keegoVersionCode = (cliProps['KEEGO_VERSION_CODE'] ?: repoVersionCode).toString().toInteger()
         // ⚠️ iOS 의 MARKETING_VERSION 과 **같은 문자열**이어야 한다(2026-08-08 정합).
         // 예전엔 iOS 가 `1.0`, 안드로이드 기본이 `1.0.0` 이라 두 스토어에 다른 버전이
         // 올라갈 뻔했다. 사용자 문의·크래시 리포트가 버전으로 묶이는데 그게 갈리면
         // "1.0 에서만 나는 버그"를 추적할 수 없다.
-        def keegoVersionName = (project.findProperty('KEEGO_VERSION_NAME') ?: '1.0').toString()
+        // versionName 도 같은 이유로 저장소 파일이 정본이다(위 주석 참조).
+        def repoVersionName = repoProps.getProperty('KEEGO_VERSION_NAME')
+        if (repoVersionName == null) {
+            throw new GradleException('android/gradle.properties 에 KEEGO_VERSION_NAME 이 없습니다.')
+        }
+        def keegoVersionName = (cliProps['KEEGO_VERSION_NAME'] ?: repoVersionName).toString()
         versionCode keegoVersionCode
         versionName keegoVersionName
         // 카카오 네이티브 앱 키는 공개 저장소에 두지 않는다 — ~/.gradle/gradle.properties 의
