@@ -136,12 +136,20 @@ describe('걸음 정지 게이트(2026-07-11) — 걸음수가 늘지 않으면 
 });
 
 describe('스윕 복제 엔진 패리티 — 하네스 신뢰성 가드', () => {
-  // 파라미터 스윕(gpsSweepEngine)은 RunTracker 의 거리 결정 경로 복제로 돌린다.
-  // 복제가 제품 기본값에서 실제 엔진과 거리 완전 일치해야 스윕 결과를 믿을 수 있다.
-  test('제품 기본 파라미터에서 RunTracker 와 거리 완전 일치', () => {
+  // 파라미터 스윕(gpsSweepEngine)은 RunTracker 의 **위치 경로**(Kalman → acceptSegment →
+  // 평활) 복제로 돌린다. 복제가 제품 기본값에서 실제 엔진과 거리 완전 일치해야 스윕 결과를
+  // 믿을 수 있다.
+  //
+  // 2026-08-10: 거리 1순위가 도플러 속도 적분으로 바뀌었다. 복제는 그 경로를 모사하지
+  // 않으므로(모사할 이유도 없다 — 스윕 대상 파라미터는 전부 위치 경로의 것이다), 패리티는
+  // **도플러가 없는 fix**로 확인한다. 그것이 복제가 실제로 대신하는 경로이고, 폴백이
+  // 살아 있는지까지 함께 지켜 준다.
+  test('제품 기본 파라미터에서 RunTracker 와 거리 완전 일치 (도플러 없는 폴백 경로)', () => {
     for (const scenario of ['straight2k', 'stopGo', 'circle', 'runWalk']) {
       for (const p of [NOISE_TYPICAL, NOISE_URBAN]) {
-        const fixes = makeFixes(sampleTruth(SCENARIOS[scenario]), p, 7);
+        // speed 를 제거해 폴백(위치 차분) 경로를 강제한다 — 구형 기기·도플러 무효 상황.
+        const fixes = makeFixes(sampleTruth(SCENARIOS[scenario]), p, 7)
+          .map(f => ({...f, coords: {...f.coords, speed: null}}));
         const real = runEngine(fixes).distKm;
         const replica = runTunableEngine(fixes, {
           accelPsd: DEFAULT_ACCEL_PSD,

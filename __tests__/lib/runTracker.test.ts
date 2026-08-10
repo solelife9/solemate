@@ -283,33 +283,44 @@ test('현재(롤링) 페이스: 표본 충분하면 산출, 표본 부족·정�
   expect(t.getState().currentPaceSecPerKm).toBeNull();
 });
 
-test('현재 페이스 OS 속도 보강(P0-6): 롤링 부족 시 속도로 채우고, 롤링이 생기면 롤링 우선', () => {
+test('현재 페이스: 롤링(거리기반)이 생기면 OS 속도 보강보다 우선한다', () => {
   const t = new RunTracker();
   let clock = 100000;
   t.setNow(() => clock);
   t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
-  const FS = (lat: number, ts: number, speed: number | null) => {
+  // 2.5 m/s 로 1Hz 이동 — **위치와 speed 가 서로 맞는** 표본을 쓴다.
+  // (2026-08-10: 예전 이 테스트는 위치로는 4~5 m/s 인데 speed 는 0.6 인 모순된 fix 로
+  //  "거리 누적엔 속도 미관여"를 지키고 있었다. 거리 1순위가 도플러가 된 지금 그 불변식은
+  //  없어졌고, 모순된 표본은 어느 쪽을 검증하는지도 알 수 없다.)
+  const STEP_DEG = 2.5 / 111320; // 1초에 2.5m
+  let lat = 37.5;
+  let ts = 100000;
+  const FS = (speed: number | null, moveM = 2.5) => {
+    lat += moveM / 111320;
+    ts += 1000;
     clock = ts;
     t.ingestFix({coords: {latitude: lat, longitude: LON, accuracy: 5, speed}, timestamp: ts});
   };
+  void STEP_DEG;
   // 워밍업(롤링 표본 0)이라도 유효 OS 속도(2.5 m/s)면 현재 페이스를 보강한다 → 1000/2.5=400.
-  FS(37.5, 100000, 2.5);
-  FS(37.5, 102000, 2.5);
+  t.ingestFix({coords: {latitude: lat, longitude: LON, accuracy: 5, speed: 2.5}, timestamp: ts});
+  FS(2.5);
   const cpWarm = t.getState().currentPaceSecPerKm;
   expect(cpWarm).not.toBeNull();
   expect(cpWarm as number).toBeCloseTo(400, 0);
   // 무효 속도(-1, doppler 미정)면 보강하지 않는다 → (아직 롤링 없음) null.
-  FS(37.5, 104000, -1);
+  FS(-1, 0);
   expect(t.getState().currentPaceSecPerKm).toBeNull();
-  // 거리 누적이 충분해지면 롤링(거리기반)이 우선 — 엉뚱한 저속(0.6 m/s=1667초/km)을 무시하고
-  // 현실 범위의 롤링 페이스를 반환한다(코어 불변 — 거리 누적엔 속도 미관여).
-  FS(37.5003, 107000, 0.6);
-  FS(37.5005, 113000, 0.6);
-  FS(37.5007, 119000, 0.6);
-  FS(37.5009, 125000, 0.6);
+  // 40초를 2.5 m/s 로 달려 롤링 표본을 충분히 쌓는다.
+  for (let i = 0; i < 40; i++) FS(2.5);
   const cpRoll = t.getState().currentPaceSecPerKm;
   expect(cpRoll).not.toBeNull();
-  expect(cpRoll as number).toBeLessThan(1000); // 0.6m/s 보강(1667)이 아니라 롤링 우선
+  expect(cpRoll as number).toBeCloseTo(400, -1); // 롤링이 실제 페이스를 반영
+
+  // 한 표본만 크게 느려져도(0.6 m/s=1667초/km) 롤링 창(30s)이 지배한다 — 순간값으로 튀지 않는다.
+  FS(0.6, 0.6);
+  const cpAfterDip = t.getState().currentPaceSecPerKm;
+  expect(cpAfterDip as number).toBeLessThan(1000);
 });
 
 test('권한 회수 후 resumeFromPermissionRevoked: 거리 보존 + 재개 후 다시 누적 + elapsed 점프 없음(#6)', () => {

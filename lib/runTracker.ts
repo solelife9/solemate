@@ -228,6 +228,11 @@ class RunTracker {
   private lastFixTs = 0; // de-dupe guard: highest fix timestamp processed
   // 런 시작 이전 시각(=캐시된 위치)이라 버린 fix 수. 안전 밸브 — ingestFix 주석 참조.
   private staleDrops = 0;
+  // 도플러 적분용 — 직전 fix 의 유효 속도(m/s, 0 포함)와 그 시각. null = 미수신/무효.
+  private dopLastSpeedMps: number | null = null;
+  private dopLastMs = 0;
+  /** 지금 거리를 도플러가 이끌고 있는가. 켜져 있으면 폴리라인(스무더) 증분은 버린다. */
+  private dopplerLeading = false;
   private autoAnchor: {lat: number; lon: number} | null = null;
   private autoAnchorMs = 0;
   private autoPauseState: AutoPauseState = initAutoPauseState();
@@ -347,20 +352,51 @@ class RunTracker {
   private smoothPush(p: {lat: number; lon: number}) {
     const before = this.smoother.distKm();
     this.smoother.push(p);
-    const add = this.smoother.distKm() - before;
-    this.phoneDist += add;              // 항상 — 폰 자체 측정은 끊지 않는다
+    // 도플러가 거리를 이끄는 동안에는 폴리라인 증분을 버린다(이중계산 금지).
+    // 스무더는 **계속 먹인다** — 체인 상태가 유효해야 도플러가 끊긴 순간 곧바로
+    // 폴백으로 이어받을 수 있다. 버리는 것은 '숫자'지 '상태'가 아니다.
+    if (this.dopplerLeading) return;
+    this.addDistanceKm(this.smoother.distKm() - before);
+  }
+
+  /** 거리 한 조각을 누적한다. 폰 자체 측정(phoneDist)은 항상, 표시 거리(dist)는
+   *  워치가 주도 중이 아닐 때만 — smoothPush/도플러 적분이 공유하는 단일 통로다. */
+  private addDistanceKm(km: number) {
+    if (!(km > 0)) return;
+    this.phoneDist += km;               // 항상 — 폰 자체 측정은 끊지 않는다
     if (this.watchLed()) return;
-    this.dist += add;
+    this.dist += km;
+  }
+
+  /**
+   * 이 fix 의 **OS 도플러 속도**(m/s). 쓸 수 없으면 null.
+   *
+   * 도플러는 위성 반송파의 주파수 편이로 속도를 **직접** 잰다 — 위치를 빼서 만든 값이
+   * 아니라서 위치 오차와 독립이고, 자릿수가 다르다(통상 0.05~0.15 m/s vs 위치 수 m).
+   * OS 가 못 구하면 음수(-1)/null 로 준다.
+   *
+   * `CURRENT_PACE_MIN_SPEED_MPS` 아래는 **0 으로 본다.** 속도도 크기(|v|)라 정지 상태의
+   * 잡음이 0 이 아니라 양수로 정류되기 때문이다(제자리 300초에 수십 m 가 쌓인다).
+   * 이 상수는 원래 "이 아래 도플러 값은 못 믿는다"로 이미 문서화돼 있던 기준이라,
+   * 여기서 새 임계를 만들지 않고 그대로 쓴다.
+   */
+  private dopplerSpeedMps(fix: RawFix): number | null {
+    const s = fix.coords.speed;
+    if (typeof s !== 'number' || !Number.isFinite(s) || s < 0) return null;
+    if (s > MAX_SEG_SPEED_MPS) return null;        // 명백한 이상치 — 위치 게이트와 같은 상한
+    return s < CURRENT_PACE_MIN_SPEED_MPS ? 0 : s;
   }
 
   /** 구간 경계(일시정지·재앵커·종료·권한동결): 꼬리 거리를 계상하고 체인을 끊는다. */
   private smoothFlush() {
     const before = this.smoother.distKm();
     this.smoother.flush();
-    const add = this.smoother.distKm() - before;
-    this.phoneDist += add;
-    if (this.watchLed()) return;
-    this.dist += add;
+    // ⚠️ flush 는 **거리를 더한다.** 도플러가 이끄는 동안 이 꼬리를 더하면 같은 땅을 두 번
+    // 센다(2026-08-10: 이걸 놓쳐 느린걷기 open 오차가 −1.5% → +6.1% 로 뒤집혔다 —
+    // 환경이 좋을수록 오차가 커지는 비정상 순서가 이중계산의 신호였다).
+    // 체인을 끊는 일(상태)은 그대로 하고, 숫자만 버린다.
+    if (this.dopplerLeading) return;
+    this.addDistanceKm(this.smoother.distKm() - before);
   }
 
   /** Begin a fresh run, clearing all engine state. */
@@ -389,6 +425,9 @@ class RunTracker {
     this.lastRecvMs = 0;
     this.lastFixTs = 0;
     this.staleDrops = 0;
+    this.dopLastSpeedMps = null;
+    this.dopLastMs = 0;
+    this.dopplerLeading = false;
     this.autoAnchor = null;
     this.autoAnchorMs = 0;
     this.autoPauseState = initAutoPauseState();
@@ -760,6 +799,51 @@ class RunTracker {
       this.emit({type: 'firstFix', lat: f.lat, lon: f.lon});
     }
 
+    // ── 거리 1순위: OS 도플러 속도 적분 ──────────────────────────────────────
+    //
+    // 왜 위치 차분이 아니라 속도인가(2026-08-10 민우님 실측이 계기):
+    // 위치 차분은 |Δp| 라 **평균이 0 인 잡음도 항상 양의 거리로 정류된다.** 제자리에 서
+    // 있어도 거리가 쌓이고, 느릴수록 진짜 이동(걷기 1.2m/s)이 잡음에 묻혀 심해진다.
+    // 합성 하네스 계측(느린걷기·도심): 위치차분 +15.7% vs 도플러 +3.5%.
+    // 잡음 하한(정확도×0.6)·속도 상한은 전부 그 정류를 막으려던 방어막이었고, 그 방어막이
+    // 곧 **화면이 6~18초씩 멈췄다 뛰는** 원인이었다(조이면 끊기고 풀면 부푼다 — 같은 관문의
+    // 앞뒷면이라 상수로는 못 푼다).
+    //
+    // 도플러는 위성 반송파 주파수 편이로 속도를 직접 재므로 위치 오차와 독립이고, 잡음
+    // 하한이 필요 없다 → **매 fix 갱신**이라 부드럽다.
+    //
+    // 지키는 선:
+    //  · 정지 판정(걸음 게이트)은 그대로 — 도플러도 크기라 제자리에서 정류된다.
+    //  · 워밍업 구간은 계상하지 않는다(위치 경로와 같은 기준선 유지).
+    //  · 무효/공백(재측위 임계 초과)이면 계상하지 않고, 그 구간은 아래 위치 경로가 맡는다.
+    const spd = this.dopplerSpeedMps(fix);
+    let dopplerCreditedKm: number | null = null;
+    // ⚠️ 걸음 정지 게이트(stillGated)를 여기 걸지 **않는다.** 두 가지 이유다:
+    //  1) 중복이다 — 그 게이트는 '정지 중 위치 표류'를 막으려는 것인데, 도플러는 정지하면
+    //     속도가 CURRENT_PACE_MIN_SPEED_MPS 아래로 떨어져 이미 0 으로 처리된다.
+    //  2) **위험하다** — 위치 경로는 건너뛴 구간을 앵커 보존으로 나중에 회수하지만, 속도
+    //     적분은 건너뛴 1초를 영영 잃는다. 러닝 중 칼만 속도가 잡음으로 잠깐 2.5 아래로
+    //     내려가면 게이트가 깜빡 켜지고, 그때마다 거리가 사라진다(실측 −24.7%).
+    if (
+      idx >= WARMUP_FIXES &&
+      spd != null &&
+      this.dopLastSpeedMps != null &&
+      this.dopLastMs > 0
+    ) {
+      const dtS = (ts - this.dopLastMs) / 1000;
+      // 공백이 신호두절 임계를 넘으면 그 사이 속도를 몰랐다는 뜻 — 사다리꼴로 이어 붙이면
+      // 없던 거리를 만든다. 그 구간은 위치 경로(재앵커 분기)가 판단한다.
+      if (dtS > 0 && dtS * 1000 <= GPS_STALL_THRESHOLD_MS) {
+        dopplerCreditedKm = (((spd + this.dopLastSpeedMps) / 2) * dtS) / 1000;
+        this.dopplerLeading = true;   // 이 순간부터 폴리라인 증분은 버린다
+        this.addDistanceKm(dopplerCreditedKm);
+      }
+    }
+    // 도플러가 무효가 된 순간 곧바로 폴백으로 돌아간다(터널·신호불량).
+    if (spd == null) this.dopplerLeading = false;
+    this.dopLastSpeedMps = spd;
+    this.dopLastMs = ts;
+
     // 이 fix 가 실제로 더한 거리/시간을 재기 위한 기준점(차량 감지에 넘긴다).
     const distBefore = this.dist;
     const vehDtMs = this.lastGoodMs ? Math.max(0, ts - this.lastGoodMs) : 0;
@@ -768,7 +852,9 @@ class RunTracker {
       const d = calcDist(this.lastGood.lat, this.lastGood.lon, f.lat, f.lon);
       const dtSec = this.lastGoodMs ? Math.max((ts - this.lastGoodMs) / 1000, 0) : 0;
       if (!stillGated && acceptSegment({distKm: d, dtSec, accuracyM: acc, fixIndex: idx})) {
-        this.smoothPush(f); // dist 는 평활 폴리라인 증분으로 늘어난다(직결 d 적산 금지)
+        // 스무더는 계속 먹인다(체인 유지 — 도플러가 끊기면 곧바로 이어받는다).
+        // 도플러가 이끄는 동안 그 증분은 smoothPush 안에서 버려진다.
+        this.smoothPush(f);
         this.pts.push(f);
         this.lastGood = f;
         this.lastGoodMs = ts;
