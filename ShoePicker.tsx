@@ -17,6 +17,7 @@ import Svg, {Circle, Path} from 'react-native-svg';
 import {findShoeModel, getRecommendedLifespanKm} from './data/shoeModels';
 // 번들 + 원격 카탈로그. 원격이 늦게 도착해도 이 훅이 알아서 다시 그린다(lib/shoeCatalogStore).
 import {useShoeModels, useShoeBrands} from './lib/shoeCatalogStore';
+import {matchesTokens} from './lib/shoeSearch';
 import {categoryLabelKo} from './lib/affiliate';
 import {BG, CARD, T1, T3, SEP, FONT, withAlpha, GUTTER, MOTION} from './theme';
 import {Button, Input, Tap} from './primitives';
@@ -103,7 +104,11 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
   // 처럼 붙어 헷갈리지 않는다. 모델 접두 일치 우선("b"→Bondi), 그다음 알파벳순.
   const brandModels = useMemo(() => {
     const all = SHOE_MODELS.filter(m => norm(m.brand) === norm(selBrand));
-    const filtered = q ? all.filter(m => norm(m.model).includes(q)) : all;
+    // 모델명(영문) **과 한글 별칭**을 함께 훑는다. 앱 UI 는 한국어인데 카탈로그
+    // 모델명은 전부 영문이라, 별칭 없이는 "보스턴"·"에보"로 치는 사용자가 있는
+    // 신발을 못 찾고 아래 '검색 0건' 신호까지 남는다(2026-08-10).
+    // 매칭 규칙은 lib/shoeSearch 하나가 소유한다 — 여기서 다시 적으면 또 갈라진다.
+    const filtered = q ? all.filter(m => matchesTokens([m.model, ...(m.aliases ?? [])], q)) : all;
     return filtered.sort((a, b) => {
       const ra = q && norm(a.model).startsWith(q) ? 0 : 1;
       const rb = q && norm(b.model).startsWith(q) ? 0 : 1;

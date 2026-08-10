@@ -47,14 +47,29 @@ export function searchableStrings(s: ShoeDoc): string[] {
   return out.filter((v) => typeof v === 'string' && v.trim().length > 0);
 }
 
-/** 질의가 이 신발에 걸리는가 — 부분일치(포함). */
-export function matchesShoe(s: ShoeDoc, query: string): boolean {
+/**
+ * 질의가 이 문자열들 중 어딘가에 걸리는가 — **매칭 규칙의 단일 소유자.**
+ *
+ * `ShoeDoc` 를 받지 않는 이유: 신발 목록은 화면마다 형태가 다르다(등록 피커는 카탈로그
+ * 문서가 아니라 `data/shoeModels.ts` 의 축약 형태를 쓴다). 규칙을 형태에 묶어 두면
+ * 호출부가 자기 매칭을 새로 적게 되고, 실제로 그렇게 갈라졌다 — 피커는 모델명만
+ * `includes` 로 훑어서 **한글 별칭이 통째로 죽어 있었다**(2026-08-10 발견: 카탈로그
+ * 618켤레 전부 한글 별칭을 갖고 있는데 "보스턴"으로 치면 0건).
+ */
+export function matchesTokens(haystack: readonly string[], query: string): boolean {
   const q = normalizeQuery(query);
   if (!q) return true; // 빈 질의는 전체
   // 공백으로 나눈 토큰이 **모두** 어딘가에 걸려야 한다("호카 클리프톤" → 둘 다 만족).
   const tokens = q.split(' ').filter(Boolean);
-  const hay = searchableStrings(s).map(normalizeQuery);
+  const hay = haystack
+    .filter((v) => typeof v === 'string' && v.trim().length > 0)
+    .map(normalizeQuery);
   return tokens.every((t) => hay.some((h) => h.includes(t)));
+}
+
+/** 질의가 이 신발에 걸리는가 — 부분일치(포함). */
+export function matchesShoe(s: ShoeDoc, query: string): boolean {
+  return matchesTokens(searchableStrings(s), query);
 }
 
 export interface SearchOptions {

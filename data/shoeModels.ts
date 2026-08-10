@@ -40,6 +40,15 @@ export interface ShoeModel {
   recommendedKm: number;
   /** 출시연도 */
   year: number;
+  /**
+   * 한글 표기·오타·축약형(카탈로그 `searchAliases`). **검색 전용 — 화면에 뜨지 않는다.**
+   *
+   * 여기까지 들고 오는 이유: 앱 UI 가 한국어인데 카탈로그 모델명은 전부 영문이다.
+   * 이 필드가 없으면 "보스턴"·"에보"로 치는 사용자가 카탈로그에 있는 신발을 못 찾고,
+   * 앱은 그걸 '없는 신발' 신호로 기록한다(2026-08-10 발견 — 618켤레 전부 별칭이
+   * 있는데도 죽어 있었다).
+   */
+  aliases?: string[];
 }
 
 /** getRecommendedLifespanKm 인자 (모든 필드 선택적 — 정보가 적어도 합리적 기본값 반환) */
@@ -128,6 +137,14 @@ const NEW_TO_LEGACY_CATEGORY: Readonly<Record<string, ShoeCategory>> = {
  * 카탈로그에 없으면 데일리로 떨어진다 — 그런 신발이 없도록 테스트가 막는다
  * (__tests__/data.categorySource.test.ts).
  */
+/** 문서에서 검색 별칭만 뽑는다 — 형태가 이상하면 빈 배열(검색이 죽지 않게). */
+function aliasesOf(doc: {searchAliases?: unknown} | null | undefined): string[] | undefined {
+  const raw = doc?.searchAliases;
+  if (!Array.isArray(raw)) return undefined;
+  const out = raw.filter((v): v is string => typeof v === 'string' && v.trim().length > 0);
+  return out.length ? out : undefined;
+}
+
 const SEED_MODELS: ShoeModel[] = (
   shoesData.shoes as Array<{brand: string; model: string; recommendedKm?: number; year?: number}>
 ).map((s) => {
@@ -142,6 +159,8 @@ const SEED_MODELS: ShoeModel[] = (
       ? (s.recommendedKm as number)
       : (categoryLifespanKm[category] ?? DEFAULT_LIFESPAN_KM),
     year: s.year ?? 0,
+    // 별칭은 카탈로그가 소유한다(시드에는 없다) — 조회된 문서에서 그대로 가져온다.
+    aliases: aliasesOf(doc),
   };
 });
 
@@ -164,6 +183,8 @@ export interface ShoeDocLike {
   category?: string;
   defaultLifespanKm?: number;
   releaseYear?: number | null;
+  /** 한글 표기·오타·축약형 — 검색에만 쓴다. */
+  searchAliases?: string[];
 }
 
 /**
@@ -190,6 +211,7 @@ export function shoeDocToModel(s: ShoeDocLike | null | undefined): ShoeModel | n
       ? (s.defaultLifespanKm as number)
       : (categoryLifespanKm[category] ?? DEFAULT_LIFESPAN_KM),
     year: Number.isFinite(s.releaseYear as number) ? (s.releaseYear as number) : 0,
+    aliases: aliasesOf(s),
   };
 }
 
