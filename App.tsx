@@ -25,7 +25,7 @@ import {calibrateStride} from './lib/strideLength';
 import {saveDistanceRef} from './lib/distanceRef';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
-import HistoryScreen from './HistoryScreen.rn';
+import HistoryScreen, {type ImportedRunExtras} from './HistoryScreen.rn';
 import ShoesScreen from './ShoesScreen.rn';
 import ProfileScreen from './ProfileScreen.rn';
 import RunEngine from './screens/RunEngine';
@@ -1292,9 +1292,9 @@ function Main(){
   // **주된 경로인 GPS 러닝은 노면을 묻지 않는다** — 실내·트랙만 자동 태깅되고 트레일은
   // road 로 계산된다. 보조 경로에서만 묻는 건 비대칭이고 데이터도 반쪽이 된다(수동 런에만
   // 트레일 표시가 붙는다). 이미 저장된 태그는 그대로 남아 계산에 반영된다 — 새로 붙이는
-  // 길만 없앤 것이다. 노면이 정말 필요하면 물어볼 자리는 런이 아니라 **신발**이다.
-  async function addManualRun(shoeId:string,km:number,date:string,durationSec:number){
-    await addRun(shoeId,km,date,'','manual',durationSec);
+  // 길만 없앤 것이다. 파일(GPX)에서 온 것은 source='gpx' 로 남겨 손입력과 구분한다.
+  async function addManualRun(shoeId:string,km:number,date:string,durationSec:number,x?:ImportedRunExtras){
+    await addRun(shoeId,km,date,'',x?.route?'gpx':'manual',durationSec,undefined,x?.route,undefined,undefined,x?.elevationM,undefined,x?.startMs?{startMs:x.startMs}:undefined);
   }
 
   // 개별 런 편집(Stage 2b · Firestore 정본). 낙관적으로 runs 상태를 갱신 → toUiShoe가

@@ -41,6 +41,7 @@
     "expo-audio": "~56.0.13",
     "expo-camera": "~56.0.8",
     "expo-crypto": "~56.0.4",
+    "expo-document-picker": "~56.0.4",
     "expo-file-system": "~56.0.8",
     "expo-image-manipulator": "~56.0.23",
     "expo-image-picker": "~56.0.22",

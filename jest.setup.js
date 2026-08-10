@@ -118,11 +118,20 @@ jest.mock('expo-file-system/legacy', () => ({
   copyAsync: jest.fn(() => Promise.resolve()),
   deleteAsync: jest.fn(() => Promise.resolve()),
   getInfoAsync: jest.fn(() => Promise.resolve({exists: true})),
+  // GPX 가져오기(2026-08-10) — 고른 파일을 문자열로 읽는다. 기본: 빈 GPX(파서가 거절).
+  readAsStringAsync: jest.fn(() => Promise.resolve('')),
   // 메달·기록증 클라우드 백업(2026-08-07) — Firebase Storage REST 를 이 두 함수로 탄다
   // (새 네이티브 의존성 0). 기본: 전송 성공.
   FileSystemUploadType: {BINARY_CONTENT: 0, MULTIPART: 1},
   uploadAsync: jest.fn(() => Promise.resolve({status: 200, body: '{}'})),
   downloadAsync: jest.fn((_url, dest) => Promise.resolve({status: 200, uri: dest})),
+}));
+// ── expo-document-picker ─────────────────────────────────────────────────────
+// GPX 가져오기(2026-08-10, 민우님 승인). 기본: **취소** — 테스트가 실제 파일 선택을
+// 기대하지 않게 한다. 파일을 고른 상황은 각 테스트가 mockResolvedValue 로 만든다.
+jest.mock('expo-document-picker', () => ({
+  __esModule: true,
+  getDocumentAsync: jest.fn(() => Promise.resolve({canceled: true, assets: null})),
 }));
 jest.mock('expo-media-library/legacy', () => ({
   __esModule: true,

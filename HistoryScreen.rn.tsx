@@ -31,6 +31,9 @@ import { RunSplits, Split } from './RunSplits';
 import { buildSplits } from './lib/splits';
 import { buildShareCardModel } from './lib/shareCard';
 import { exportGpx } from './lib/gpx';
+// 가져오기도 이 화면이 직접 부른다 — 내보내기(위)와 대칭이고, App.tsx 는 이 기능을
+// 몰라도 된다(크기 래칫 §'새 기능은 App.tsx 가 아니라 lib 에'). 주입은 테스트용으로만.
+import { pickAndParseGpx } from './lib/gpxFile';
 import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './lib/inputMask';
 import { useBackClose } from './lib/backStack';
 import { loadDistanceRef, distanceRefLine } from './lib/distanceRef';
@@ -153,19 +156,45 @@ export function PeriodChartView({ data, labels, unit }: { data: number[]; labels
 // 코스 지도는 공용 CourseMap 컴포넌트로 추출됨(러닝 완료 리캡과 공유) — CourseMap.tsx.
 
 // ── manual-run input / run edit form ────────────────────────────────────────
+/**
+ * GPX 에서만 오는 값들 — 손으로 칠 수 없는 것들이다(경로·고도·시작 시각).
+ * 수동 입력이면 전부 undefined 이고, 그 경우 저장 레코드에서 필드 자체가 빠진다
+ * (0 으로 채우면 "평지를 달렸다"는 거짓 주장이 된다 — lib/elevation 주석과 같은 원칙).
+ */
+export interface ImportedRunExtras {
+  route?: string;
+  elevationM?: number;
+  startMs?: number;
+}
+
+/** 파일에서 읽어 폼에 채울 값 한 벌. */
+export interface GpxFill extends ImportedRunExtras {
+  km: number;
+  durationSec: number;
+  /** 'YYYY-MM-DD'. 파일에 시각이 없으면 빈 문자열 — 그때는 사용자가 고른다. */
+  date: string;
+  /** 사용자에게 무엇을 읽었는지 보여줄 파일명. */
+  fileName: string;
+}
+
 // 한 폼으로 '수동 입력'(initial=null)과 '편집'(initial=Run)을 모두 처리한다. 거리는
 // 표시 단위(km|mi)로 입력받아 displayToKm로 저장 표준 km으로 되돌리고, 시간은 'MM:SS'를
 // 초로, 날짜는 'YYYY-MM-DD'로 받는다. 신발은 칩으로 고른다(편집 시 원래 신발이 프리필).
 // 수동 추가/편집 폼. initial=null → 추가 모드. 외부 노출은 수용 테스트가 폼 자체(KeyboardAvoiding
 // View·인라인 검증)를 직접 검증하기 위함(추가 진입 버튼은 e67930f 에서 제거됨 — 폼은 편집에 잔존).
 export function RunForm({
-  shoes, unit, initial, onCancel, onSubmit,
+  shoes, unit, initial, onCancel, onSubmit, onPickGpx,
 }: {
   shoes: Shoe[];
   unit: Unit;
   initial?: Run | null;
   onCancel: () => void;
-  onSubmit: (v: { shoeId: string; km: number; date: string; durationSec: number }) => void;
+  onSubmit: (v: ImportedRunExtras & { shoeId: string; km: number; date: string; durationSec: number }) => void;
+  /**
+   * GPX 파일에서 값을 채운다(추가 모드 전용). 고르기·파싱은 바깥이 맡고 여기는 **채우기만**
+   * 한다 — 그래야 이 폼을 파일 시스템 없이 테스트할 수 있다. 취소·실패는 null.
+   */
+  onPickGpx?: () => Promise<GpxFill | null>;
 }) {
   const editing = !!initial;
   const initShoeId = editing && initial!.shoe >= 0 ? shoes[initial!.shoe]?.id : undefined;
@@ -213,7 +242,35 @@ export function RunForm({
     const errs = validateRunForm({ shoeId, dist, date });
     setErrors(errs);
     if (errs.shoe || errs.dist || errs.date) return;
-    onSubmit({ shoeId: shoeId!, km: displayToKm(parseFloat(dist), unit), date, durationSec: parseDurationInput(dur) });
+    onSubmit({
+      shoeId: shoeId!, km: displayToKm(parseFloat(dist), unit), date, durationSec: parseDurationInput(dur),
+      // 파일에서 온 값만 실어 보낸다. 사용자가 거리를 손으로 고쳤어도 경로는 그대로 둔다 —
+      // 지도는 실제로 달린 길이고, 거리 보정과 별개의 사실이다.
+      ...imported,
+    });
+  };
+
+  // ── GPX 채우기 ───────────────────────────────────────────────────────────────
+  // 파일에서 읽은 값으로 입력칸을 **채우기만** 한다. 저장은 여전히 '추가하기'다 —
+  // 무엇이 들어가는지 보고 고칠 수 있어야 한다(파일의 거리가 늘 옳지는 않다).
+  const [imported, setImported] = useState<ImportedRunExtras>({});
+  const [importedName, setImportedName] = useState('');
+  const [importing, setImporting] = useState(false);
+  const fillFromGpx = async () => {
+    if (!onPickGpx || importing) return;
+    setImporting(true);
+    try {
+      const g = await onPickGpx();
+      if (!g) return; // 취소·실패 — 바깥이 이미 안내했다
+      setDist(String(displayNum(g.km, unit, 2)));
+      setDur(fmtDurationInput(g.durationSec));
+      if (g.date) setDate(g.date);
+      setImported({ route: g.route, elevationM: g.elevationM, startMs: g.startMs });
+      setImportedName(g.fileName);
+      setErrors({});
+    } finally {
+      setImporting(false);
+    }
   };
 
   const insets = useSafeAreaInsets();
@@ -229,6 +286,22 @@ export function RunForm({
           (iOS=padding, Android는 windowSoftInputMode adjustResize에 맡겨 undefined). */}
       <KeyboardAvoidingView style={s.flex1} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 8}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: rs(18), paddingBottom: rv(40), gap: rv(18) }} keyboardShouldPersistTaps="handled">
+        {/* GPX 가져오기 — 다른 앱(가민·스트라바·나이키)에서 내보낸 러닝을 그대로 들여온다.
+            진입점을 따로 만들지 않고 이 폼에 둔 이유: 의도가 같다("앱 없이 달린 기록을
+            넣는다"). 헤더에 아이콘을 하나 더 다는 건 잡음이다(상시 절제 체크).
+            채우기만 하고 저장은 '추가하기' — 무엇이 들어가는지 보고 고칠 수 있어야 한다. */}
+        {!editing && !!onPickGpx && (
+          <View style={{ gap: rv(6) }}>
+            <Button
+              label={importing ? '파일 읽는 중…' : 'GPX 파일에서 채우기'}
+              variant="ghost"
+              onPress={() => { void fillFromGpx(); }}
+            />
+            {!!importedName && (
+              <Text style={s.formHint} numberOfLines={1}>{importedName} 을(를) 읽었어요</Text>
+            )}
+          </View>
+        )}
         {/* 신발 선택 */}
         <View>
           <Text style={s.formLabel}>신발</Text>
@@ -943,7 +1016,7 @@ export function RunCard({ run, shoes, onPress, unit, hideShoe }: { run: Run; sho
 
 function HistoryScreen({
   shoes = SHOES, runs = [], summary = {}, chart = {}, onTab, unit = 'km',
-  onAddRun, onEditRun, onDeleteRun, onRefresh,
+  onAddRun, onEditRun, onDeleteRun, onRefresh, onPickGpx = pickAndParseGpx,
   age = 0, sex = 'male', restHR = 0,
 }: {
   shoes?: Shoe[];
@@ -954,7 +1027,9 @@ function HistoryScreen({
   // 표시 단위(km|mi). 거리·차트 눈금이 이를 따른다(요약·차트 값은 App이 환산해 주입).
   unit?: Unit;
   // 수동 입력/편집/삭제 콜백(App이 백엔드 POST/PATCH/DELETE + 상태를 처리). 거리는 km.
-  onAddRun?: (shoeId: string, km: number, date: string, durationSec: number) => void;
+  onAddRun?: (shoeId: string, km: number, date: string, durationSec: number, extras?: ImportedRunExtras) => void;
+  /** GPX 파일 고르기+파싱(App 이 소유). 없으면 폼에 가져오기 버튼이 뜨지 않는다. */
+  onPickGpx?: () => Promise<GpxFill | null>;
   onEditRun?: (id: string, fields: { shoe_id?: string; km?: number; run_date?: string; duration?: number }) => void;
   onDeleteRun?: (id: string) => void;
   // 당겨서 새로고침 — 서버 재fetch + pending flush 재시도(App 의 initUser/sync 재진입).
@@ -1128,11 +1203,12 @@ function HistoryScreen({
         unit={unit}
         initial={initial}
         onCancel={() => setForm(null)}
-        onSubmit={({ shoeId, km, date, durationSec }) => {
+        onPickGpx={onPickGpx}
+        onSubmit={({ shoeId, km, date, durationSec, route, elevationM, startMs }) => {
           if (form.mode === 'edit' && form.run.id) {
             onEditRun?.(form.run.id, { shoe_id: shoeId, km, run_date: date, duration: durationSec });
           } else {
-            onAddRun?.(shoeId, km, date, durationSec);
+            onAddRun?.(shoeId, km, date, durationSec, { route, elevationM, startMs });
           }
           setForm(null);
           setDetail(null);
