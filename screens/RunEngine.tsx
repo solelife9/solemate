@@ -735,6 +735,19 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     }
     // 엔진이 이 화면 것으로 초기화됐다 — 이 시점부터만 종료/저장이 엔진 값을 읽어도 된다(Q-1).
     engineStartedRef.current=true;
+    // ⏱️ **1초 틱은 여기서 켠다 — 엔진 시작 직후, 어떤 await 보다도 먼저.**
+    //
+    // 2026-08-10 민우님: "러닝 누르고 걸어가면 처음 몇 초 아무것도 안 뜨다가 갑자기 몇십 초가
+    // 지나 있다." GPS 가 늦은 게 아니었다. 시계(t0)는 runTracker.start() 에서 이미 갔는데
+    // 화면을 갱신하는 이 틱만 아래쪽, **await 네 개 뒤**에 있었다(그중 하나는 시스템 권한
+    // 팝업이 뜰 수 있는 Pedometer.requestPermissionsAsync). 그동안 화면은 00:00 에 얼어
+    // 있다가 첫 틱에서 now−t0 를 한 번에 따라잡았다 — 시계가 튄 게 아니라 화면이 늦은 것이다.
+    //
+    // 틱은 경과시간만 다시 계산한다(GPS·권한·센서와 무관). 그러니 그 준비들보다 먼저 돌아도
+    // 안전하고, 먼저 돌아야 버튼을 누른 순간부터 1초씩 부드럽게 올라간다.
+    // 재진입 시 중복 인터벌이 남지 않게 먼저 정리한다(아래 재개 경로와 같은 규약).
+    clearInterval(timer.current);
+    timer.current=setInterval(()=>runTracker.tick(),1000);
     // 케이던스(걸음수): OS 걸음 센서(CMPedometer)의 누적 걸음수를 **주기 조회(폴링)**로
     // 받아 분당 비율 spm 을 산출한다. watchStepCount 스트림은 expo-sensors 네이티브가
     // OnAppEntersBackground 에서 stopUpdates() 해 화면을 잠그면(주머니 러닝) 끊긴다 —
@@ -865,8 +878,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       pedometerDistance.start();
       pedDistUnsub.current=pedometerDistance.onDistance(m=>runTracker.feedPedometerDistance(m,Date.now()));
     }catch{/* 네이티브 부재/예외 — 거리 정본은 GPS, 융합만 비활성 */}
-    // 1초 틱: fix가 없어도 경과/死구간을 다시 계산해 화면을 갱신한다(엔진이 판정).
-    timer.current=setInterval(()=>runTracker.tick(),1000);
+    // (1초 틱은 위 엔진 시작 직후로 옮겼다 — 여기 있으면 위 await 들만큼 화면이 늦는다.)
     // 진행중 스냅샷: 3초마다 영속(audit#2). fix마다도 persist되지만, 무신호 구간에서
     // 시간만 흐를 때의 복구 정확도를 위해 주기 저장도 둔다. 크래시 시 복구 지점.
     snapTimer.current=setInterval(()=>runTracker.persist(),3000);
