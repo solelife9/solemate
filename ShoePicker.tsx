@@ -50,6 +50,15 @@ const OTHER = '기타';
 // 60/30 은 서버 규칙(shoe_requests 의 brand·model ≤ 60자)과 정렬한 값이다 — 넘기면
 // 카탈로그 개선 신호가 조용히 거부돼, 등록은 되는데 신호만 사라지는 비대칭이 생긴다.
 const MODEL_MAX = 60;
+
+/**
+ * '다른 브랜드' 폴백에서 보여줄 최대 줄 수.
+ *
+ * 이 섹션은 **찾아주는 보조 장치**이지 목록이 아니다. "클리프톤" 같은 라인명은 세대별로
+ * 여러 켤레가 걸리는데, 그걸 다 펼치면 원래 고른 브랜드보다 길어져 주객이 뒤집힌다.
+ * 넘치면 아래에 몇 개가 더 있는지 적는다(조용히 자르지 않는다).
+ */
+const OTHER_BRAND_LIMIT = 12;
 const BRAND_MAX = 30;
 const norm = (v: string) => v.trim().toLowerCase().replace(/\s+/g, ' ');
 
@@ -116,13 +125,36 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
     });
   }, [SHOE_MODELS, selBrand, q]);
 
+  // ── 다른 브랜드 폴백(2026-08-11 민우님 확정) ────────────────────────────────
+  // 검색은 여전히 **선택된 브랜드가 먼저**다(2026-07-07 결정 유지). 다만 거기서 0건일 때
+  // 조용히 막다른 길로 두지 않는다 — 카탈로그에 있는 신발인데도 "없다"고 보이고, 아래
+  // logSearchMiss 가 그걸 '없는 신발' 신호로 서버에 남겨 집계까지 오염시켰다.
+  // (실측 2026-08-11: Nike 가 선택된 채 "호카 클리프톤" → 0건. 전체에는 6켤레가 있다.)
+  const otherBrandHits = useMemo(() => {
+    if (!q || brandModels.length > 0) return [];
+    return SHOE_MODELS
+      .filter(m => norm(m.brand) !== norm(selBrand))
+      // 브랜드도 매칭 대상에 넣는다 — 여기선 브랜드가 화면에 드러나지 않으므로
+      // "호카"·"hoka" 로 브랜드만 쳐도 찾을 수 있어야 한다.
+      .filter(m => matchesTokens([m.brand, m.model, ...(m.aliases ?? [])], q))
+      .sort((a, b) => a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model));
+  }, [SHOE_MODELS, selBrand, q, brandModels.length]);
+  const otherBrandCount = otherBrandHits.length;
+  const otherBrandModels = useMemo(
+    () => otherBrandHits.slice(0, OTHER_BRAND_LIMIT),
+    [otherBrandHits],
+  );
+
   // 검색어와 정확히 일치하는 모델이 없으면 '직접 추가'(그 브랜드에 커스텀 모델).
   const exactExists = brandModels.some(m => norm(m.model) === q);
 
   // ── 검색 0건 ────────────────────────────────────────────────────────────────
   // 결과가 없으면 그 질의를 남긴다. 같은 질의를 타이핑 중에 여러 번 적재하지 않게
   // 마지막으로 남긴 질의를 기억하고, 조용히 실패한다(관측이지 기능이 아니다).
-  const noResult = q.length > 0 && brandModels.length === 0;
+  // '없는 신발' 판정은 **다른 브랜드까지 훑은 뒤**에 한다. 예전엔 선택된 브랜드에만
+  // 없으면 곧바로 없는 것으로 보고 logSearchMiss 를 쐈다 — 카탈로그에 있는 신발을
+  // 없다고 서버에 집계하고 있었던 것이다(2026-08-11).
+  const noResult = q.length > 0 && brandModels.length === 0 && otherBrandModels.length === 0;
   const loggedRef = useRef<string>('');
   const [requested, setRequested] = useState(false);
   useEffect(() => {
@@ -155,14 +187,16 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
     if (!m) return `권장 ${getRecommendedLifespanKm({brand, model})} km`;
     return `${categoryLabelKo[m.category]} · 권장 ${m.recommendedKm} km`;
   };
-  const modelRow = (brand: string, model: string, sub: string) => (
+  // withBrand: '다른 브랜드' 섹션 전용. 그쪽은 레일이 브랜드를 말해주지 않으므로
+  // 이름에 브랜드를 붙인다("Clifton 10" 만 보이면 어느 브랜드인지 알 수 없다).
+  const modelRow = (brand: string, model: string, sub: string, withBrand = false) => (
     <Pressable
       key={`${brand}-${model}`}
       onPress={() => pick(brand, model)}
       accessibilityRole="button"
       accessibilityLabel={`${brand} ${model}, ${sub}`}
       style={({pressed}) => [s.pkRow, pressed && s.pressed]}>
-      <Text numberOfLines={1} style={s.pkRowName}>{model}</Text>
+      <Text numberOfLines={1} style={s.pkRowName}>{withBrand ? `${brand} ${model}` : model}</Text>
       <Text style={s.pkRowSub}>{sub}</Text>
     </Pressable>
   );
@@ -254,8 +288,28 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
                 {brandModels.map(m => modelRow(m.brand, m.model, subFor(m.brand, m.model)))}
                 {brandModels.length === 0 && (
                   <Text style={{fontFamily: FONT, fontSize: rf(14), color: T3, marginTop: rv(6), lineHeight: rf(19)}}>
-                    “{query.trim()}” 검색 결과가 없어요.
+                    {otherBrandModels.length > 0
+                      ? `${selBrand} 에는 “${query.trim()}” 결과가 없어요.`
+                      : `“${query.trim()}” 검색 결과가 없어요.`}
                   </Text>
+                )}
+
+                {/* 다른 브랜드 — 선택된 브랜드에 없을 때만. 브랜드 우선 검색은 그대로 두되
+                    (2026-07-07 결정) 막다른 길은 만들지 않는다. 누르면 그 브랜드의
+                    신발로 바로 등록된다(레일을 다시 고를 필요 없음). */}
+                {otherBrandModels.length > 0 && (
+                  <View testID="picker-other-brands">
+                    <Text style={s.pkOtherHead}>다른 브랜드</Text>
+                    {otherBrandModels.map(m =>
+                      modelRow(m.brand, m.model, subFor(m.brand, m.model), true),
+                    )}
+                    {otherBrandCount > OTHER_BRAND_LIMIT && (
+                      // 조용히 자르지 않는다 — 몇 개가 더 있는지 말하고, 좁히는 법을 알려준다.
+                      <Text style={s.pkOtherMore}>
+                        외 {otherBrandCount - OTHER_BRAND_LIMIT}개 · 왼쪽에서 브랜드를 고르면 좁혀져요
+                      </Text>
+                    )}
+                  </View>
                 )}
                 {q.length > 0 && !exactExists && (
                   <Pressable
@@ -369,6 +423,12 @@ const s = StyleSheet.create({
   pkRow: {paddingVertical: rv(12), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: withAlpha(T1, 0.06)},
   pkRowName: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: T1, letterSpacing: -0.2},
   pkRowSub: {fontFamily: FONT, fontSize: rf(12), fontWeight: '500', color: T3, marginTop: rv(2)},
+  // '다른 브랜드' 구분 라벨 — 섹션이지 결과가 아니라는 걸 보이게 작고 조용히.
+  pkOtherHead: {
+    fontFamily: FONT, fontSize: rf(12), color: T3, letterSpacing: 0.6,
+    marginTop: rv(18), marginBottom: rv(6),
+  },
+  pkOtherMore: {fontFamily: FONT, fontSize: rf(12), color: T3, marginTop: rv(8)},
   // 0건 안내 — 강조가 아니라 안심이라 무채. '내 신발이 없어요'는 카탈로그 개선 신호를
   // 보내는 버튼이라 직접 추가와 시각적으로 구분한다(둘은 다른 행동이다).
   pkMissWrap: {paddingHorizontal: rs(4), paddingTop: rv(14), gap: rv(10)},
