@@ -9,11 +9,7 @@
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		1415864F5E793EAB9E0C8D4D /* WatchSessionModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 173792C31B98E655CA6BB81E /* WatchSessionModule.m */; };
-		A1B2C3D40001VISIONSWIFT0 /* VisionTextModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40003VISIONSWREF0 /* VisionTextModule.swift */; };
-		A1B2C3D40002VISIONOBJC00 /* VisionTextModule.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40004VISIONMMREF0 /* VisionTextModule.m */; };
 		1D2C2E1113DB93E83A09A552 /* PedometerDistanceModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F18E580F0B380430FE4DBCE /* PedometerDistanceModule.swift */; };
-		AC01C7E0000000000000001F /* ActivityRecognitionModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC01C7E0000000000000003F /* ActivityRecognitionModule.swift */; };
-		AC01C7E0000000000000002F /* ActivityRecognitionModule.m in Sources */ = {isa = PBXBuildFile; fileRef = AC01C7E0000000000000004F /* ActivityRecognitionModule.m */; };
 		1FD016C018929E07724A8819 /* Pods_SoleMate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 32DD5CD7322D8A8F57770E83 /* Pods_SoleMate.framework */; };
 		2BBCC3659AFF917CE5CD098F /* RunActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96FBF53A281B69B063512CE9 /* RunActivityAttributes.swift */; };
 		482D1634C3074355BD2B9DB7 /* Barlow-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5D21423DEB5B4B84B0F354E6 /* Barlow-Medium.ttf */; };
@@ -26,10 +22,15 @@
 		94D45B79FEFB4E08B5B336B3 /* Barlow-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CB87CDEECCE3462588478950 /* Barlow-Regular.ttf */; };
 		9DB316122F10FE302E4457FC /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F1023D5EE8A6A5A16AC7F1B /* ExpoModulesProvider.swift */; };
 		A0F56BF89B4C46768352C306 /* PretendardVariable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0523DFC08B56481FAAB32589 /* PretendardVariable.ttf */; };
+		A1B2C3D40001VISIONSWIFT0 /* VisionTextModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40003VISIONSWREF0 /* VisionTextModule.swift */; };
+		A1B2C3D40002VISIONOBJC00 /* VisionTextModule.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40004VISIONMMREF0 /* VisionTextModule.m */; };
 		A1B2C3D4E5F60718293A4B5D /* HapticModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* HapticModule.swift */; };
 		A1B2C3D4E5F60718293A4B5F /* HapticModule.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5E /* HapticModule.m */; };
 		A99592C060E1B04239C26A0F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D241C27486D3F7BF2FBE79D2 /* GoogleService-Info.plist */; };
+		AC01C7E0000000000000001F /* ActivityRecognitionModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC01C7E0000000000000003F /* ActivityRecognitionModule.swift */; };
+		AC01C7E0000000000000002F /* ActivityRecognitionModule.m in Sources */ = {isa = PBXBuildFile; fileRef = AC01C7E0000000000000004F /* ActivityRecognitionModule.m */; };
 		B24A7C1E80CD775F32E9DB1C /* LiveActivityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923265D40951BEF46E599242 /* LiveActivityModule.swift */; };
+		C0FFEE0000000000000000B3 /* KeegoComplication.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C0FFEE0000000000000000A9 /* KeegoComplication.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C4B62BCD3E4C24EBE468BC17 /* WatchSessionModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB119C642F2D1AD301E42631 /* WatchSessionModule.swift */; };
 		C63B71695312ED92E3CCA3E2 /* Pods_SoleMateWatch_Watch_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3115385E01C8AA66E52CD04 /* Pods_SoleMateWatch_Watch_App.framework */; };
 		CE4752102FEECEC400FCC92A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE47520F2FEECEC400FCC92A /* WidgetKit.framework */; };
@@ -40,7 +41,6 @@
 		FA57F0000000000000A10002 /* Jost.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FA57F0000000000000A10001 /* Jost.ttf */; };
 		FE30A99D1AD1D3D691B196A3 /* LiveActivityModule.m in Sources */ = {isa = PBXBuildFile; fileRef = C87CE683AB3104A6AB2E5968 /* LiveActivityModule.m */; };
 		KEE60A11EE60A11EE60A0001 /* SoleMateWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		C0FFEE0000000000000000B3 /* KeegoComplication.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C0FFEE0000000000000000A9 /* KeegoComplication.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,19 +51,19 @@
 			remoteGlobalIDString = CE19A1E62FF150740030FFF0;
 			remoteInfo = "SoleMateWatch Watch App";
 		};
-		CE4752212FEECEC500FCC92A /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = CE47520D2FEECEC400FCC92A;
-			remoteInfo = RunActivityExtension;
-		};
 		C0FFEE0000000000000000B5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = C0FFEE0000000000000000A1;
 			remoteInfo = KeegoComplication;
+		};
+		CE4752212FEECEC500FCC92A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CE47520D2FEECEC400FCC92A;
+			remoteInfo = RunActivityExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -79,17 +79,6 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		CE4752282FEECEC500FCC92A /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				CE4752232FEECEC500FCC92A /* RunActivityExtension.appex in Embed Foundation Extensions */,
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		C0FFEE0000000000000000B2 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -101,12 +90,21 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CE4752282FEECEC500FCC92A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CE4752232FEECEC500FCC92A /* RunActivityExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		00D679160E67979080F725FA /* PedometerDistanceModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/PedometerDistanceModule.m; sourceTree = "<group>"; };
-		AC01C7E0000000000000003F /* ActivityRecognitionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/ActivityRecognitionModule.swift; sourceTree = "<group>"; };
-		AC01C7E0000000000000004F /* ActivityRecognitionModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/ActivityRecognitionModule.m; sourceTree = "<group>"; };
 		0523DFC08B56481FAAB32589 /* PretendardVariable.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = PretendardVariable.ttf; path = ../assets/fonts/PretendardVariable.ttf; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* SoleMate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SoleMate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SoleMate/Images.xcassets; sourceTree = "<group>"; };
@@ -121,8 +119,6 @@
 		5D13D234F4E1B2B118314B9C /* SoleMate.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = SoleMate.debug.xcconfig; sourceTree = "<group>"; };
 		5D21423DEB5B4B84B0F354E6 /* Barlow-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Barlow-Medium.ttf"; path = "../assets/fonts/Barlow-Medium.ttf"; sourceTree = "<group>"; };
 		5F1023D5EE8A6A5A16AC7F1B /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-SoleMate/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		A1B2C3D40003VISIONSWREF0 /* VisionTextModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/VisionTextModule.swift; sourceTree = "<group>"; };
-		A1B2C3D40004VISIONMMREF0 /* VisionTextModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/VisionTextModule.m; sourceTree = "<group>"; };
 		5F18E580F0B380430FE4DBCE /* PedometerDistanceModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/PedometerDistanceModule.swift; sourceTree = "<group>"; };
 		693862A40B02D61A30575D6E /* Pods-SoleMateWatch Watch App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SoleMateWatch Watch App.debug.xcconfig"; path = "Target Support Files/Pods-SoleMateWatch Watch App/Pods-SoleMateWatch Watch App.debug.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SoleMate/AppDelegate.swift; sourceTree = "<group>"; };
@@ -130,11 +126,16 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = SoleMate/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		923265D40951BEF46E599242 /* LiveActivityModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/LiveActivityModule.swift; sourceTree = SOURCE_ROOT; };
 		96FBF53A281B69B063512CE9 /* RunActivityAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RunActivity/RunActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
+		A1B2C3D40003VISIONSWREF0 /* VisionTextModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/VisionTextModule.swift; sourceTree = "<group>"; };
+		A1B2C3D40004VISIONMMREF0 /* VisionTextModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/VisionTextModule.m; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5C /* HapticModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/HapticModule.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5E /* HapticModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/HapticModule.m; sourceTree = "<group>"; };
 		A3115385E01C8AA66E52CD04 /* Pods_SoleMateWatch_Watch_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SoleMateWatch_Watch_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC01C7E0000000000000003F /* ActivityRecognitionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/ActivityRecognitionModule.swift; sourceTree = "<group>"; };
+		AC01C7E0000000000000004F /* ActivityRecognitionModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/ActivityRecognitionModule.m; sourceTree = "<group>"; };
 		B78BFCE8B429A25D4F1E45EE /* Pods-SoleMateWatch Watch App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SoleMateWatch Watch App.release.xcconfig"; path = "Target Support Files/Pods-SoleMateWatch Watch App/Pods-SoleMateWatch Watch App.release.xcconfig"; sourceTree = "<group>"; };
 		BB119C642F2D1AD301E42631 /* WatchSessionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/WatchSessionModule.swift; sourceTree = "<group>"; };
+		C0FFEE0000000000000000A9 /* KeegoComplication.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KeegoComplication.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C87CE683AB3104A6AB2E5968 /* LiveActivityModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/LiveActivityModule.m; sourceTree = SOURCE_ROOT; };
 		CB87CDEECCE3462588478950 /* Barlow-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Barlow-Regular.ttf"; path = "../assets/fonts/Barlow-Regular.ttf"; sourceTree = "<group>"; };
 		CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SoleMateWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -145,10 +146,16 @@
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F140792D3E517E002AEDD348 /* SoleMate.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = SoleMate.release.xcconfig; sourceTree = "<group>"; };
 		FA57F0000000000000A10001 /* Jost.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = Jost.ttf; path = ../assets/fonts/Jost.ttf; sourceTree = "<group>"; };
-		C0FFEE0000000000000000A9 /* KeegoComplication.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KeegoComplication.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C0FFEE0000000000000000B1 /* Exceptions for "KeegoComplication" folder in "KeegoComplication" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C0FFEE0000000000000000A1 /* KeegoComplication */;
+		};
 		CE19A2AA2FF150740030FFF0 /* Exceptions for "SoleMateWatch Watch App" folder in "SoleMateWatch Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -163,16 +170,21 @@
 			);
 			target = CE47520D2FEECEC400FCC92A /* RunActivityExtension */;
 		};
-		C0FFEE0000000000000000B1 /* Exceptions for "KeegoComplication" folder in "KeegoComplication" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = C0FFEE0000000000000000A1 /* KeegoComplication */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		C0FFEE0000000000000000A8 /* KeegoComplication */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C0FFEE0000000000000000B1 /* Exceptions for "KeegoComplication" folder in "KeegoComplication" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = KeegoComplication;
+			sourceTree = "<group>";
+		};
 		CE19A1EB2FF150740030FFF0 /* SoleMateWatch Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -197,18 +209,6 @@
 			path = RunActivity;
 			sourceTree = "<group>";
 		};
-		C0FFEE0000000000000000A8 /* KeegoComplication */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				C0FFEE0000000000000000B1 /* Exceptions for "KeegoComplication" folder in "KeegoComplication" target */,
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = KeegoComplication;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -217,6 +217,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				1FD016C018929E07724A8819 /* Pods_SoleMate.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE0000000000000000A6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -234,13 +241,6 @@
 			files = (
 				CE4752122FEECEC400FCC92A /* SwiftUI.framework in Frameworks */,
 				CE4752102FEECEC400FCC92A /* WidgetKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		C0FFEE0000000000000000A6 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -396,6 +396,26 @@
 			productReference = 13B07F961A680F5B00A75B9A /* SoleMate.app */;
 			productType = "com.apple.product-type.application";
 		};
+		C0FFEE0000000000000000A1 /* KeegoComplication */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0FFEE0000000000000000A2 /* Build configuration list for PBXNativeTarget "KeegoComplication" */;
+			buildPhases = (
+				C0FFEE0000000000000000A5 /* Sources */,
+				C0FFEE0000000000000000A6 /* Frameworks */,
+				C0FFEE0000000000000000A7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C0FFEE0000000000000000A8 /* KeegoComplication */,
+			);
+			name = KeegoComplication;
+			productName = KeegoComplication;
+			productReference = C0FFEE0000000000000000A9 /* KeegoComplication.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		CE19A1E62FF150740030FFF0 /* SoleMateWatch Watch App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CE19A1F72FF150740030FFF0 /* Build configuration list for PBXNativeTarget "SoleMateWatch Watch App" */;
@@ -439,26 +459,6 @@
 			name = RunActivityExtension;
 			productName = RunActivityExtension;
 			productReference = CE47520E2FEECEC400FCC92A /* RunActivityExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
-		C0FFEE0000000000000000A1 /* KeegoComplication */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = C0FFEE0000000000000000A2 /* Build configuration list for PBXNativeTarget "KeegoComplication" */;
-			buildPhases = (
-				C0FFEE0000000000000000A5 /* Sources */,
-				C0FFEE0000000000000000A6 /* Frameworks */,
-				C0FFEE0000000000000000A7 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				C0FFEE0000000000000000A8 /* KeegoComplication */,
-			);
-			name = KeegoComplication;
-			productName = KeegoComplication;
-			productReference = C0FFEE0000000000000000A9 /* KeegoComplication.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -521,6 +521,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0FFEE0000000000000000A7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CE19A1E52FF150740030FFF0 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -529,13 +536,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		CE47520C2FEECEC400FCC92A /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		C0FFEE0000000000000000A7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -752,6 +752,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0FFEE0000000000000000A5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CE19A1E32FF150740030FFF0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -767,13 +774,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		C0FFEE0000000000000000A5 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -783,15 +783,15 @@
 			target = CE19A1E62FF150740030FFF0 /* SoleMateWatch Watch App */;
 			targetProxy = 02DCFDD6D54605C8B8A20347 /* PBXContainerItemProxy */;
 		};
-		CE4752222FEECEC500FCC92A /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = CE47520D2FEECEC400FCC92A /* RunActivityExtension */;
-			targetProxy = CE4752212FEECEC500FCC92A /* PBXContainerItemProxy */;
-		};
 		C0FFEE0000000000000000B4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C0FFEE0000000000000000A1 /* KeegoComplication */;
 			targetProxy = C0FFEE0000000000000000B5 /* PBXContainerItemProxy */;
+		};
+		CE4752222FEECEC500FCC92A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CE47520D2FEECEC400FCC92A /* RunActivityExtension */;
+			targetProxy = CE4752212FEECEC500FCC92A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1072,6 +1072,77 @@
 			};
 			name = Release;
 		};
+		C0FFEE0000000000000000A3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_ENTITLEMENTS = KeegoComplication/KeegoComplication.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 24;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = LTWYG63SY7;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KeegoComplication/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Keego;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
+				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app.watchkitapp.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
+		C0FFEE0000000000000000A4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_ENTITLEMENTS = KeegoComplication/KeegoComplication.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 24;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = LTWYG63SY7;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KeegoComplication/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Keego;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
+				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app.watchkitapp.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
 		CE19A1F52FF150740030FFF0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 693862A40B02D61A30575D6E /* Pods-SoleMateWatch Watch App.debug.xcconfig */;
@@ -1276,75 +1347,6 @@
 			};
 			name = Release;
 		};
-		C0FFEE0000000000000000A3 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = "KeegoComplication/KeegoComplication.entitlements";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 24;
-				DEVELOPMENT_TEAM = LTWYG63SY7;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "KeegoComplication/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Keego;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app.watchkitapp.widget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 11.0;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-			};
-			name = Debug;
-		};
-		C0FFEE0000000000000000A4 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = "KeegoComplication/KeegoComplication.entitlements";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 24;
-				DEVELOPMENT_TEAM = LTWYG63SY7;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "KeegoComplication/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Keego;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app.watchkitapp.widget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 11.0;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1366,6 +1368,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		C0FFEE0000000000000000A2 /* Build configuration list for PBXNativeTarget "KeegoComplication" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0FFEE0000000000000000A3 /* Debug */,
+				C0FFEE0000000000000000A4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		CE19A1F72FF150740030FFF0 /* Build configuration list for PBXNativeTarget "SoleMateWatch Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1380,15 +1391,6 @@
 			buildConfigurations = (
 				CE4752262FEECEC500FCC92A /* Debug */,
 				CE4752272FEECEC500FCC92A /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		C0FFEE0000000000000000A2 /* Build configuration list for PBXNativeTarget "KeegoComplication" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				C0FFEE0000000000000000A3 /* Debug */,
-				C0FFEE0000000000000000A4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
