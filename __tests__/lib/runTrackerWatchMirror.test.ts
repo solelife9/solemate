@@ -137,8 +137,59 @@ describe('★ 새 러닝이 지난 거리에서 시작하지 않는다', () => {
     expect(t.getDistanceSource()).toBe('phone');
 
     // 지난 런보다 작은 값도 정상 채택돼야 한다(누적 기준이 리셋됐으므로).
-    t.feedWatchDistance(0.3, now + S);
+    // ⚠️ 시각을 현실적으로 준다(2026-08-12). 예전엔 시작 1초 뒤에 0.3km 를 먹였는데
+    //    그건 300 m/s 라 사람이 낼 수 없는 값이고, 아래 새 스위트가 잡는 **물려받은
+    //    거리**와 구분이 안 된다. 120초 뒤 0.3km = 2.5 m/s 로 바꿔 의도만 남긴다.
+    t.feedWatchDistance(0.3, now + 120 * S);
     expect(t.getDistanceKm()).toBeCloseTo(0.3, 6);
+  });
+});
+
+// ── 2026-08-12 실기기 사고 ────────────────────────────────────────────────────
+// 민우님: "0.3km 달리고 앱을 껐다가 다시 달리면 0.3km 부터 시작해."
+//
+// 위 스위트가 이미 '새 러닝이 지난 거리에서 시작하지 않는다'를 지키고 있었는데도 났다.
+// 이유는 그 테스트가 **폰 쪽만** 봤기 때문이다 — start() 는 watchKm 을 지우지만, 정작
+// **워치의 누적은 안 지워진다.** 워치 앱은 `guard phase == .idle else { return }` 이라
+// 이미 워크아웃 중이면 폰의 시작 요청을 조용히 무시하고 옛 누적을 계속 보낸다.
+//
+// 실제 저장된 기록(아이폰): 0.28km/25초 · 0.31km/16초 · 0.36km/7초 · 0.45km/3초.
+// 거리는 워치 것, 시간은 폰의 새 시계라 0'06"/km 같은 기록이 남았다.
+describe('★ 워치가 들고 있던 남의 거리를 물려받지 않는다', () => {
+  test('시작 직후 도착한 불가능한 누적은 기준점으로만 쓴다', () => {
+    const t = mk();
+    // 시작 3초 만에 0.45km = 150 m/s. 이 러닝에서 달린 거리일 수 없다.
+    t.feedWatchDistance(0.45, now + 3 * S);
+    expect(t.getDistanceKm()).toBe(0);
+  });
+
+  test('그 뒤 워치가 늘어난 만큼만 이 러닝에 쌓인다', () => {
+    const t = mk();
+    t.feedWatchDistance(0.45, now + 3 * S);   // 물려받은 누적(기준점)
+    t.feedWatchDistance(0.75, now + 180 * S); // 이 러닝에서 300m 더 갔다
+    expect(t.getDistanceKm()).toBeCloseTo(0.3, 6);
+  });
+
+  test('정상적으로 새 워크아웃이 시작된 경우엔 예전과 동작이 같다', () => {
+    const t = mk();
+    // 워치가 제대로 리셋됐으면 첫 값이 작다 — 기준은 0 이고 워치가 곧 기록자다.
+    t.feedWatchDistance(0.02, now + 10 * S);
+    expect(t.getDistanceKm()).toBeCloseTo(0.02, 6);
+    t.feedWatchDistance(1.5, now + 400 * S);
+    expect(t.getDistanceKm()).toBeCloseTo(1.5, 6);
+  });
+
+  test('워치가 러닝 도중 워크아웃을 새로 시작해도 거리가 뒤로 가지 않는다', () => {
+    const t = mk();
+    t.feedWatchDistance(0.02, now + 10 * S);
+    t.feedWatchDistance(2.0, now + 600 * S);
+    expect(t.getDistanceKm()).toBeCloseTo(2.0, 6);
+    // 워치 재시작 — 누적이 0.05 로 떨어진다. 되돌아가면 안 된다(Iron Law).
+    t.feedWatchDistance(0.05, now + 610 * S);
+    expect(t.getDistanceKm()).toBeCloseTo(2.0, 6);
+    // 재시작 이후의 증가분은 다시 쌓인다.
+    t.feedWatchDistance(0.55, now + 800 * S);
+    expect(t.getDistanceKm()).toBeGreaterThanOrEqual(2.0);
   });
 });
 

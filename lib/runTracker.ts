@@ -23,6 +23,15 @@ import {DistanceSmoother} from './distanceSmoother';
 import {calcDist, acceptSegment, segmentSpeedMps} from './geo';
 import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS, PACE_TRACK_MIN_STEP_KM, STEP_SIGNAL_FRESH_MS, STEP_STILL_GATE_MS, STEP_GATE_MAX_SPEED_MPS, AUTO_PAUSE_STEP_STALL_MS, AUTO_PAUSE_BACKDATE_CAP_MS, AUTO_PAUSE_STEP_MAX_KALMAN_MPS, AUTO_RESUME_SPEED_MPS} from './engineConstants';
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
+
+/**
+ * 워치의 **첫 표본**을 "이 러닝의 것"으로 믿을 수 있는 최대 속도(m/s).
+ *
+ * 8 m/s = 2'05"/km. 사람이 러닝 내내 낼 수 없는 속도이므로, 러닝 시작 후 t 초 만에
+ * 워치가 이보다 빠른 누적을 보고하면 그건 **이전 워크아웃에서 물려받은 거리**다.
+ * (2026-08-12 실측: 3초 만에 0.45km = 150 m/s, 25초에 0.28km = 11.2 m/s.)
+ */
+const WATCH_SEED_MAX_MPS = 8;
 import {
   feedVehicleSample,
   initVehicleState,
@@ -423,6 +432,7 @@ class RunTracker {
     // 워치 미러링 상태 — 새 런에서 반드시 지운다. 안 지우면 직전 러닝의 누적 거리가
     // 남아 "워치 값이 현재보다 크면 채택" 규칙에 걸려 **새 런이 지난 거리에서 시작**한다.
     this.watchKm = 0;
+    this.watchBaseKm = -1;
     this.watchAtMs = 0;
     this.smoother = new DistanceSmoother();
     this.pts = [];
@@ -1088,6 +1098,21 @@ class RunTracker {
 
   /** 워치가 마지막으로 알려 준 거리(km). 0 = 아직 없음. */
   private watchKm = 0;
+  /**
+   * 이 러닝이 시작될 때 워치가 이미 들고 있던 누적 거리(km). -1 = 아직 첫 표본 전.
+   *
+   * 왜 필요한가 (2026-08-12 실기기 사고)
+   * ------------------------------------------------------------------------
+   * 워치 워크아웃은 **폰 앱과 수명이 다르다.** 폰을 강제 종료했다 켜고 새 러닝을 시작해도
+   * 워치는 이전 워크아웃의 누적 거리를 계속 들고 있다. 그 값을 그대로 받으면 새 러닝이
+   * 남의 거리를 물려받는다 — 민우님 실측: 0.3km 달리고 앱을 끈 뒤 다시 시작하니
+   * **0.3km 부터 시작**했고, 반복하며 0.28→0.31→0.36→0.43→0.45 로 계속 불어났다.
+   * 시간은 폰의 새 시계라 3초짜리 0.45km(0'06"/km) 같은 기록이 남았다.
+   *
+   * 그래서 워치가 주는 것은 **누적**이 아니라 **이 러닝에서 늘어난 몫**으로 읽는다.
+   * 워치가 제대로 새 워크아웃을 시작한 정상 경우엔 기준이 0 이라 예전과 결과가 같다.
+   */
+  private watchBaseKm = -1;
   /** 그 값이 도착한 시각(ms). 0 = 아직 없음. */
   private watchAtMs = 0;
 
@@ -1119,9 +1144,29 @@ class RunTracker {
     if (!Number.isFinite(km) || km <= 0) return;
     const now = atMs ?? this.now();
     this.watchAtMs = now;           // 값을 안 쓰더라도 '워치가 살아 있다'는 사실은 갱신한다
-    if (km <= this.watchKm) return; // 워치 누적은 단조 — 역행 표본은 버린다
+    // ① 이 러닝의 첫 표본 — **이 시간 안에 달릴 수 없는 거리면 남의 것이다.**
+    //    워치가 제대로 새 워크아웃을 시작했다면 첫 값은 작고, 기준은 0 이 되어
+    //    "워치가 기록자"라는 기존 계약이 그대로 유지된다(runTrackerWatchMirror 스위트).
+    if (this.watchBaseKm < 0) {
+      const dtSec = this.t0 > 0 ? (now - this.t0) / 1000 : 0;
+      const impossible = dtSec > 0 && km * 1000 > dtSec * WATCH_SEED_MAX_MPS;
+      this.watchBaseKm = impossible ? km : 0;
+      this.watchKm = km;
+      if (!impossible && km > this.dist) this.dist = km;
+      return;
+    }
+    // ② 누적이 줄었다 = 워치가 워크아웃을 새로 시작했다. 기준을 다시 잡고 이어 간다
+    //    (거리를 되돌리지 않는다 — 화면의 거리가 뒤로 가면 기록이 사라진 것으로 읽힌다).
+    if (km < this.watchKm) {
+      this.watchBaseKm = km;
+      this.watchKm = km;
+      return;
+    }
+    if (km === this.watchKm) return; // 같은 표본
     this.watchKm = km;
-    if (km > this.dist) this.dist = km;  // 절대 줄이지 않는다
+    // ③ 워치가 기여하는 것은 **이 러닝에서 늘어난 몫**이다.
+    const gained = km - this.watchBaseKm;
+    if (gained > this.dist) this.dist = gained;  // 절대 줄이지 않는다
   }
 
   /**
