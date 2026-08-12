@@ -113,25 +113,30 @@ Apple Watch 가 연결된 경우에만 심박이 표시됩니다. 없으면 '--'
 | 앱 이름 | **Keego — 러닝 & 러닝화** | 확정(2026-07-21) |
 | 카테고리 | 건강 및 피트니스 | |
 | 연령 등급 | 4+ 예상 — 폭력·성인물·도박 없음. **설문은 콘솔에서 직접** | 👤 |
-| Support URL | 〔  〕 **미정 — 아래 §6** | 👤 |
-| Marketing URL | 선택 사항 | |
-| 개인정보처리방침 URL | 〔  〕 **필수** | 👤 |
+| Support URL | `https://solelife9.github.io/keego-legal/support.html` | ✅ 200 확인 |
+| Marketing URL | 선택 사항 — 비워도 된다 | |
+| 개인정보처리방침 URL | `https://solelife9.github.io/keego-legal/privacy.html` | ✅ 200 · **단 내용이 낡음 → `00` 최상단** |
 | 저작권 | 〔연도〕 김민우 | |
 | 수출 규정 | 표준 암호화(HTTPS)만 사용 → **면제 해당** 여부 확인 | 👤 |
 
 ---
 
-## 6. 아직 정해지지 않은 것 — Support URL / 처리방침 URL
+## 6. URL — 이미 다 있다 (2026-08-13 확인)
 
-두 URL 은 **필수**이고 아직 없다. 선택지:
+**감사 문서에 남아 있던 "GitHub Pages 404" 는 해소된 항목이다.** 네 페이지 모두 200 응답.
 
-1. **GitHub Pages** — 저장소에 정적 페이지를 두고 공개. 무료·즉시.
-   (과거 시도에서 404 가 났던 이력이 있으니 실제 접속을 확인해야 한다.)
-2. **Notion 공개 페이지** — 가장 빠르다. 다만 도메인이 notion.site 라 신뢰도가 낮다.
-3. **도메인 + 정적 호스팅** — 가장 반듯하다. 도메인 비용 발생.
+| 용도 | URL |
+|---|---|
+| Support | `https://solelife9.github.io/keego-legal/support.html` |
+| 개인정보처리방침 | `https://solelife9.github.io/keego-legal/privacy.html` |
+| 이용약관 | `https://solelife9.github.io/keego-legal/terms.html` |
+| 계정·데이터 삭제 | `https://solelife9.github.io/keego-legal/delete-account.html` |
 
-**권한다: 1번**. 저장소에 이미 문서가 있어 관리가 한 곳에서 된다.
-페이지 내용 초안은 `04-지원-페이지.md` 에 있다.
+앱 안의 상수도 같은 주소를 가리킨다(`lib/legalLinks.ts`).
+
+> ⚠️ **다만 처리방침·약관의 *내용*이 낡았다** — 공개본이 8/4 판이고 8/7 개정이 안 올라갔다.
+> 배포 방법은 `00-출시-작업-목록.md` 최상단. **URL 은 있는데 내용이 틀린 상태**라
+> 404 보다 오히려 위험하다(폼은 채워지지만 심사에서 불일치로 걸린다).
 
 ---
 
