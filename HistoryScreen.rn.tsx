@@ -11,7 +11,7 @@ import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Svg, { Rect as SvgRect, Path as SvgPath, Line as SvgLine } from 'react-native-svg';
+import Svg, { Rect as SvgRect, Path as SvgPath, Line as SvgLine, Defs as SvgDefs, LinearGradient as SvgLinearGradient, Stop as SvgStop, Mask as SvgMask } from 'react-native-svg';
 import {
   BG, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, MOTION, HERO, HR_ZONE_COLORS, TYPE,
   BAR,
@@ -38,6 +38,9 @@ import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './l
 import { useBackClose } from './lib/backStack';
 import { loadDistanceRef, distanceRefLine } from './lib/distanceRef';
 import ShareCardPicker from './ShareCardPicker';
+// 러닝 탐색 뷰(전체화면 확대·스크럽) — 이 화면의 심박 카드를 탭하면 열린다.
+import RunTimeline from './RunTimeline.rn';
+import {toPoints, hasCurve, type Metric, type Range as TlRange} from './lib/timeline';
 
 // ── manual-run / edit form helpers ──────────────────────────────────────────
 // 소요 시간 입력은 'MM:SS'·'H:MM:SS'(또는 분 단위 숫자)를 초로 변환한다. 빈 값/파싱 불가 → 0.
@@ -77,8 +80,6 @@ export type PeriodChart = { title: string; data: number[]; labels: string[] };
 
 const PERIODS = ['주', '월', '년', '전체'];
 const EMPTY_SUMMARY: PeriodSummary = { km: '0', runs: 0, pace: '--', time: '--' };
-// 심박 곡선 접이식 선택 영속 키(심사 #19, 2026-07-22).
-const HR_CURVE_OPEN_KEY = 'hr_curve_open_v1';
 
 // ── bar chart with right-side km gridlines ────────────────────────────────────
 export function PeriodChartView({ data, labels, unit }: { data: number[]; labels: string[]; unit: Unit }) {
@@ -182,6 +183,54 @@ export interface GpxFill extends ImportedRunExtras {
 // 초로, 날짜는 'YYYY-MM-DD'로 받는다. 신발은 칩으로 고른다(편집 시 원래 신발이 프리필).
 // 수동 추가/편집 폼. initial=null → 추가 모드. 외부 노출은 수용 테스트가 폼 자체(KeyboardAvoiding
 // View·인라인 검증)를 직접 검증하기 위함(추가 진입 버튼은 e67930f 에서 제거됨 — 폼은 편집에 잔존).
+/**
+ * 상세 카드의 작은 심박 곡선 — **읽는 게 아니라 알아보는 용도**다.
+ * 존 색으로 채워 "대체로 어느 강도였나"만 전달하고, 정밀 판독은 탐색 뷰가 맡는다.
+ * 축·눈금·라벨을 일부러 두지 않았다(카드가 다시 복잡해지지 않게).
+ */
+function HrSpark({points, bounds}: {points: {t: number; v: number}[]; bounds: Record<number, number>}) {
+  const W = 300, H = 62, TOP = 5, BOT = 5;
+  if (points.length < 2) return null;
+  const vs = points.map(p => p.v);
+  const lo = Math.min(...vs), hi = Math.max(...vs);
+  const span = hi - lo || 1;
+  const tMax = points[points.length - 1].t || 1;
+  // 표본이 많으면 솎는다 — 작은 그림에 1,000점을 그릴 이유가 없다.
+  const step = Math.max(1, Math.ceil(points.length / 120));
+  const pts = points.filter((_, i) => i % step === 0);
+  const X = (p: {t: number}) => (p.t / tMax) * W;
+  const Y = (p: {v: number}) => TOP + (1 - (p.v - lo) / span) * (H - TOP - BOT);
+  let d = `M${X(pts[0]).toFixed(1)},${Y(pts[0]).toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    d += `C${(X(p1) + (X(p2) - X(p0)) / 6).toFixed(1)},${(Y(p1) + (Y(p2) - Y(p0)) / 6).toFixed(1)}`
+      + ` ${(X(p2) - (X(p3) - X(p1)) / 6).toFixed(1)},${(Y(p2) - (Y(p3) - Y(p1)) / 6).toFixed(1)}`
+      + ` ${X(p2).toFixed(1)},${Y(p2).toFixed(1)}`;
+  }
+  const stops: React.ReactElement[] = [];
+  ([5, 4, 3, 2, 1] as HRZone[]).forEach(z => {
+    const zh = Math.min(z === 5 ? hi : bounds[z + 1], hi);
+    const zl = Math.max(z === 1 ? lo : bounds[z], lo);
+    if (zh <= zl) return;
+    stops.push(<SvgStop key={`${z}a`} offset={`${((hi - zh) / span) * 100}%`} stopColor={HR_ZONE_COLORS[z]} />);
+    stops.push(<SvgStop key={`${z}b`} offset={`${((hi - zl) / span) * 100}%`} stopColor={HR_ZONE_COLORS[z]} />);
+  });
+  return (
+    <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+      <SvgDefs>
+        <SvgLinearGradient id="sparkZone" x1="0" y1="0" x2="0" y2="1">{stops}</SvgLinearGradient>
+        <SvgLinearGradient id="sparkFade" x1="0" y1="0" x2="0" y2="1">
+          <SvgStop offset="0%" stopColor={T1} stopOpacity={0.62} />
+          <SvgStop offset="100%" stopColor={T1} stopOpacity={0.04} />
+        </SvgLinearGradient>
+        <SvgMask id="sparkMask"><SvgRect x={0} y={0} width={W} height={H} fill="url(#sparkFade)" /></SvgMask>
+      </SvgDefs>
+      <SvgPath d={`${d}L${W},${H}L0,${H}Z`} fill="url(#sparkZone)" mask="url(#sparkMask)" />
+      <SvgPath d={d} fill="none" stroke={T1} strokeWidth={1.6} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 export function RunForm({
   shoes, unit, initial, onCancel, onSubmit, onPickGpx,
 }: {
@@ -463,6 +512,17 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
   }, [trackMeta]);
   // GAP(경사보정페이스)용 (거리,경과초,고도) 시계열(gapTrack_<id>, App.onSave가 영속). 있으면
   // 스무딩→지형스케일 빈평균→Minetti 로 평지 등가 페이스를 낸다. 없으면(옛 런/평지/고도無) null.
+  // 페이스 시계열(paceTrack_<id>, 누적 km + 경과초) — 탐색 뷰의 페이스 레인이 쓴다.
+  // 이 화면은 지금까지 이걸 안 읽었다(스플릿 표로 충분했으므로). 곡선이 필요해져 붙인다.
+  const [paceTrack, setPaceTrack] = useState<{ d: number; t: number }[]>([]);
+  useEffect(() => {
+    let alive = true;
+    if (!run.id) { setPaceTrack([]); return; }
+    AsyncStorage.getItem('paceTrack_' + run.id)
+      .then(raw => { if (!alive) return; try { const a = raw ? JSON.parse(raw) : []; setPaceTrack(Array.isArray(a) ? a : []); } catch { setPaceTrack([]); } })
+      .catch(() => { if (alive) setPaceTrack([]); });
+    return () => { alive = false; };
+  }, [run.id]);
   const [gapTrack, setGapTrack] = useState<{ d: number; t: number; e: number }[]>([]);
   useEffect(() => {
     let alive = true;
@@ -498,15 +558,22 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
   // 심박 시계열(hrTrack_<id>, App.onSave 가 워치 HR 을 영속). 있으면 HR존 분포·평균/최대·
   // 트레이닝효과(TRIMP)를 산출한다. 워치 미연동이면 빈값 → 카드 자동 숨김.
   const [hrTrack, setHrTrack] = useState<{ t: number; bpm: number }[]>([]);
-  // 심박 곡선 접이식(심사 #19) — 기본 펼침, 사용자의 마지막 선택을 영속.
-  const [hrCurveOpen, setHrCurveOpen] = useState(true);
+  // 탐색 뷰(전체화면) 열림 상태. 심박 카드 탭 또는 스플릿 한 줄 탭으로 열린다.
+  // (접이식 곡선 상태는 폐지됐다 — 곡선이 탐색 뷰로 옮겨가 접을 대상이 없다.)
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  // 스플릿에서 진입하면 그 구간·페이스로 연다(표는 "어디가 빨랐나", 탐색은 "왜 그랬나").
+  const [timelineSeed, setTimelineSeed] = useState<{range: TlRange; metric: string} | null>(null);
+  // 케이던스 시계열(cadTrack_<id>) — 2026-08-12 이후 러닝에만 있다. 없으면 그 지표는
+  // 탐색 뷰에서 아예 안 뜬다(없는 걸 지어내지 않는다).
+  const [cadTrack, setCadTrack] = useState<{ t: number; spm: number }[]>([]);
   useEffect(() => {
     let alive = true;
-    AsyncStorage.getItem(HR_CURVE_OPEN_KEY)
-      .then(v => { if (alive && v === '0') setHrCurveOpen(false); })
-      .catch(() => {});
+    if (!run.id) { setCadTrack([]); return; }
+    AsyncStorage.getItem('cadTrack_' + run.id)
+      .then(raw => { if (!alive) return; try { const a = raw ? JSON.parse(raw) : []; setCadTrack(Array.isArray(a) ? a : []); } catch { setCadTrack([]); } })
+      .catch(() => { if (alive) setCadTrack([]); });
     return () => { alive = false; };
-  }, []);
+  }, [run.id]);
   useEffect(() => {
     let alive = true;
     if (!run.id) { setHrTrack([]); return; }
@@ -535,6 +602,40 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
     const load = rest ? trimp(total, avg, maxHR, rest, sex) : 0;
     return { secs, total, avg, max, maxHR, rest, load, bounds: zoneBoundaries(maxHR, rest) };
   }, [hrTrack, age, restHR, sex]);
+  // 탐색 뷰가 먹는 형태로 옮긴다(lib/timeline). 저장 데이터를 믿지 않고 걸러 낸다.
+  const hrPoints = useMemo(() => toPoints(hrTrack, r => ({t: r.t, v: r.bpm})), [hrTrack]);
+  const pacePoints = useMemo(() => {
+    // paceTrack 은 (누적 km, 경과초) 라 인접 두 점의 차이가 그 구간 페이스(초/km)다.
+    const out: {t: number; v: number}[] = [];
+    for (let i = 1; i < paceTrack.length; i++) {
+      const dd = paceTrack[i].d - paceTrack[i - 1].d;
+      const dt = paceTrack[i].t - paceTrack[i - 1].t;
+      if (dd > 0 && dt > 0) out.push({t: paceTrack[i].t, v: dt / dd});
+    }
+    return out;
+  }, [paceTrack]);
+  const elevPoints = useMemo(() => toPoints(gapTrack, r => ({t: r.t, v: r.e})), [gapTrack]);
+  const cadPoints = useMemo(() => toPoints(cadTrack, r => ({t: r.t, v: r.spm})), [cadTrack]);
+  /** 그릴 수 있는 지표만 넘긴다 — 표본이 없는 지표는 탐색 뷰에서 아예 안 뜬다. */
+  const tlMetrics = useMemo<Metric[]>(() => {
+    const all: Metric[] = [
+      {key: 'hr', name: '심박', unit: 'bpm', points: hrPoints},
+      {key: 'pace', name: '페이스', unit: '/km', points: pacePoints, invert: true},
+      {key: 'elev', name: '고도', unit: 'm', points: elevPoints},
+      {key: 'cad', name: '케이던스', unit: 'spm', points: cadPoints},
+    ];
+    return all.filter(hasCurve);
+  }, [hrPoints, pacePoints, elevPoints, cadPoints]);
+  /** 카드에 적을 상위 2개 존 — 한 줄로 "이 러닝의 성격"을 말한다. */
+  const topZones = useMemo<HRZone[]>(() => {
+    if (!hr) return [];
+    return ([1, 2, 3, 4, 5] as HRZone[])
+      .filter(z => hr.secs[z] > 0)
+      .sort((a, b) => hr.secs[b] - hr.secs[a])
+      .slice(0, 2);
+  }, [hr]);
+  const fmtZ = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
+
   // 이 러닝의 트레이닝 부하(스트라바 'Relative Effort') — 심박(안정심박 有)이면 TRIMP,
   // 아니면 페이스 기반 rTSS(임계페이스 기준). 둘 다 불가(타임·체력 없음)면 null → 카드 숨김.
   const effort = useMemo(() => {
@@ -719,136 +820,45 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
             </View>
           );
         })()}
-        {/* 심박 존 — 워치 심박(hrTrack)이 있을 때만. 존별 구간시간 + 평균/최대 + 트레이닝효과(TRIMP).
-            나이(최대심박 추정)·안정심박(Karvonen)이 있으면 더 정확. 없어도 190 폴백으로 동작. */}
-        {hr && (() => {
-          const fmtT = (sec: number) => { const m = Math.floor(sec / 60); const ss = Math.round(sec % 60); return `${m}:${String(ss).padStart(2, '0')}`; };
-          return (
-            <View
-              style={[s.card, { paddingHorizontal: rs(16), paddingVertical: rv(16), marginTop: rv(12) }]}>
-              <GlassEdge glints={false} radius={RADIUS.lg} />
-              {/* accessible 붕괴 제거(2026-07-05 a11y): 카드를 한 요소로 묶으면 Z1~Z5
-                  존별 체류 시간이 낭독 안 됐다. 제목·평균/최대·각 존 행이 텍스트라
-                  개별 낭독되게 둔다(존 색은 Z{n} 라벨·시간 텍스트로 병기됨). */}
-              {/* 헤더 탭 = 곡선 접기/펼치기(심사 #19, 2026-07-22) — 곡선과 존 막대가 한
-                  데이터의 이중 표현이라, 밀도를 스스로 고를 수 있게 곡선을 접이식으로.
-                  기본 펼침 + 선택 영속(다음 상세에서도 내 선택 유지). 존 막대는 항상 표시. */}
-              <Tap
-                onPress={() => { const v = !hrCurveOpen; setHrCurveOpen(v); void AsyncStorage.setItem(HR_CURVE_OPEN_KEY, v ? '1' : '0').catch(() => {}); }}
-                accessibilityRole="button"
-                accessibilityLabel={hrCurveOpen ? '심박 그래프 접기' : '심박 그래프 펼치기'}
-                accessibilityState={{ expanded: hrCurveOpen }}
-                style={s.rowBetweenBaseline}>
-                <View style={s.rowCenterGap4}>
-                  <Text style={s.cardTitle}>심박 존</Text>
-                  {hrTrack.length >= 2 && (
-                    <Ionicons name={hrCurveOpen ? 'chevron-up' : 'chevron-down'} size={ri(ICON.tag)} color={T3} />
-                  )}
-                </View>
-                <Text style={s.labelT2}>
-                  평균 <Text style={s.t1Bold}>{hr.avg}</Text> · 최대 <Text style={s.t1Bold}>{hr.max}</Text> bpm
-                </Text>
-              </Tap>
-              {/* 심박 곡선(#7) — 존 색 밴드 위 흰 라인. 페이스 곡선과 달리 밴드라는 절대
-                  기준이 배경에 깔려 '어느 존인가'가 색으로 즉답된다. hrTrack 2점 이상일 때만. */}
-              {hrCurveOpen && hrTrack.length >= 2 && (() => {
-                const W = 300, H = 116, L = 4, R = 4, TOP = 6, BOT = 16;
-                const bpms = hrTrack.map(p => p.bpm).filter(b => b > 0);
-                if (bpms.length < 2) return null;
-                const tMax = Math.max(1, hrTrack[hrTrack.length - 1].t);
-                const realMax = Math.max(...bpms), realMin = Math.min(...bpms);
-                const yMin = Math.max(60, realMin - 8);
-                const yMax = realMax + 8;
-                const zb = hr.bounds; // {1..5} 하한 bpm
-                const zones = [
-                  { z: 5 as HRZone, lo: zb[5], hi: yMax }, { z: 4 as HRZone, lo: zb[4], hi: zb[5] },
-                  { z: 3 as HRZone, lo: zb[3], hi: zb[4] }, { z: 2 as HRZone, lo: zb[2], hi: zb[3] },
-                  { z: 1 as HRZone, lo: yMin, hi: zb[2] },
-                ];
-                const x = (t: number) => L + (t / tMax) * (W - L - R);
-                const y = (b: number) => TOP + (yMax - b) / (yMax - yMin) * (H - TOP - BOT);
-                const path = hrTrack.filter(p => p.bpm > 0)
-                  .map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.bpm).toFixed(1)}`).join('');
-                // x축 km 눈금 — gapTrack(거리·시간)으로 각 km 통과 시각을 찾아 매핑. '몇 km에
-                // 심박 몇'을 읽게 세로 그리드라인 + km 라벨. gapTrack 없으면(옛 런/평지) 생략.
-                const totalKm = Math.floor(Number(run.dist) || 0);
-                const kmTicks: { km: number; t: number; xPct: number }[] = [];
-                if (gapTrack.length >= 2) {
-                  for (let k = 1; k <= totalKm; k++) {
-                    const pt = gapTrack.find(p => p.d >= k);
-                    if (pt && pt.t > 0 && pt.t <= tMax) kmTicks.push({ km: k, t: pt.t, xPct: (x(pt.t) / W) * 100 });
-                  }
-                }
-                // accessible 로 곡선 전체를 한 요소로 묶고 수치 요약을 낭독한다 —
-                // 구 accessibilityElementsHidden 은 자식만 숨기고 자신은 요소가 아니라
-                // 라벨이 영원히 안 읽혔다(심박 데이터 0% 전달, 2026-07-24 심사 P0 #6).
-                return (
-                  <View
-                    style={s.mt12}
-                    accessible
-                    accessibilityRole="image"
-                    accessibilityLabel={`심박 곡선 그래프 — 평균 ${hr.avg}, 최고 ${hr.max} bpm`}>
-                    <View style={[s.rel, { height: H }]}>
-                      <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-                        {zones.map(zn => {
-                          const lo = Math.max(yMin, zn.lo), hi = Math.min(yMax, zn.hi);
-                          if (hi <= yMin || lo >= yMax || hi <= lo) return null;
-                          return <SvgRect key={zn.z} x={0} y={y(hi)} width={W} height={Math.max(0, y(lo) - y(hi))} fill={HR_ZONE_COLORS[zn.z]} opacity={0.11} />;
-                        })}
-                        {kmTicks.map(tk => (
-                          <SvgLine key={tk.km} x1={x(tk.t)} y1={TOP} x2={x(tk.t)} y2={H - BOT} stroke={withAlpha(T1, 0.14)} strokeWidth={1} vectorEffect="non-scaling-stroke" />
-                        ))}
-                        {/* 평균 기준선 — 점선. 골짜기(신호 대기 등)가 축 확대 탓에 과장돼 읽히는 것을
-                            평균이라는 앵커로 눌러준다(2026-07-18 실기기 피드백). */}
-                        {hr.avg > yMin && hr.avg < yMax && (
-                          <SvgLine x1={L} y1={y(hr.avg)} x2={W - R} y2={y(hr.avg)} stroke={withAlpha(T1, 0.5)} strokeWidth={1} strokeDasharray="4 5" vectorEffect="non-scaling-stroke" />
-                        )}
-                        <SvgPath d={path} fill="none" stroke={T1} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-                      </Svg>
-                      {/* y축 bpm — 실제 최대(위)·최소(아래). 곡선 위에서도 읽히게 살짝 딤 배경. */}
-                      {([[realMax, rv(1)], [realMin, y(realMin) - rv(7)]] as [number, number][]).map(([v, topPx], i) => (
-                        <Text key={i} style={[s.hrPin, s.hrPinLeft, { top: topPx }]}>{v}</Text>
-                      ))}
-                      {/* 평균 라벨 — 점선 우측 끝 위. */}
-                      {hr.avg > yMin && hr.avg < yMax && (
-                        <Text style={[s.hrPin, s.hrPinRight, { top: y(hr.avg) - rv(13) }]}>평균 {hr.avg}</Text>
-                      )}
-                    </View>
-                    {/* x축 km 라벨 — 그리드라인과 같은 위치. */}
-                    {kmTicks.length > 0 && (
-                      <View style={s.axisRow}>
-                        {kmTicks.map(tk => (
-                          <Text key={tk.km} style={[s.axisTick, { left: `${tk.xPct}%` }]}>{tk.km}</Text>
-                        ))}
-                        <Text style={s.axisRight}>km</Text>
-                      </View>
-                    )}
-                  </View>
-                );
-              })()}
-              <View style={s.mt12gap8}>
-                {([5, 4, 3, 2, 1] as HRZone[]).map((z) => {
-                  const sec = hr.secs[z];
-                  const pct = hr.total > 0 ? sec / hr.total : 0;
-                  return (
-                    <View key={z} style={s.rowCenter}>
-                      <Text style={s.zoneName}>Z{z} {HR_ZONE_LABEL[z]}</Text>
-                      <View style={s.zoneTrack}>
-                        <View style={[s.zoneFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: HR_ZONE_COLORS[z] }]} />
-                      </View>
-                      <Text style={s.zoneValue}>{fmtT(sec)}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-              {/* TRIMP(트레이닝 부하)는 위 '트레이닝 부하' 카드가 밴드까지 붙여 보여주므로 여기선
-                  중복 노출하지 않는다. 심박 존 카드는 '분포 + 평균/최대'에 집중. */}
-              {!hr.rest && (
-                <Text style={s.capT3mt8}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
-              )}
+        {/* 심박 — **조용한 카드 하나**. 파고드는 건 탭하면 열리는 탐색 뷰가 맡는다.
+            (2026-08-12) 예전엔 여기에 접이식 곡선 + Z1~Z5 막대 5줄이 다 있었다. 타임라인을
+            만들며 이 카드에 확대·스크럽까지 넣으려 했더니 한 카드에 요소가 9개가 됐고,
+            민우님이 "보기가 더 복잡해졌다"고 했다 — 맞는 말이었다. 요약 화면에 탐색 도구를
+            욱여넣은 게 원인이라 두 층으로 갈랐다(애플 건강과 같은 구조):
+              · 여기 = "어땠나"(5초) — 평균/최대 · 작은 곡선 · 존 두 줄
+              · 탐색 = "왜 그랬나"(몇 분) — 전체화면에서 확대·스크럽·지표 전환
+            결과적으로 이 카드는 **예전보다 짧아졌다.** */}
+        {hr && (
+          <Tap onPress={() => setTimelineOpen(true)} accessibilityRole="button"
+            accessibilityLabel={`심박 상세 열기. 평균 ${hr.avg}, 최대 ${hr.max} bpm`}
+            style={[s.card, { paddingHorizontal: rs(16), paddingVertical: rv(16), marginTop: rv(12) }]}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
+            <View style={s.rowBetweenBaseline}>
+              <Text style={s.cardTitle}>심박</Text>
+              <Text style={s.labelT2}>
+                평균 <Text style={s.t1Bold}>{hr.avg}</Text> · 최대 <Text style={s.t1Bold}>{hr.max}</Text> bpm
+              </Text>
             </View>
-          );
-        })()}
+            {hrTrack.length >= 2 && (
+              <View style={s.mt12}>
+                <HrSpark points={hrPoints} bounds={hr.bounds} />
+              </View>
+            )}
+            <View style={[s.rowCenterGap4, s.mt12]}>
+              {topZones.map(z => (
+                <React.Fragment key={z}>
+                  <View style={[s.zoneDot, { backgroundColor: HR_ZONE_COLORS[z] }]} />
+                  <Text style={s.capT3w5}>Z{z} {HR_ZONE_LABEL[z]} {fmtZ(hr.secs[z])}</Text>
+                </React.Fragment>
+              ))}
+              <View style={s.flex1} />
+              <Ionicons name="chevron-forward" size={ri(ICON.tag)} color={T3} />
+            </View>
+            {!hr.rest && (
+              <Text style={s.capT3mt8}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
+            )}
+          </Tap>
+        )}
         {/* 오늘의 한 컷 + 한 줄 메모(리캡에서 입력 — 2026-07-05). 없으면 자동 숨김. */}
         {!!photoUri && (
           <Image source={{ uri: photoUri }} style={s.runPhoto} resizeMode="cover" testID="run-photo" accessible accessibilityLabel="러닝 사진" />
@@ -888,7 +898,22 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
           /* 구간별 페이스 스플릿(km · 페이스 바 · 고도). 페이스 곡선(추세)은 개선 시도
              (평균선·눈금·스무딩) 후에도 '봐도 모르겠다'는 실사용 판정으로 제거 확정
              (2026-07-04) — 구간 정보는 이 표의 대비 강화된 막대가 담당한다. */
-          <RunSplits splits={recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route)} />
+          <RunSplits
+            splits={recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route)}
+            onPickSplit={tlMetrics.length > 0 ? (km) => {
+              // 표는 "어디가 빨랐나", 탐색은 "왜 그랬나" — 눌러서 이어 준다.
+              // km 경계 시각은 페이스 시계열의 누적 거리에서 찾는다(없으면 균등 분할 근사).
+              const total = run.durationS || 0;
+              const at = (k: number) => {
+                const hit = paceTrack.find(p => p.d >= k);
+                return hit ? hit.t : (total * k) / Math.max(0.01, Number(run.dist) || 1);
+              };
+              const a = km <= 1 ? 0 : at(km - 1);
+              const b = at(km);
+              if (b > a) setTimelineSeed({range: {a, b}, metric: 'pace'});
+              setTimelineOpen(true);
+            } : undefined}
+          />
         )}
         {/* 데이터 내보내기 — 조용한 하단 진입점. 경로가 있는(GPS) 런에서만. 감정적 공유(위
             공유 버튼)와 분리해, 가민/스트라바로 코스를 옮기려는 사람만 찾아 쓴다. */}
@@ -906,6 +931,25 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
       </ScrollView>
       {/* 공유 카드 선택기 — 공유 버튼으로 열린다(여러 템플릿·포맷·배경·크기). */}
       <ShareCardPicker visible={shareOpen} onClose={() => setShareOpen(false)} model={cardModel} route={route} shareInput={shareInput} />
+      {/* 러닝 탐색 뷰 — 심박 카드 탭 또는 스플릿 한 줄 탭으로 열린다. 그릴 수 있는 지표가
+          하나도 없으면(옛 러닝·워치 미연동) 아예 안 연다. */}
+      {tlMetrics.length > 0 && (
+        <RunTimeline
+          visible={timelineOpen}
+          onClose={() => { setTimelineOpen(false); setTimelineSeed(null); }}
+          metrics={tlMetrics}
+          totalSec={run.durationS || 0}
+          zoneBounds={hr ? hr.bounds : null}
+          initialRange={timelineSeed?.range ?? null}
+          initialMetric={timelineSeed?.metric ?? null}
+          title={`${displayNum(run.dist, unit, 2)}${unit} · ${run.date}`}
+          formatValue={(k, v) =>
+            k === 'pace'
+              ? `${Math.floor(v / 60)}'${String(Math.round(v % 60)).padStart(2, '0')}"`
+              : String(Math.round(v))
+          }
+        />
+      )}
     </View>
     </SwipeBack>
   );
@@ -1631,6 +1675,7 @@ const s = StyleSheet.create({
   detailDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.heroLg, fontWeight: '700', letterSpacing: 0.5 },
   detailDistU: { color: T3, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', marginLeft: rs(6), marginBottom: rv(8) },
   detailBrand: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 1.4 },
+  zoneDot: { width: rs(6), height: rs(6), borderRadius: rs(2) },
   detailModel: { color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, marginTop: rv(4) },
   // 메트릭 한 카드(디자인 11) — 2x3 그리드. 칸 레이아웃·값/단위/라벨은 StatGrid
   // 프리미티브가 책임지고(columns=3·align=left), 여기선 카드 내부 여백만 얹는다.

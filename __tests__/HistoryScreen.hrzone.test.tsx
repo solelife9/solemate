@@ -51,13 +51,17 @@ async function renderDetail(props: any, hrKey?: string, hrVal?: unknown) {
   return r.root;
 }
 
-describe('HistoryScreen RunDetail — 심박 존', () => {
+// 2026-08-12 — 심박 존 **카드**가 심박 **카드**로 바뀌었다. 곡선과 Z1~Z5 막대 5줄은
+// 전체화면 탐색 뷰(RunTimeline)로 옮겼고, 상세에는 평균/최대 · 작은 곡선 · 가장 오래
+// 머문 존 두 줄만 남는다. 이유는 RunTimeline.rn.tsx 머리말 참조(요약 화면에 탐색
+// 도구를 넣었더니 한 카드에 요소가 9개가 됐다).
+describe('HistoryScreen RunDetail — 심박', () => {
   afterEach(async () => { await AsyncStorage.clear(); });
 
-  test('hrTrack 이 있으면 심박 존 카드(존·평균/최대·트레이닝효과)가 뜬다', async () => {
+  test('hrTrack 이 있으면 심박 카드(평균/최대·상위 존)가 뜬다', async () => {
     const root = await renderDetail({age: 30, sex: 'male', restHR: 50}, 'hrTrack_r1', HR);
     const txt = textOf(root);
-    expect(txt).toContain('심박 존');
+    expect(txt).toContain('심박');
     expect(txt).toContain('평균');           // 평균/최대 심박 행
     // 평균은 **시간가중(사다리꼴)** 이다(2026-08-07). 예전엔 산술평균이라 148 이었다.
     // 표본이 60초 간격으로 고르므로 두 값이 크게 다르지 않지만, 사다리꼴은 구간 양 끝의
@@ -67,8 +71,9 @@ describe('HistoryScreen RunDetail — 심박 존', () => {
     // 구간이 과대 대표됐다. 바로 옆 존 구간시간은 시간 적분이라 **같은 카드의 두 숫자가
     // 서로 다른 러닝을 말했다.** 근거는 lib/analytics/hrZones.hrSummary 주석.
     expect(txt).toContain('149');
-    expect(txt).toContain('회복');           // Z1 라벨
-    expect(txt).toContain('무산소');         // Z5 라벨(항상 렌더)
+    // 상위 2개 존만 카드에 남는다(전체 5줄은 탐색 뷰에서). 이 트랙은 Z1·Z2 가 최다.
+    expect(txt).toContain('회복');
+    expect(txt).toContain('유산소');
     // 부하(TRIMP)는 중복 방지로 별도 '트레이닝 부하' 카드가 담당 — 심박 있으면 심박 기반으로.
     expect(txt).toContain('트레이닝 부하');
     expect(txt).toContain('심박 기반');
@@ -77,7 +82,7 @@ describe('HistoryScreen RunDetail — 심박 존', () => {
   test('안정심박 미설정이면 심박 존 정확도 안내 노출', async () => {
     const root = await renderDetail({age: 30, sex: 'male', restHR: 0}, 'hrTrack_r1', HR);
     const txt = textOf(root);
-    expect(txt).toContain('심박 존');
+    expect(txt).toContain('심박');
     expect(txt).toContain('안정시심박을 설정');
   });
 

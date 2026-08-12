@@ -13,6 +13,7 @@
 import React from 'react';
 import { rs, rv } from './lib/responsive';
 import {View, StyleSheet} from 'react-native';
+import {Tap} from './primitives';
 import {Text} from './lib/text';
 import {BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha, TYPE, CARD_BORDER} from './theme';
 
@@ -20,7 +21,17 @@ export type Split = {km: number; paceSec: number; elevM: number};
 
 const fmtPace = (s: number) => `${Math.floor(s / 60)}'${String(Math.round(s % 60)).padStart(2, '0')}"`;
 
-export function RunSplits({splits}: {splits: Split[]}) {
+export function RunSplits({splits, onPickSplit}: {
+  splits: Split[];
+  /**
+   * 한 줄을 눌렀을 때(2026-08-12). 주면 행이 눌리는 요소가 되고, 없으면 지금까지와
+   * 똑같이 **읽기 전용 표**다 — 다른 화면(리캡 등)의 동작을 바꾸지 않는다.
+   *
+   * 왜: 표는 "어디가 빨랐나"를 답하고 탐색 뷰는 "왜 그랬나"를 답한다. 이어 주면
+   * 둘이 중복이 아니라 질문과 대답이 된다.
+   */
+  onPickSplit?: (km: number) => void;
+}) {
   if (!splits || splits.length < 2) return null;
   const paces = splits.map(s => s.paceSec);
   const fast = Math.min(...paces);
@@ -47,14 +58,21 @@ export function RunSplits({splits}: {splits: Split[]}) {
         const elevA11y = sp.elevM > 0 ? `+${sp.elevM}미터` : `${sp.elevM}미터`;
         const rowLabel = `${sp.km}킬로미터 구간, 페이스 ${paceA11y}, 고도 ${elevA11y}${best ? ', 최고 구간' : ''}`;
         return (
-          <View key={i} style={[r.row, i > 0 && r.rowSep]} accessible accessibilityLabel={rowLabel}>
+          <Tap
+            key={i}
+            onPress={onPickSplit ? () => onPickSplit(sp.km) : undefined}
+            disabled={!onPickSplit}
+            accessible
+            accessibilityRole={onPickSplit ? 'button' : undefined}
+            accessibilityLabel={onPickSplit ? `${rowLabel}. 눌러서 자세히 보기` : rowLabel}
+            style={[r.row, i > 0 && r.rowSep]}>
             <Text style={r.km}>{sp.km}</Text>
             <View style={r.barWrap}>
               <View style={[r.bar, best && r.barBest, {width: `${widthOf(sp.paceSec)}%`}]} />
             </View>
             <Text style={[r.pace, best && r.paceBest]}>{fmtPace(sp.paceSec)}</Text>
             <Text style={r.elev}>{ev}</Text>
-          </View>
+          </Tap>
         );
       })}
     </View>
