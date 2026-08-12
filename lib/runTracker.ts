@@ -18,6 +18,7 @@
 // the KalmanFilter are reused UNCHANGED — this module only owns the stateful
 // orchestration + persistence + a small subscribe() event bus the UI listens to.
 
+import {Platform} from 'react-native';
 import {KalmanFilter} from './kalman';
 import {DistanceSmoother} from './distanceSmoother';
 import {calcDist, acceptSegment, segmentSpeedMps} from './geo';
@@ -252,6 +253,13 @@ class RunTracker {
   private dopLastMs = 0;
   /** 지금 거리를 도플러가 이끌고 있는가. 켜져 있으면 폴리라인(스무더) 증분은 버린다. */
   private dopplerLeading = false;
+  // ── 진단(2026-08-12): 두 방식의 거리를 **둘 다** 남긴다 ─────────────────────
+  // 08-10 에 거리 계산이 '위치 차분' → 'OS 속도 적분'으로 바뀌었는데, 실기기 대조는
+  // 오늘이 처음이었고 갤럭시가 가민보다 -5.7% 나왔다(2.79 vs 2.96). 08-05 4중 대조에서
+  // 위치 방식은 오차 0% 였다. 어느 쪽이 맞는지는 **다음 러닝 한 번이면 판가름난다** —
+  // 그래서 실제 쓰는 값과 별개로 두 누적을 나란히 세어 둔다(계산에는 관여하지 않는다).
+  private dopDistKm = 0;   // 도플러 적분으로만 센 거리
+  private posDistKm = 0;   // 위치(평활 폴리라인)로만 센 거리
   private autoAnchor: {lat: number; lon: number} | null = null;
   private autoAnchorMs = 0;
   private autoPauseState: AutoPauseState = initAutoPauseState();
@@ -374,8 +382,10 @@ class RunTracker {
     // 도플러가 거리를 이끄는 동안에는 폴리라인 증분을 버린다(이중계산 금지).
     // 스무더는 **계속 먹인다** — 체인 상태가 유효해야 도플러가 끊긴 순간 곧바로
     // 폴백으로 이어받을 수 있다. 버리는 것은 '숫자'지 '상태'가 아니다.
+    const posGain = this.smoother.distKm() - before;
+    this.posDistKm += Math.max(0, posGain);   // 진단용 — 버리더라도 세어는 둔다
     if (this.dopplerLeading) return;
-    this.addDistanceKm(this.smoother.distKm() - before);
+    this.addDistanceKm(posGain);
   }
 
   /** 거리 한 조각을 누적한다. 폰 자체 측정(phoneDist)은 항상, 표시 거리(dist)는
@@ -400,6 +410,19 @@ class RunTracker {
    * 여기서 새 임계를 만들지 않고 그대로 쓴다.
    */
   private dopplerSpeedMps(fix: RawFix): number | null {
+    // ── 안드로이드는 도플러를 쓰지 않는다 (2026-08-12 민우님 B안 확정) ──────────
+    // 08-10 에 거리 계산을 'OS 속도 적분'으로 바꿨는데, 그 검증은 **전부 합성
+    // 트레이스**였고 실기기 대조가 없었다. 오늘 첫 실기기 러닝에서 갤럭시가 가민보다
+    // **-5.7%** 나왔다(2.79 vs 2.96). 반면 08-05 4중 대조에서 **위치 방식은 오차 0%** 였다.
+    //
+    // 안드로이드 `Location.getSpeed()` 는 기기·칩셋마다 품질이 크게 다르고 보통
+    // 평활·지연돼 나온다 — 적분하면 계통적으로 낮게 나오는 모양이 정확히 이렇다.
+    // 검증된 방식이 있는데 미검증 방식을 쓸 이유가 없어 **되돌린다.**
+    //
+    // iOS 는 그대로 둔다: `CLLocation.speed` 는 애플이 품질을 문서로 보장하고,
+    // 오늘 아이폰의 위치 경로 실측(2.95km)이 가민(2.96km)과 일치해 별도 문제가 없었다.
+    // 안드로이드를 다시 켜려면 **실기기 대조부터** 한다(진단용 두 거리를 함께 저장한다).
+    if (Platform.OS === 'android') return null;
     const s = fix.coords.speed;
     if (typeof s !== 'number' || !Number.isFinite(s) || s < 0) return null;
     if (s > MAX_SEG_SPEED_MPS) return null;        // 명백한 이상치 — 위치 게이트와 같은 상한
@@ -420,8 +443,10 @@ class RunTracker {
     // 센다(2026-08-10: 이걸 놓쳐 느린걷기 open 오차가 −1.5% → +6.1% 로 뒤집혔다 —
     // 환경이 좋을수록 오차가 커지는 비정상 순서가 이중계산의 신호였다).
     // 체인을 끊는 일(상태)은 그대로 하고, 숫자만 버린다.
+    const tailGain = this.smoother.distKm() - before;
+    this.posDistKm += Math.max(0, tailGain);   // 진단용
     if (this.dopplerLeading) return;
-    this.addDistanceKm(this.smoother.distKm() - before);
+    this.addDistanceKm(tailGain);
   }
 
   /** Begin a fresh run, clearing all engine state. */
@@ -456,6 +481,8 @@ class RunTracker {
     this.dopLastSpeedMps = null;
     this.dopLastMs = 0;
     this.dopplerLeading = false;
+    this.dopDistKm = 0;
+    this.posDistKm = 0;
     this.autoAnchor = null;
     this.autoAnchorMs = 0;
     this.autoPauseState = initAutoPauseState();
@@ -866,6 +893,7 @@ class RunTracker {
       // 없던 거리를 만든다. 그 구간은 위치 경로(재앵커 분기)가 판단한다.
       if (dtS > 0 && dtS * 1000 <= GPS_STALL_THRESHOLD_MS) {
         dopplerCreditedKm = (((spd + this.dopLastSpeedMps) / 2) * dtS) / 1000;
+        this.dopDistKm += dopplerCreditedKm;   // 진단용 누적
         this.dopplerLeading = true;   // 이 순간부터 폴리라인 증분은 버린다
         this.addDistanceKm(dopplerCreditedKm);
       }
@@ -1334,6 +1362,18 @@ class RunTracker {
     if (t - this.lastCadPushSec < 5) return;
     this.lastCadPushSec = t;
     this.cadTrack.push({t: Math.round(t), spm: Math.round(spm)});
+  }
+
+  /**
+   * 진단용 — 두 방식이 각각 센 거리(km). 계산에는 관여하지 않는다.
+   * 저장 시 사이드카로 남겨 다음 실기기 러닝에서 가민과 나란히 대조한다.
+   */
+  getDistanceDiag(): {doppler: number; position: number; used: number} {
+    return {
+      doppler: Math.round(this.dopDistKm * 1000) / 1000,
+      position: Math.round(this.posDistKm * 1000) / 1000,
+      used: Math.round(this.dist * 1000) / 1000,
+    };
   }
 
   /** 케이던스 시계열({t: 경과초, spm}). 없으면 빈 배열 — 옛 러닝은 이 지표가 조용히 빠진다. */

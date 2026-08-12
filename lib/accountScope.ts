@@ -131,6 +131,7 @@ export const USER_KEY_PREFIXES: readonly string[] = [
   'hrTrack_',
   'gapTrack_',
   'cadTrack_',
+  'distdiag_',
   'track_',
   'route_',
   'surface_',

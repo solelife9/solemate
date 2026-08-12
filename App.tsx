@@ -1376,7 +1376,7 @@ function Main(){
     await AsyncStorage.removeItem('surface_'+sid);
     await AsyncStorage.removeItem('splits_'+sid);
     // 곡선 시계열 사이드키(페이스/심박/GAP/케이던스)도 정리 — 없으면 영구 누수된다.
-    for(const k of ['paceTrack_','hrTrack_','gapTrack_','cadTrack_'])await AsyncStorage.removeItem(k+sid);
+    for(const k of ['paceTrack_','hrTrack_','gapTrack_','cadTrack_','distdiag_'])await AsyncStorage.removeItem(k+sid);
     // 오늘의 한 컷 사이드카(2026-07-05 추가)도 정리 — 없으면 삭제된 런의 사진 URI 가 영구 고아.
     await AsyncStorage.removeItem('runphoto_'+sid);
     // AUDIT 3 D-3 — **클라우드 상세도 지운다.** 예전엔 로컬만 지우고 서버의 GPS 경로·심박·

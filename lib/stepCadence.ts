@@ -115,3 +115,32 @@ export function averageSpm(totalSteps: number, movingSec: number): number {
   if (totalSteps <= 0 || movingSec <= 0) return 0;
   return Math.round((totalSteps * 60) / movingSec);
 }
+
+/**
+ * 안드로이드 걸음 누적 — **expo 가 기준을 옮겨도 총합을 잃지 않는다.**
+ *
+ * 왜 필요한가 (2026-08-12 실기기)
+ * ----------------------------------------------------------------------------
+ * `expo-sensors` 의 PedometerModule 은 리스너가 다시 등록될 때마다 기준을 지운다:
+ *     listenerDecorator = { stepsAtTheBeginning = null }
+ * 그리고 SensorProxy 는 앱이 백그라운드로 가면(onHostPause) 리스너를 해제한다.
+ * 즉 폰을 주머니에 넣고 달리다 화면을 켜면 `steps` 가 **0 부터 다시** 시작한다.
+ *
+ * 실측: 갤럭시 19분 33초 러닝의 저장된 케이던스가 **1 spm**. 마지막 복귀 이후의
+ * 스무 걸음 남짓만 남았기 때문이다(가민은 같은 러닝에서 168 spm).
+ *
+ * 그래서 raw 의 **증분만** 더한다. 값이 줄면 기준이 리셋된 것이므로 그 시점부터의
+ * 값을 그대로 더한다.
+ *
+ * ⚠️ 백그라운드 동안 하드웨어가 센 걸음은 expo 가 기준을 옮겨 버려 **되찾을 수 없다.**
+ * 완전한 해법은 Health Connect 걸음수로 러닝 구간을 조회하는 것이다(별건).
+ */
+export function accumulateSteps(
+  state: {total: number; lastRaw: number},
+  raw: unknown,
+): {total: number; lastRaw: number} {
+  const v = typeof raw === 'number' ? raw : Number(raw);
+  if (!Number.isFinite(v) || v < 0) return state;         // 쓰레기 표본은 무시
+  const delta = v >= state.lastRaw ? v - state.lastRaw : v; // 줄었다 = 기준 리셋
+  return {total: state.total + delta, lastRaw: v};
+}

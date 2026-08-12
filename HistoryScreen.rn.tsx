@@ -565,6 +565,17 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
   const [timelineSeed, setTimelineSeed] = useState<{range: TlRange; metric: string} | null>(null);
   // 케이던스 시계열(cadTrack_<id>) — 2026-08-12 이후 러닝에만 있다. 없으면 그 지표는
   // 탐색 뷰에서 아예 안 뜬다(없는 걸 지어내지 않는다).
+  // 거리 진단(2026-08-12) — 두 방식이 각각 센 거리. 08-10 거리 계산 변경이 옳은지
+  // 다음 실기기 러닝에서 가민과 대조해 판가름내려고 남긴다. 없으면(옛 러닝) 안 보인다.
+  const [distDiag, setDistDiag] = useState<{doppler: number; position: number; used: number} | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (!run.id) { setDistDiag(null); return; }
+    AsyncStorage.getItem('distdiag_' + run.id)
+      .then(raw => { if (!alive) return; try { setDistDiag(raw ? JSON.parse(raw) : null); } catch { setDistDiag(null); } })
+      .catch(() => { if (alive) setDistDiag(null); });
+    return () => { alive = false; };
+  }, [run.id]);
   const [cadTrack, setCadTrack] = useState<{ t: number; spm: number }[]>([]);
   useEffect(() => {
     let alive = true;
@@ -914,6 +925,14 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
               setTimelineOpen(true);
             } : undefined}
           />
+        )}
+        {/* 거리 진단(임시) — 두 방식이 각각 센 거리. 가민과 대조해 08-10 변경의 옳고 그름을
+            가리기 위한 것이고, 판가름나면 지운다. 안드로이드는 저장소를 뽑을 수 없어
+            화면으로만 확인된다. 값이 없으면(옛 러닝) 줄 자체가 안 뜬다. */}
+        {distDiag && (distDiag.doppler > 0 || distDiag.position > 0) && (
+          <Text style={[s.capT3w5, { marginTop: rv(14), marginHorizontal: rs(4) }]}>
+            거리 진단 · 사용 {distDiag.used.toFixed(2)} / 속도적분 {distDiag.doppler.toFixed(2)} / 위치 {distDiag.position.toFixed(2)} km
+          </Text>
         )}
         {/* 데이터 내보내기 — 조용한 하단 진입점. 경로가 있는(GPS) 런에서만. 감정적 공유(위
             공유 버튼)와 분리해, 가민/스트라바로 코스를 옮기려는 사람만 찾아 쓴다. */}

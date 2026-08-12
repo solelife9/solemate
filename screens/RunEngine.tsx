@@ -32,6 +32,7 @@ import {success as hapticSuccess, warning as hapticWarning, isHapticsEnabled} fr
 import {PAUSE_MOVE_NUDGE_STEPS, PAUSE_MOVE_NUDGE_POLL_MS, NO_FIX_WARN_SEC} from '../lib/engineConstants';
 import {simplifyRoute} from '../lib/geo';
 import {appendFinalSplit} from '../lib/splits';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {runTracker} from '../lib/runTracker';
 import {
   requestActivityPermission,
@@ -47,7 +48,7 @@ import {haversineM, calibrateLapM, lapsToTrack} from '../lib/laps';
 import {requestRunPermissions, startTracking, stopTracking, isPermissionError, hasForegroundPermission, RunPermissions} from '../lib/locationService';
 import {showRunNotification, clearRunNotification, onRunNotificationAction, RUN_ACTION} from '../lib/runNotification';
 import {activateKeepAwakeAsync, deactivateKeepAwake} from 'expo-keep-awake';
-import {initStepCadence, feedStepCount, averageSpm} from '../lib/stepCadence';
+import {initStepCadence, feedStepCount, averageSpm, accumulateSteps} from '../lib/stepCadence';
 import {fmtPace, fmtTime} from '../lib/format';
 import {parseShoeName} from '../lib/shoe';
 import {clearSnapshot, RunSnapshot} from '../lib/runPersistence';
@@ -798,11 +799,25 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
         const stepT0=new Date();
         stepT0Ref.current=stepT0;
         stepsRef.current=0;
-        // 안드로이드: 구간 조회가 없으므로 구독으로 최신 누적 걸음을 받아 둔다.
-        // 화면이 꺼지면(주머니) 이벤트는 멈추지만 TYPE_STEP_COUNTER 는 하드웨어가 계속 세므로
-        // 복귀 시 그동안의 걸음이 누적값에 그대로 실려 온다 — 총 걸음수는 유실되지 않는다.
+        // ── 안드로이드: 걸음 누적을 **우리가 직접 센다** (2026-08-12 근본수정) ──
+        // 예전 주석은 "복귀 시 그동안의 걸음이 누적값에 그대로 실려 온다"였는데 **틀렸다.**
+        // expo-sensors 의 PedometerModule 은 리스너가 다시 등록될 때마다 기준을 지운다:
+        //     listenerDecorator = { stepsAtTheBeginning = null }
+        // 그리고 SensorProxy 는 앱이 백그라운드로 가면(onHostPause) 리스너를 해제한다.
+        // 즉 주머니에 넣고 달리다 화면을 켜면 `steps` 가 **0 부터 다시** 시작한다.
+        //
+        // 실측(2026-08-12 갤럭시, 19분 33초 러닝): 저장된 케이던스가 **1 spm** 이었다.
+        // 마지막 복귀 이후의 스무 걸음 남짓만 남았기 때문이다.
+        //
+        // 그래서 raw 값의 **증분만** 더해 우리 총합을 만든다. 값이 줄면(=기준 리셋) 그
+        // 시점부터의 값을 그대로 더한다. 백그라운드 동안 하드웨어가 센 걸음은 expo 가
+        // 기준을 옮겨 버려 되찾을 수 없다 — 그건 Health Connect 걸음수로 메워야 한다(별건).
         if(Platform.OS==='android'){
-          try{stepWatch.current=Pedometer.watchStepCount(r=>{stepsRef.current=r?.steps??0;});}
+          let acc={total:0,lastRaw:0};
+          try{stepWatch.current=Pedometer.watchStepCount(r=>{
+            acc=accumulateSteps(acc,r?.steps);
+            stepsRef.current=acc.total;
+          });}
           catch{/* 구독 실패 — 케이던스만 0, 러닝은 계속 */}
         }
         let polling=false;
@@ -1107,6 +1122,12 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     const gapTrackFin=runTracker.getGapTrack().slice();
     // 케이던스 시계열 — 옛 러닝엔 없다(빈 배열이면 저장·표시 모두 조용히 빠진다).
     const cadTrackFin=runTracker.getCadTrack().slice();
+    // 진단(2026-08-12): 두 방식이 각각 센 거리를 남긴다. 08-10 에 거리 계산이 바뀌었는데
+    // 실기기 대조가 없었고, 첫 대조에서 갤럭시가 가민보다 -5.7% 나왔다. 다음 러닝에서
+    // 어느 쪽이 맞는지 한 번에 갈리도록 실제 쓴 값과 두 후보를 나란히 적어 둔다.
+    // (계산에는 관여하지 않는다. 안드로이드는 데이터를 뽑을 수 없어 화면으로 보여준다.)
+    void AsyncStorage.setItem('distdiag_'+runTracker.getRunId(),
+      JSON.stringify(runTracker.getDistanceDiag())).catch(()=>{});
     setFinSplits(splitsFin);
     setFinPaceTrack(paceTrackFin);
     setFinHrTrack(hrTrackFin);
