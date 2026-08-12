@@ -230,7 +230,7 @@ final class WatchLink: NSObject, ObservableObject {
     if allowCmd, let cmd = context["cmd"] as? String { handle(cmd: cmd) }
   }
 
-  private func handle(cmd: String) {
+  func handle(cmd: String) {
     switch cmd {
     case "start":
       // 폰에서 러닝 시작 — 보통 startWatchApp(handle:)로 이미 세션이 뜨므로 idempotent.
@@ -372,6 +372,18 @@ extension WatchLink: WCSessionDelegate {
 
   nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
     Task { @MainActor in WatchLink.shared.apply(context: applicationContext, allowCmd: true) }
+  }
+
+  /// 폰이 배달 보장 큐로 보낸 명령(2026-08-12 신설).
+  ///
+  /// 폰은 러닝 종료 시 `stop` 을 보내는데, 예전엔 `isReachable` 이 아니면
+  /// applicationContext 로 흘려보냈다. 그건 '최신 상태 동기화' 채널이라 iOS 가 기회가 될
+  /// 때 전달한다 — 손목을 내리고 달리는 실제 러닝에서는 정지가 몇 분 뒤에 오거나 아예
+  /// 안 왔다(민우님 실기기: "폰에서 완료해도 워치가 안 끝난다"). 이제 폰이
+  /// `transferUserInfo`(배달 보장·순서 유지)로 보내므로 이 수신부가 필요하다.
+  nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+    guard let cmd = userInfo["cmd"] as? String else { return }
+    Task { @MainActor in WatchLink.shared.handle(cmd: cmd) }
   }
 
   nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {

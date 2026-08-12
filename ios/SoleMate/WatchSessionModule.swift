@@ -282,13 +282,35 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
 
   // 폰 → 워치: 러닝 종료 시 워치 워크아웃도 종료(도달 가능하면 즉시, 아니면 컨텍스트 폴백).
   // cmdAt 을 함께 실어 직전 컨텍스트와 값이 달라지게 한다(동일 컨텍스트는 재전송 생략됨).
+  /**
+   * 폰 러닝 종료 → 워치 워크아웃도 종료.
+   *
+   * ⚠️ **applicationContext 로 보내지 않는다(2026-08-12 수정).**
+   *
+   * 민우님: "폰에서 러닝 완료하면 워치도 완료되나? 안 되는 것 같던데." — 맞았다.
+   * 예전 코드는 `isReachable` 이면 sendMessage, 아니면 applicationContext 였는데 둘 다 샜다:
+   *
+   *  ① `isReachable` 은 **워치 앱이 포그라운드일 때만** 참이다. 러닝 중 손목을 내리면
+   *     거짓이 되므로, 실제 러닝에서는 거의 항상 아래 분기로 떨어진다.
+   *  ② `applicationContext` 는 '최신 상태 동기화'용이지 **명령용이 아니다.** iOS 가
+   *     기회가 될 때 전달하므로 몇 분 뒤에 도착하거나 손목을 들 때까지 안 온다.
+   *     게다가 outboundContext 는 누적 병합이라 한 번 들어간 cmd 가 이후 모든 갱신에
+   *     계속 실려 나간다(워치가 allowCmd 게이트를 둔 이유가 그 부작용이다).
+   *
+   * 워치 → 폰 방향(WatchLink.sendStopToPhone)은 이미 올바른 방식을 쓰고 있었다:
+   * sendMessage 를 시도하고 실패하면 **transferUserInfo**(배달 보장 큐)로 폴백한다.
+   * 폰 → 워치도 같은 규약으로 맞춘다 — 큐는 앱이 백그라운드여도 배달되고 순서를 지킨다.
+   */
   @objc(stopWatchWorkout)
   func stopWatchWorkout() {
+    guard WCSession.isSupported() else { return }
     let s = WCSession.default
+    let payload: [String: Any] = ["cmd": "stop", "cmdAt": Date().timeIntervalSince1970]
     if s.isReachable {
-      s.sendMessage(["cmd": "stop"], replyHandler: nil, errorHandler: nil)
+      // 즉시 시도 — 실패하면 곧바로 배달 보장 큐로 넘긴다(놓치지 않는다).
+      s.sendMessage(payload, replyHandler: nil, errorHandler: { _ in s.transferUserInfo(payload) })
     } else {
-      pushContext(["cmd": "stop", "cmdAt": Date().timeIntervalSince1970])
+      s.transferUserInfo(payload)
     }
   }
 
