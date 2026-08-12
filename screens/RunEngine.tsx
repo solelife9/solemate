@@ -49,6 +49,9 @@ import {requestRunPermissions, startTracking, stopTracking, isPermissionError, h
 import {showRunNotification, clearRunNotification, onRunNotificationAction, RUN_ACTION} from '../lib/runNotification';
 import {activateKeepAwakeAsync, deactivateKeepAwake} from 'expo-keep-awake';
 import {initStepCadence, feedStepCount, averageSpm, accumulateSteps} from '../lib/stepCadence';
+// 안드로이드 하드웨어 걸음 카운터 — expo 는 백그라운드에서 구독을 떼어 주머니 러닝의
+// 걸음을 통째로 놓친다(2026-08-12 실측: 가민 168 spm vs keego 1 spm).
+import {startStepCounter, stopStepCounter, currentSteps} from '../lib/stepCounter';
 import {fmtPace, fmtTime} from '../lib/format';
 import {parseShoeName} from '../lib/shoe';
 import {clearSnapshot, RunSnapshot} from '../lib/runPersistence';
@@ -254,6 +257,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   // 대안은 watchStepCount 구독뿐이다. 안드로이드 구현은 TYPE_STEP_COUNTER(하드웨어 누적)를
   // 쓰고 **구독 시점 기준 누적값**을 주므로 구간 조회와 의미가 같다 — 아래 소비처는 그대로 둔다.
   const stepWatch=useRef<{remove?:()=>void}|null>(null);
+  /** 안드로이드 하드웨어 걸음 카운터가 켜졌는가. 켜졌으면 expo 값은 안 쓴다. */
+  const hwStepsRef=useRef(false);
   const stepsRef=useRef(0);
   // ── 평균 케이던스의 분자 (2026-08-07) ─────────────────────────────────────
   //
@@ -813,12 +818,19 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
         // 시점부터의 값을 그대로 더한다. 백그라운드 동안 하드웨어가 센 걸음은 expo 가
         // 기준을 옮겨 버려 되찾을 수 없다 — 그건 Health Connect 걸음수로 메워야 한다(별건).
         if(Platform.OS==='android'){
-          let acc={total:0,lastRaw:0};
-          try{stepWatch.current=Pedometer.watchStepCount(r=>{
-            acc=accumulateSteps(acc,r?.steps);
-            stepsRef.current=acc.total;
-          });}
-          catch{/* 구독 실패 — 케이던스만 0, 러닝은 계속 */}
+          // ① 하드웨어 걸음 카운터(1순위) — 백그라운드에서도 살아 있다. 켜지면 아래
+          //    폴링이 이 값을 읽고, expo 구독 값은 쓰지 않는다.
+          hwStepsRef.current=await startStepCounter();
+          // ② expo 구독(폴백) — 하드웨어 모듈이 없는 기기용. 리스너가 다시 붙을 때마다
+          //    기준이 지워지므로 증분만 누적한다(lib/stepCadence.accumulateSteps).
+          if(!hwStepsRef.current){
+            let acc={total:0,lastRaw:0};
+            try{stepWatch.current=Pedometer.watchStepCount(r=>{
+              acc=accumulateSteps(acc,r?.steps);
+              stepsRef.current=acc.total;
+            });}
+            catch{/* 구독 실패 — 케이던스만 0, 러닝은 계속 */}
+          }
         }
         let polling=false;
         stepSub.current=setInterval(async()=>{
@@ -830,7 +842,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
             // 보려고 같은 값을 주기적으로 먹어야 한다. 이벤트가 올 때만 먹이면 멈춘 순간
             // 표본이 끊겨 게이트가 영영 판정하지 못한다.
             const steps=Platform.OS==='android'
-              ? stepsRef.current
+              ? (hwStepsRef.current ? ((await currentSteps()) ?? stepsRef.current) : stepsRef.current)
               : ((await Pedometer.getStepCountAsync(stepT0,new Date()))?.steps??0);
             // 걸음 정지 게이트 공급 — 일시정지 중에도 계속 먹인다. 끊으면 오토포즈가
             // 노이즈로 잠깐 풀리는 창에서 표본이 스테일해져 게이트가 꺼진 채 팬텀 거리가
@@ -947,6 +959,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   function stop(){
     if(stepSub.current){clearInterval(stepSub.current);stepSub.current=null;}
     if(stepWatch.current){try{stepWatch.current.remove?.();}catch{/* 이미 해제 */}stepWatch.current=null;}
+    if(hwStepsRef.current){void stopStepCounter();hwStepsRef.current=false;} // 배터리
     if(baroSub.current){try{baroSub.current.remove();}catch{/* noop */}baroSub.current=null;}
     // OS 활동 인식 해제 — 러닝이 끝나면 반드시 끊는다(배터리·프라이버시).
     if(arSub.current){clearInterval(arSub.current);arSub.current=null;}
@@ -1147,7 +1160,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     if(stepT0Ref.current&&ft>0){
       try{
         const total=Platform.OS==='android'
-          ? stepsRef.current
+          ? (hwStepsRef.current ? ((await currentSteps()) ?? stepsRef.current) : stepsRef.current)
           : ((await Pedometer.getStepCountAsync(stepT0Ref.current,new Date()))?.steps??0);
         // 이번 구간의 이동 걸음 = 누적 − 일시정지 중 걸음. 여기에 복구 시드를 더한다.
         const moving=movingBaseRef.current+Math.max(0,total-pausedStepsRef.current);

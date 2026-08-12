@@ -19,6 +19,7 @@ class KeegoWidgetPackage : ReactPackage {
         listOf(
             KeegoWidgetModule(reactContext),
             KeegoActivityRecognitionModule(reactContext),
+            KeegoStepCounterModule(reactContext),
         )
 
     override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> =

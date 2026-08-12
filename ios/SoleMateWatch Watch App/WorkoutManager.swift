@@ -236,6 +236,20 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// 현재(롤링) 페이스용 (경과초, 거리km) 샘플 — 최근 ~20s 창으로 순간 페이스 산출. 러너가
   /// 가장 자주 보는 실시간 지표(평균 페이스는 보조). 시작/리셋 시 비움.
   private var pacePoints: [(t: Double, d: Double)] = []
+  /** 지수 평활된 현재 페이스(초/km) — 거리 기반 폴백용. 0 = 아직 없음. */
+  private var smoothedPaceSecPerKm: Double = 0
+  /** 지수 평활된 도플러 속도(m/s) — 현재 페이스의 1순위 소스. 0 = 아직 없음. */
+  private var smoothedSpeedMps: Double = 0
+  /** 도플러로 페이스를 마지막에 만든 시각(경과초). 폴백이 끼어들 시점을 가른다. */
+  private var lastPaceFromSpeedAt: Double = -999
+  /** 이 속도 아래는 '멈춤'으로 본다(m/s). 0.5 = 폰의 CURRENT_PACE_MIN_SPEED_MPS 와 동일. */
+  private static let paceMinSpeedMps: Double = 0.5
+  /** 도플러 값이 이 시간 안에 왔으면 폴백을 쓰지 않는다(초). */
+  private static let paceSpeedFreshS: Double = 8
+  /** 현재 페이스 창(초) — 폰(CURRENT_PACE_WINDOW_MS = 30000)과 같은 값으로 맞춘다. */
+  private static let paceWindowS: Double = 30
+  /** 지수 평활 계수. 작을수록 부드럽고 느리게 따라온다. */
+  private static let paceSmoothing: Double = 0.35
   // 종료 통계 스냅샷 — finishWorkout 호출 전에 확정한다. finishWorkout 이후엔 빌더의
   // statistics(for:) 가 nil 을 뱉어 심박·칼로리가 0(→ '--')이 되던 버그의 근본 수정.
   private var capturedAvgBpm: Double = 0
@@ -404,6 +418,14 @@ final class WorkoutManager: NSObject, ObservableObject {
       lastRoutePoint = nil
       pacePoints = []
       currentPaceSecPerKm = 0
+    smoothedPaceSecPerKm = 0
+    smoothedSpeedMps = 0
+    lastPaceFromSpeedAt = -999
+      smoothedPaceSecPerKm = 0
+    smoothedSpeedMps = 0
+    lastPaceFromSpeedAt = -999
+      smoothedSpeedMps = 0
+      lastPaceFromSpeedAt = -999
       pausedAccumS = 0
       pauseStartDate = nil
       splits = []
@@ -547,6 +569,9 @@ final class WorkoutManager: NSObject, ObservableObject {
     lastRoutePoint = nil
     pacePoints = []
     currentPaceSecPerKm = 0
+    smoothedPaceSecPerKm = 0
+    smoothedSpeedMps = 0
+    lastPaceFromSpeedAt = -999
     pausedAccumS = 0
     pauseStartDate = nil
     splits = []
@@ -814,15 +839,68 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// (HK) 양쪽에서 호출 — 두 소스가 같은 distanceKm 에 안전하게 수렴한다(@MainActor 직렬).
   /// 현재(순간) 페이스 — 최근 ~20s 창의 거리/시간. 창이 짧거나(<5s) 이동이 적으면(<20m)
   /// 0(→"--", 정지·초반 표본부족). 러닝 중에만 갱신, 일시정지엔 마지막 값 유지 후 정지 시 0.
+  /**
+   * 현재 페이스 — **거리를 미분하지 말고 속도를 직접 잰다(2026-08-12 근본수정).**
+   *
+   * 민우님: "러닝 중에 애플워치 페이스가 너무 들쭉날쭉 날뛴다. 폰은 그나마 덜하다."
+   * 그리고 정확한 지적을 덧붙이셨다 — **"일정한 속도로 계속 달리면 페이스는 원래 안 튄다."**
+   * 맞다. 튀는 건 러너가 아니라 측정이다.
+   *
+   * ── 예전 방식이 왜 튀었나 ─────────────────────────────────────────────────
+   * 20초 창에서 `Δ거리 / Δ시간` 을 냈다. 그런데 워치 거리는 HealthKit 융합값이라
+   * **계단식**이다(HK 가 표본을 뭉텅이로 준다 — `recomputeDistance()` 는 새 값이 올 때만
+   * 늘어난다). 계단을 짧은 창으로 나누면 계단마다 페이스가 튄다. 게다가 창 안에서 20m 를
+   * 못 채우면 0(화면 `--`)으로 떨어뜨려 깜빡임까지 더했다.
+   *
+   * ── 업계는 이걸 못 풀었다 ────────────────────────────────────────────────
+   * 가민은 순간 페이스 평균을 5초 → 20~30초로 늘렸는데, 이번엔 "반응이 없어 쓸모없다"는
+   * 불평이 쌓였다(포럼 다수). 짧으면 튀고 길면 늦다 — **창 길이로는 못 푸는 문제**다.
+   * 많은 러너가 아예 랩 페이스로 도망친 이유가 이것이다.
+   *
+   * ── 정석 ────────────────────────────────────────────────────────────────
+   * 거리를 미분하는 대신 **속도를 직접 잰다.** `CLLocation.speed` 는 위성 반송파의 주파수
+   * 편이(도플러)로 속도를 바로 측정해 오차가 0.05~0.15 m/s 다(위치는 수 m). 계단이 없으니
+   * 짧게 평활해도 안 튀고, 그래서 **부드러우면서 동시에 반응이 빠르다** — 창 길이의
+   * 딜레마 자체가 사라진다. 폰이 08-10 에 같은 이유로 거리 계산을 도플러로 옮겼다.
+   *
+   * 무효(-1)이면 위치 증분으로 대체하고(호출부), 도플러가 아예 안 오는 구간에서는
+   * 아래 거리 기반 폴백이 그대로 맡는다.
+   */
+  private func feedPaceSpeed(_ mps: Double) {
+    guard mps.isFinite, mps >= 0 else { return }
+    // 멈춰 있으면 페이스는 '없음'이다 — 무한대를 만들지 않는다(화면은 직전 값을 유지).
+    guard mps >= Self.paceMinSpeedMps else { return }
+    smoothedSpeedMps = smoothedSpeedMps > 0
+      ? smoothedSpeedMps + (mps - smoothedSpeedMps) * Self.paceSmoothing
+      : mps
+    currentPaceSecPerKm = 1000 / smoothedSpeedMps
+    lastPaceFromSpeedAt = elapsedS
+  }
+
+  /**
+   * 거리 기반 폴백 — 도플러가 끊긴 구간에서만 쓴다(터널·실내·속도 미제공 기기).
+   *
+   * 창은 폰과 같은 30초로 맞췄고, 조건 미달이면 **직전 값을 유지**한다(0 으로 떨어뜨리면
+   * 화면이 깜빡인다 — 정지/일시정지에서는 호출부가 이미 0 으로 만든다).
+   */
   private func updateCurrentPace() {
     guard phase == .running else { return }
     pacePoints.append((t: elapsedS, d: distanceKm))
-    while let first = pacePoints.first, elapsedS - first.t > 20 { pacePoints.removeFirst() }
-    if let first = pacePoints.first {
-      let dt = elapsedS - first.t
-      let dd = distanceKm - first.d
-      currentPaceSecPerKm = (dt >= 5 && dd > 0.02) ? dt / dd : 0
+    while let first = pacePoints.first, elapsedS - first.t > Self.paceWindowS {
+      pacePoints.removeFirst()
     }
+    // 도플러가 최근에 값을 줬으면 그쪽이 정본이다 — 폴백은 끼어들지 않는다.
+    if elapsedS - lastPaceFromSpeedAt <= Self.paceSpeedFreshS { return }
+    guard let first = pacePoints.first else { return }
+    let dt = elapsedS - first.t
+    let dd = distanceKm - first.d
+    guard dt >= 8, dd >= 0.03 else { return }
+    let raw = dt / dd
+    guard raw.isFinite, raw > 0 else { return }
+    smoothedPaceSecPerKm = smoothedPaceSecPerKm > 0
+      ? smoothedPaceSecPerKm + (raw - smoothedPaceSecPerKm) * Self.paceSmoothing
+      : raw
+    currentPaceSecPerKm = smoothedPaceSecPerKm
   }
 
   private func recomputeDistance() {
@@ -1045,6 +1123,9 @@ extension WorkoutManager: CLLocationManagerDelegate {
           let meters = loc.distance(from: last)
           let derived = meters / dt
           if loc.speed < 0 { sampleSpeed = derived }
+          // 현재 페이스는 **속도를 직접 재서** 만든다(아래 feedPaceSpeed 주석 참조).
+          // 거리 미분이 아니라 도플러라 계단이 없다 — 이게 페이스 널뜀의 근본 해결이다.
+          if phase == .running { feedPaceSpeed(loc.speed >= 0 ? loc.speed : derived) }
           // 스파이크 컷: 순간이동 표본은 거리에 넣지 않는다(팬텀 거리 방지).
           if phase == .running, derived <= Self.maxSpeedMps, meters.isFinite, meters >= 0 {
             if isTrack {

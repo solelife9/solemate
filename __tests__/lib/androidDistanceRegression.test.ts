@@ -114,3 +114,87 @@ describe('화면이 걸음 누적기를 실제로 쓴다', () => {
 it('테스트 환경 확인용 — Platform 이 로드된다', () => {
   expect(typeof Platform.OS).toBe('string');
 });
+
+// ── 하드웨어 걸음 카운터 (2026-08-12) ────────────────────────────────────────
+// JS 증분 누적만으로는 부족했다. `SensorProxy.onHostPause()` 가 구독을 **떼기** 때문에
+// 주머니에 넣고 달리면 이벤트가 아예 안 온다 — 더할 증분이 없다. 러닝 앱에서 그건
+// 예외가 아니라 기본이므로, TYPE_STEP_COUNTER(부팅 이후 누적)를 직접 구독한다.
+describe('걸음은 백그라운드에서도 세어야 한다', () => {
+  const read = (p: string) =>
+    require('fs').readFileSync(require('path').join(__dirname, '..', '..', p), 'utf8') as string;
+
+  it('네이티브 모듈이 있고 패키지에 등록돼 있다 — 등록을 빠뜨리면 조용히 없는 모듈이 된다', () => {
+    const mod = read('android/app/src/main/java/com/keego/app/KeegoStepCounterModule.kt');
+    expect(mod).toMatch(/TYPE_STEP_COUNTER/);
+    expect(mod).toMatch(/registerListener/);
+    // expo 와 달리 백그라운드에서 떼지 않는다 — 해제는 stop() 에서만 일어나야 한다.
+    // (주석에 onHostPause 를 '설명으로' 언급하는 것과, 그 훅을 '구현하는' 것은 다르다.)
+    const code = mod.split('\n').filter(l => !l.trim().startsWith('*') && !l.trim().startsWith('//')).join('\n');
+    expect(code).not.toMatch(/onHostPause|onHostResume/);
+    expect(code).toMatch(/fun stop\(/);
+    expect(code).toMatch(/unregisterListener/);
+    expect(read('android/app/src/main/java/com/keego/app/KeegoWidgetPackage.kt'))
+      .toMatch(/KeegoStepCounterModule\(reactContext\)/);
+  });
+
+  it('모르면 -1 을 돌려준다 — 0 은 "안 걸었다"는 주장이라 다르다', () => {
+    expect(read('android/app/src/main/java/com/keego/app/KeegoStepCounterModule.kt'))
+      .toMatch(/-1\.0/);
+  });
+
+  it('화면이 하드웨어 카운터를 1순위로 쓰고, 없으면 expo 로 폴백한다', () => {
+    const s = read('screens/RunEngine.tsx');
+    expect(s).toMatch(/startStepCounter\(\)/);
+    expect(s).toMatch(/currentSteps\(\)/);
+    expect(s).toMatch(/hwStepsRef\.current\s*\?/); // 켜졌을 때만 하드웨어 값을 읽는다
+    expect(s).toMatch(/if\(!hwStepsRef\.current\)/); // 폴백 분기
+  });
+
+  it('러닝이 끝나면 구독을 끊는다 — 배터리', () => {
+    const s = read('screens/RunEngine.tsx');
+    const at = s.indexOf('function stop()');
+    expect(at).toBeGreaterThan(-1);
+    expect(s.slice(at, at + 1400)).toMatch(/stopStepCounter\(\)/);
+  });
+});
+
+// ── 워치 현재 페이스 (2026-08-12) ────────────────────────────────────────────
+// 민우님: "애플워치 페이스가 너무 날뛴다" + "일정하게 달리면 페이스는 원래 안 튄다."
+// 후자가 정확한 진단이다 — 튀는 건 러너가 아니라 측정이다.
+// 업계 문헌: 위치는 점당 ±10m 오차라 거리 미분으로 만든 현재 페이스는 "마일당 30초 이상
+// 튄다"(Fellrnr). 가민은 평균 창을 20~30초로 늘렸다가 "반응이 없다"는 불평을 얻었다.
+// 정석은 창 길이가 아니라 **소스 교체**다 — 도플러 속도는 모든 벤더가 5~6년 이상 써 온
+// 방식이고 오차가 0.05~0.15 m/s 라 계단이 없다.
+describe('워치 현재 페이스는 속도를 직접 잰다', () => {
+  const wm = () =>
+    require('fs').readFileSync(
+      require('path').join(__dirname, '..', '..', 'ios', 'SoleMateWatch Watch App', 'WorkoutManager.swift'),
+      'utf8',
+    ) as string;
+
+  it('도플러 속도를 페이스에 먹인다', () => {
+    const s = wm();
+    expect(s).toMatch(/func feedPaceSpeed/);
+    expect(s).toMatch(/feedPaceSpeed\(loc\.speed >= 0 \? loc\.speed : derived\)/);
+  });
+
+  it('거리 기반은 폴백으로만 — 도플러가 신선하면 끼어들지 않는다', () => {
+    expect(wm()).toMatch(/lastPaceFromSpeedAt <= Self\.paceSpeedFreshS/);
+  });
+
+  it('조건 미달이어도 0 으로 떨어뜨리지 않는다 — 화면 깜빡임의 정체였다', () => {
+    const s = wm();
+    const at = s.indexOf('private func updateCurrentPace');
+    const body = s.slice(at, at + 900);
+    expect(body).not.toMatch(/currentPaceSecPerKm = \(dt/); // 옛 삼항 형태
+    expect(body).toMatch(/guard dt >= 8, dd >= 0\.03 else \{ return \}/);
+  });
+
+  it('멈추면 무한대를 만들지 않는다', () => {
+    expect(wm()).toMatch(/guard mps >= Self\.paceMinSpeedMps else \{ return \}/);
+  });
+
+  it('창은 폰과 같은 30초다 — 두 화면이 다른 규칙을 쓰면 숫자가 갈린다', () => {
+    expect(wm()).toMatch(/paceWindowS: Double = 30/);
+  });
+});
