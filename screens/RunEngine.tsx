@@ -54,7 +54,7 @@ import {initStepCadence, feedStepCount, averageSpm, accumulateSteps} from '../li
 import {startStepCounter, stopStepCounter, currentSteps} from '../lib/stepCounter';
 import {fmtPace, fmtTime} from '../lib/format';
 import {parseShoeName} from '../lib/shoe';
-import {clearSnapshot, RunSnapshot} from '../lib/runPersistence';
+import {clearSnapshot, RunSnapshot, isImplausibleRun} from '../lib/runPersistence';
 import {VoiceSettings, loadVoiceSettings, DEFAULT_VOICE, loadAutoPause} from '../lib/settings';
 import {estimateCaloriesTotal} from '../lib/calories';
 import {currentTargetPace} from '../lib/pacePlan';
@@ -259,6 +259,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   const stepWatch=useRef<{remove?:()=>void}|null>(null);
   /** 안드로이드 하드웨어 걸음 카운터가 켜졌는가. 켜졌으면 expo 값은 안 쓴다. */
   const hwStepsRef=useRef(false);
+  /** '그래도 저장'을 누른 뒤의 재진입 표시 — 물리 가드를 한 번만 묻게 한다. */
+  const forceSaveRef=useRef(false);
   const stepsRef=useRef(0);
   // ── 평균 케이던스의 분자 (2026-08-07) ─────────────────────────────────────
   //
@@ -1066,6 +1068,22 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     // 최종 거리/시간. 트랙 모드는 랩수×확정랩거리(GPS 누적 아님), 그 외는 엔진 누적거리.
     const ft=runTracker.getElapsedFinal();
     const fk=trackMode?(lapTimesRef.current.length*lapMRef.current)/1000:runTracker.getDistanceKm();
+    // 사람이 낼 수 없는 기록이면 저장 전에 멈춰 세운다(2026-08-12). 거리 하한만 있고
+    // 속도 상한이 없어 0.45km/3초 같은 기록이 그대로 저장됐고, 그게 「1km 최고」까지
+    // 오염시켰다. 뿌리(워치 거리 이월)는 따로 고쳤지만 원인이 하나뿐이라는 보장이 없다.
+    if(!forceSaveRef.current&&isImplausibleRun(fk,ft)){
+      stop();
+      showDialog(
+        '기록이 이상해요',
+        `${fk.toFixed(2)}km 를 ${Math.floor(ft/60)}분 ${Math.round(ft%60)}초에 달린 것으로 기록됐어요. `+
+        '측정이 잘못된 것 같아 저장하지 않는 걸 권해요.',
+        [
+          {text:'그래도 저장',onPress:()=>{forceSaveRef.current=true;void finishRun();}},
+          {text:'저장하지 않기',style:'destructive',onPress:()=>{void clearSnapshot();trackRunDiscard('user');onDiscard();}},
+        ],
+      );
+      return;
+    }
     if(fk<0.01){
       stop();
       showDialog('거리가 너무 짧아요','조금 더 달릴까요, 아니면 여기서 마칠까요?',[

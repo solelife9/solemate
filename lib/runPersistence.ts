@@ -523,3 +523,32 @@ export async function flushPendingRuns(
   await writePendingRuns(stillPending);
   return {synced, remaining: stillPending.length};
 }
+
+/**
+ * 사람이 낼 수 없는 기록인가 — **저장 직전 마지막 관문.**
+ *
+ * 왜 있나 (2026-08-12 실기기)
+ * ----------------------------------------------------------------------------
+ * 아이폰에 이런 기록들이 남았다:
+ *     0.28km / 25초 (1'29"/km) · 0.31km / 16초 (0'51") · 0.45km / 3초 (0'06")
+ * 워치가 들고 있던 누적 거리를 새 러닝이 물려받아 생긴 것이었다(그 뿌리는 따로 고쳤다).
+ *
+ * 그런데 저장 관문에는 **거리 하한(0.01km)만** 있고 속도 상한이 없었다. 거리가 0 이
+ * 아니기만 하면 3초짜리 0.45km 도 그대로 저장됐고, 그게 프로필의 「1km 최고」 같은
+ * 기록까지 오염시킨다.
+ *
+ * 뿌리를 고쳤어도 이 관문은 남긴다 — **원인이 하나뿐이라는 보장이 없기 때문이다.**
+ * (예: 워치 재연결, GPS 점프, 복구 경로의 시각 어긋남.)
+ *
+ * 기준은 8 m/s = 2'05"/km 다. 사람이 러닝 내내 낼 수 없는 속도이고, 단거리 세계기록
+ * (100m 10.4 m/s)보다 낮게 잡아 진짜 러너를 자르지 않는다. 짧은 러닝(30초 미만)은
+ * 워밍업 구간의 GPS 워밍업 오차가 비율로 크게 잡히므로 판정하지 않는다.
+ */
+export const IMPLAUSIBLE_SPEED_MPS = 8;
+
+export function isImplausibleRun(km: number, durationSec: number): boolean {
+  if (!Number.isFinite(km) || !Number.isFinite(durationSec)) return false;
+  if (km <= 0 || durationSec <= 0) return false;
+  if (durationSec < 30) return false; // 너무 짧아 판정할 수 없다 — 다른 관문이 맡는다
+  return (km * 1000) / durationSec > IMPLAUSIBLE_SPEED_MPS;
+}
