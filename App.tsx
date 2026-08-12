@@ -1375,10 +1375,8 @@ function Main(){
     await AsyncStorage.removeItem('time_'+sid);
     await AsyncStorage.removeItem('surface_'+sid);
     await AsyncStorage.removeItem('splits_'+sid);
-    // 곡선 시계열 사이드키(페이스/심박/GAP)도 정리 — 없으면 삭제된 런의 시계열이 영구 누수된다.
-    await AsyncStorage.removeItem('paceTrack_'+sid);
-    await AsyncStorage.removeItem('hrTrack_'+sid);
-    await AsyncStorage.removeItem('gapTrack_'+sid);
+    // 곡선 시계열 사이드키(페이스/심박/GAP/케이던스)도 정리 — 없으면 영구 누수된다.
+    for(const k of ['paceTrack_','hrTrack_','gapTrack_','cadTrack_'])await AsyncStorage.removeItem(k+sid);
     // 오늘의 한 컷 사이드카(2026-07-05 추가)도 정리 — 없으면 삭제된 런의 사진 URI 가 영구 고아.
     await AsyncStorage.removeItem('runphoto_'+sid);
     // AUDIT 3 D-3 — **클라우드 상세도 지운다.** 예전엔 로컬만 지우고 서버의 GPS 경로·심박·
@@ -2514,7 +2512,7 @@ function Main(){
         restHR={restHR}
         resume={resumeSnap}
         resumeMode={resumeMode}
-        onSave={async(km,dur,cad,memo,route,location,splits,elevM,cal,paceTrack,hrTrack,gapTrack,trackMeta)=>{
+        onSave={async(km,dur,cad,memo,route,location,splits,elevM,cal,paceTrack,hrTrack,gapTrack,trackMeta,cadTrack)=>{
           // 신기록(PR) 감지 — addRun 의 낙관적 setRuns 전이라 runs 는 '이전 런들'이다.
           const prKinds=detectPRs({dist:km,durationS:dur},runs.map(r=>({dist:Number(r.km)||0,durationS:r.duration||0,runDate:r.run_date})));
           // 평균 심박을 레코드에 함께 저장(2026-07-17 비교런 수정) — 여태 undefined 로 저장돼
@@ -2593,6 +2591,7 @@ function Main(){
           // GAP 시계열 영속 — RunDetail이 gapTrack_<id>로 읽어 경사보정페이스(Strava식)를 낸다.
           // 고도 있는 점이 2개 미만이면 경사 계산 불가라 저장 생략.
           if(gapTrack&&gapTrack.length>=2) await AsyncStorage.setItem('gapTrack_'+newId, JSON.stringify(gapTrack));
+          if(cadTrack&&cadTrack.length>=2) await AsyncStorage.setItem('cadTrack_'+newId, JSON.stringify(cadTrack));
           // Apple 건강(연동 시, 비차단) — ① 이 러닝을 HK 워크아웃으로 기록(활동 링 크레딧)
           // ② 러닝 시간창의 HK 심박을 hrTrack_<id> 로 백필(워치 컴패니언이 이미 채웠으면
           // 건너뜀 — 실측 우선). 실패는 조용히 무시(러닝 저장에 영향 0).

@@ -221,6 +221,16 @@ class RunTracker {
   // GAP(경사보정페이스)용 (누적거리 km, 경과초, raw GPS 고도 m) 시계열 — paceTrack 과 같은
   // 점에서 고도가 있는 fix 일 때만 적립한다. 노이즈 스무딩·Minetti 보정은 표시단(RunDetail)에서.
   private gapTrack: {d: number; t: number; e: number}[] = [];
+  // 케이던스 시계열({t: 경과초, spm}) — hrTrack 과 같은 규약(달리는 중에만·~5s throttle).
+  //
+  // 왜 필요한가(2026-08-12): 지금까지는 **러닝 전체 평균 한 값**만 남겼다. 그래서 "언덕에서
+  // 케이던스를 지켰나" 같은 질문에 답할 수 없었다 — 러닝 타임라인이 답하려는 바로 그 질문이다.
+  // 평균은 저장 시점에 따로 계산하므로(화면이 보조칩 총 걸음으로 산출) 이 배열은 곡선 전용이다.
+  //
+  // ⚠️ **과거 러닝은 채울 수 없다.** 시계열이 없던 시절의 런은 이 값이 비고, 화면은 그 지표를
+  // 조용히 감춘다 — 없는 걸 지어내지 않는다(고도·심박과 같은 원칙).
+  private cadTrack: {t: number; spm: number}[] = [];
+  private lastCadPushSec = -999;
   private fixIndex = 0;
   private lastGood: {lat: number; lon: number} | null = null;
   private lastGoodMs = 0;
@@ -423,6 +433,8 @@ class RunTracker {
     this.hrTrack = [];
     this.lastHrPushSec = -999;
     this.gapTrack = [];
+    this.cadTrack = [];
+    this.lastCadPushSec = -999;
     this.paceSamples = [];
     this.lastSpeedMps = null;
     this.fixIndex = 0;
@@ -556,7 +568,10 @@ class RunTracker {
   }
 
   setMeta(meta: {cadence?: number; location?: string; movingSteps?: number}) {
-    if (typeof meta.cadence === 'number') this.cadence = meta.cadence;
+    if (typeof meta.cadence === 'number') {
+      this.cadence = meta.cadence;
+      this.feedCadenceSample(meta.cadence);
+    }
     if (typeof meta.location === 'string') this.location = meta.location;
     // 이동 중에만 쌓인 걸음수 — 스냅샷에 실어 복구 런의 케이던스가 이어지게 한다.
     if (typeof meta.movingSteps === 'number' && meta.movingSteps >= 0) {
@@ -1258,6 +1273,27 @@ class RunTracker {
   /** 심박 시계열({t: 경과초, bpm}). 완주 시 영속해 HR존 구간시간·TRIMP 분석에 쓴다. */
   getHrTrack(): {t: number; bpm: number}[] {
     return this.hrTrack;
+  }
+
+  /**
+   * 케이던스 표본 적립(setMeta 가 부른다 — 화면의 걸음 폴링이 유일한 소스).
+   *
+   * feedHeartRate 와 같은 선: 달리는 중(active·미정지)에만, spm<=0 은 무시, throttle.
+   * 5초인 이유는 공급원이 5초 폴링이라 그보다 촘촘히 받아도 같은 값이 겹칠 뿐이기 때문이다.
+   * **일시정지 중에는 안 쌓는다** — 서 있는 동안의 0 이 곡선에 계곡을 만든다.
+   */
+  private feedCadenceSample(spm: number) {
+    if (!this.active || this.pausedFlag()) return;
+    if (!(spm > 0)) return;
+    const t = this.getElapsed();
+    if (t - this.lastCadPushSec < 5) return;
+    this.lastCadPushSec = t;
+    this.cadTrack.push({t: Math.round(t), spm: Math.round(spm)});
+  }
+
+  /** 케이던스 시계열({t: 경과초, spm}). 없으면 빈 배열 — 옛 러닝은 이 지표가 조용히 빠진다. */
+  getCadTrack(): {t: number; spm: number}[] {
+    return this.cadTrack;
   }
 
   /** GAP 시계열({d: 누적 km, t: 경과초, e: raw 고도 m}). 완주 시 영속해 경사보정페이스에 쓴다. */

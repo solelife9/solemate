@@ -74,7 +74,7 @@ function openLocationSettingsAlert(message:string){
   ]);
 }
 
-export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,track=null,indoor=false,weightKg,strideM=1,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;goalMin?:number;pacePlan?:number[];targetZone?:number;track?:{lapM:number}|null;indoor?:boolean;weightKg:number;strideM?:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number|null,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,track=null,indoor=false,weightKg,strideM=1,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;goalMin?:number;pacePlan?:number[];targetZone?:number;track?:{lapM:number}|null;indoor?:boolean;weightKg:number;strideM?:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number|null,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null,cadTrack?:{t:number;spm:number}[])=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
   // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
@@ -1105,6 +1105,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     const paceTrackFin=trackMode?lapsToTrack(lapTimesRef.current,lapMRef.current/1000):runTracker.getPaceTrack().slice();
     const hrTrackFin=runTracker.getHrTrack().slice();
     const gapTrackFin=runTracker.getGapTrack().slice();
+    // 케이던스 시계열 — 옛 러닝엔 없다(빈 배열이면 저장·표시 모두 조용히 빠진다).
+    const cadTrackFin=runTracker.getCadTrack().slice();
     setFinSplits(splitsFin);
     setFinPaceTrack(paceTrackFin);
     setFinHrTrack(hrTrackFin);
@@ -1153,7 +1155,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
         }catch{/* 무해: 역지오코딩 실패 → 위치 라벨 없이 저장 */}
       }
       await onSave(Math.round(fk*100)/100,ft,cadFin,'',routeFin,loc,splitsFin,finElevTotal??null,estimateCaloriesTotal(fk,ft,weightKg),paceTrackFin,hrTrackFin,gapTrackFin,
-        trackMode?{lapM:Math.round(lapMRef.current),laps:lapTimesRef.current.length,lapTimes:lapTimesRef.current.slice()}:null);
+        trackMode?{lapM:Math.round(lapMRef.current),laps:lapTimesRef.current.length,lapTimes:lapTimesRef.current.slice()}:null,cadTrackFin);
       hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
     }catch{
       setPhase('done');

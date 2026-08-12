@@ -130,6 +130,7 @@ export const USER_KEY_PREFIXES: readonly string[] = [
   'paceTrack_',
   'hrTrack_',
   'gapTrack_',
+  'cadTrack_',
   'track_',
   'route_',
   'surface_',
