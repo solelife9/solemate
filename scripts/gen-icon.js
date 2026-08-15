@@ -1,14 +1,40 @@
 #!/usr/bin/env node
-// Generates Keego launcher PNGs for all mipmap densities.
-// Design matches the adaptive icon: orange (#FF6500) bg + white "K" strokes.
-// Adaptive icon coords viewport = 108×108; same proportions scaled to each size.
-// Run from project root: node scripts/gen-icon.js
+// ============================================================================
+// scripts/gen-icon.js — Keego 안드로이드 런처 아이콘 + Play 스토어 아이콘 생성
+// ============================================================================
+// 실행: node scripts/gen-icon.js   (프로젝트 루트에서)
+//
+// 이 스크립트가 만드는 것:
+//   android/app/src/main/res/mipmap-*/ic_launcher.png, ic_launcher_round.png
+//   docs/launch/assets/play-icon-512.png            (Play 등록용 · 32비트 RGBA)
+//
+// **디자인 정본은 iOS 마스터다** —
+//   ios/SoleMate/Images.xcassets/AppIcon.appiconset/icon-1024.png
+// 아래 상수는 그 PNG 를 픽셀 단위로 **실측해서** 뽑았다(2026-08-15). 눈대중이 아니다.
+//   배경 #0A0A0A (81.8%) · 마크 #FF8000 (16.6%)
+//   바깥 반지름 368.0 / 512  = 캔버스 폭의 71.9%
+//   획폭 114.4               = 바깥 반지름의 31.09%
+//   빈 구간 292°~348°        = 아크 84.2% (12시=0°, 시계방향)
+//
+// ⚠️ 과거 이 스크립트는 **오렌지 배경 + 흰 K** 를 만들었고, 그것은 2026-07-18 에
+//    폐기된 디자인이다(`78a8db6` "앱 아이콘 확정 — 파파야 단색 수명 링 아크").
+//    그때 안드로이드가 스윕에서 빠져 폐기된 K 마크 + 폐기된 색 #FF6500 이
+//    2026-08-15 까지 남아 있었다. 아이콘을 또 바꾸면 **여기와 iOS 를 같이** 바꾼다.
 'use strict';
 /* eslint-env node */
 /* eslint-disable no-bitwise -- CRC32/PNG 인코딩에 비트연산 필수 */
 const zlib = require('zlib');
 const fs   = require('fs');
 const path = require('path');
+
+// ── 실측 상수 (iOS 마스터에서) ────────────────────────────────────────────────
+const BG = [0x0a, 0x0a, 0x0a];
+const FG = [0xff, 0x80, 0x00];       // Keego Ember
+const FILL_RATIO   = 368.0 / 512.0;  // 링 바깥지름 ÷ 캔버스 폭
+const STROKE_RATIO = 114.4 / 368.0;  // 획폭 ÷ 바깥반지름
+const GAP = [292.0, 348.0];          // 비어 있는 각도 구간 (12시=0°, 시계방향)
+
+const SS = 4;                        // 슈퍼샘플링 배수(안티에일리어싱)
 
 // ── CRC32 ─────────────────────────────────────────────────────────────────────
 const CRC_TABLE = (() => {
@@ -26,100 +52,98 @@ function crc32(buf) {
   return (c ^ 0xffffffff) >>> 0;
 }
 
-// ── PNG encoder ───────────────────────────────────────────────────────────────
+// ── PNG 인코더 ────────────────────────────────────────────────────────────────
 function pngChunk(type, data) {
   const tb = Buffer.from(type, 'ascii');
-  const lb = Buffer.allocUnsafe(4);
-  lb.writeUInt32BE(data.length, 0);
-  const cb = Buffer.allocUnsafe(4);
-  cb.writeUInt32BE(crc32(Buffer.concat([tb, data])), 0);
+  const lb = Buffer.allocUnsafe(4); lb.writeUInt32BE(data.length, 0);
+  const cb = Buffer.allocUnsafe(4); cb.writeUInt32BE(crc32(Buffer.concat([tb, data])), 0);
   return Buffer.concat([lb, tb, data, cb]);
 }
 
-function encodePNG(w, h, rgbPixels /* Uint8Array w*h*3 */) {
+/** @param alpha true 면 32비트 RGBA(Play 요구), false 면 24비트 RGB. */
+function encodePNG(w, h, px, alpha) {
+  const nch = alpha ? 4 : 3;
   const ihdr = Buffer.allocUnsafe(13);
   ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4);
-  ihdr[8]=8; ihdr[9]=2; ihdr[10]=0; ihdr[11]=0; ihdr[12]=0; // 8-bit RGB
+  ihdr[8] = 8; ihdr[9] = alpha ? 6 : 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
 
-  const stride = 1 + w * 3;
+  const stride = 1 + w * nch;
   const raw = Buffer.allocUnsafe(h * stride);
   for (let y = 0; y < h; y++) {
-    raw[y * stride] = 0; // filter: None
-    raw.set(rgbPixels.subarray(y * w * 3, (y + 1) * w * 3), y * stride + 1);
+    raw[y * stride] = 0;                      // filter: None
+    raw.set(px.subarray(y * w * nch, (y + 1) * w * nch), y * stride + 1);
   }
-  const idat = zlib.deflateSync(raw, { level: 9 });
-
   return Buffer.concat([
-    Buffer.from([137,80,78,71,13,10,26,10]),
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
     pngChunk('IHDR', ihdr),
-    pngChunk('IDAT', idat),
+    pngChunk('IDAT', zlib.deflateSync(raw, { level: 9 })),
     pngChunk('IEND', Buffer.alloc(0)),
   ]);
 }
 
-// ── Geometry ──────────────────────────────────────────────────────────────────
-function distSeg(px, py, ax, ay, bx, by) {
-  const dx = bx - ax, dy = by - ay;
-  const len2 = dx * dx + dy * dy;
-  if (len2 === 0) return Math.hypot(px - ax, py - ay);
-  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
-  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
-}
+// ── 링 렌더 ───────────────────────────────────────────────────────────────────
+// 정사각 캔버스 한가운데에 아크를 그린다. 끝은 둥근 캡(iOS 마스터와 동일).
+function ringCoverage(size) {
+  const n = size * SS;
+  const c = n / 2;
+  const rOut = (FILL_RATIO * size / 2) * SS;
+  const st   = rOut * STROKE_RATIO;
+  const rc   = rOut - st / 2;               // 중심선 반지름
+  const half = st / 2;
+  const [g0, g1] = GAP;
 
-// Soft coverage: 1 inside, linear falloff over 1px for anti-aliasing.
-function coverage(dist, halfWidth) {
-  return Math.max(0, Math.min(1, halfWidth + 0.5 - dist));
-}
+  // 캡 중심 두 점
+  const caps = [g0, g1].map((a) => {
+    const t = a * Math.PI / 180;
+    return [c + rc * Math.sin(t), c - rc * Math.cos(t)];
+  });
 
-// ── Icon generator ────────────────────────────────────────────────────────────
-// Adaptive icon viewport = 108dp.
-// K strokes (from ic_launcher_foreground.xml, strokeWidth=12):
-//   stem:      (44,33)→(44,75)
-//   upper arm: (45,56)→(73,34)
-//   lower arm: (45,54)→(75,75)
-const K_LINES = [
-  [44,33, 44,75],
-  [45,56, 73,34],
-  [45,54, 75,75],
-];
-const K_HALF_STROKE = 6; // strokeWidth/2
-const VIEWPORT = 108;
-
-// Orange background: #FF6500
-const BG_R = 0xFF, BG_G = 0x65, BG_B = 0x00;
-// White foreground: #FFFFFF
-const FG_R = 0xFF, FG_G = 0xFF, FG_B = 0xFF;
-
-function generateIconRGB(size) {
-  const s = size / VIEWPORT;
-  const half = K_HALF_STROKE * s;
-  const pixels = new Uint8Array(size * size * 3);
-
-  const scaledLines = K_LINES.map(([ax,ay,bx,by]) => [ax*s, ay*s, bx*s, by*s]);
-
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      // sub-pixel center
+  const cov = new Float32Array(size * size);
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
       const px = x + 0.5, py = y + 0.5;
+      const dx = px - c, dy = py - c;
+      let hit = false;
 
-      // coverage from each K stroke
-      let cov = 0;
-      for (const [ax,ay,bx,by] of scaledLines) {
-        cov = Math.max(cov, coverage(distSeg(px, py, ax, ay, bx, by), half));
+      // 링 몸통: 중심선에서의 거리가 반획폭 이내 + 빈 구간 밖
+      if (Math.abs(Math.hypot(dx, dy) - rc) <= half) {
+        let a = Math.atan2(dx, -dy) * 180 / Math.PI;
+        if (a < 0) a += 360;
+        const inGap = g0 <= g1 ? (a >= g0 && a <= g1) : (a >= g0 || a <= g1);
+        if (!inGap) hit = true;
       }
-
-      const i = (y * size + x) * 3;
-      // blend: 0=orange, 1=white
-      pixels[i]   = Math.round(BG_R + (FG_R - BG_R) * cov);
-      pixels[i+1] = Math.round(BG_G + (FG_G - BG_G) * cov);
-      pixels[i+2] = Math.round(BG_B + (FG_B - BG_B) * cov);
+      // 둥근 캡
+      if (!hit) {
+        for (const [ex, ey] of caps) {
+          if (Math.hypot(px - ex, py - ey) <= half) { hit = true; break; }
+        }
+      }
+      if (hit) cov[((y / SS) | 0) * size + ((x / SS) | 0)] += 1;
     }
   }
-  return pixels;
+  const denom = SS * SS;
+  for (let i = 0; i < cov.length; i++) cov[i] /= denom;
+  return cov;
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-const SIZES = [
+function render(size, alpha) {
+  const cov = ringCoverage(size);
+  const nch = alpha ? 4 : 3;
+  const out = new Uint8Array(size * size * nch);
+  for (let i = 0; i < size * size; i++) {
+    const m = cov[i];
+    const o = i * nch;
+    for (let k = 0; k < 3; k++) out[o + k] = Math.round(BG[k] + (FG[k] - BG[k]) * m);
+    if (alpha) out[o + 3] = 255;             // 전면 불투명(Play 는 32비트를 요구할 뿐)
+  }
+  return out;
+}
+
+// ── 실행 ──────────────────────────────────────────────────────────────────────
+const ROOT = path.join(__dirname, '..');
+const RES  = path.join(ROOT, 'android', 'app', 'src', 'main', 'res');
+
+const DENSITIES = [
   { dir: 'mipmap-mdpi',    size: 48  },
   { dir: 'mipmap-hdpi',    size: 72  },
   { dir: 'mipmap-xhdpi',   size: 96  },
@@ -127,15 +151,20 @@ const SIZES = [
   { dir: 'mipmap-xxxhdpi', size: 192 },
 ];
 
-const RES = path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'res');
-
-for (const { dir, size } of SIZES) {
-  const rgb = generateIconRGB(size);
-  const png = encodePNG(size, size, rgb);
-  const d   = path.join(RES, dir);
+console.log('Keego 아이콘 생성 — iOS 마스터 실측 기하(링 아크)');
+for (const { dir, size } of DENSITIES) {
+  const png = encodePNG(size, size, render(size, false), false);
+  const d = path.join(RES, dir);
   fs.mkdirSync(d, { recursive: true });
-  fs.writeFileSync(path.join(d, 'ic_launcher.png'),       png);
+  fs.writeFileSync(path.join(d, 'ic_launcher.png'), png);
   fs.writeFileSync(path.join(d, 'ic_launcher_round.png'), png);
-  console.log(`  ${dir} ${size}×${size} ok`);
+  console.log(`  ${dir.padEnd(16)} ${size}×${size}`);
 }
-console.log('Keego icons generated.');
+
+// Play 스토어 등록 아이콘 — 512×512, 32비트 PNG(알파 채널 필요), 1MB 이하
+const storeDir = path.join(ROOT, 'docs', 'launch', 'assets');
+fs.mkdirSync(storeDir, { recursive: true });
+const store = encodePNG(512, 512, render(512, true), true);
+fs.writeFileSync(path.join(storeDir, 'play-icon-512.png'), store);
+console.log(`  docs/launch/assets  512×512 RGBA  (${(store.length / 1024).toFixed(0)}KB / 1024KB 한도)`);
+console.log('완료.');

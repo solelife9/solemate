@@ -1,29 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Keego "K" mark — bold rounded strokes, centered within the 72dp adaptive safe zone. -->
+<!--
+  Keego 수명 링 아크 — 앱 아이콘 전경 레이어.
+
+  **정본은 iOS 마스터다**: ios/SoleMate/Images.xcassets/AppIcon.appiconset/icon-1024.png
+  아래 숫자는 그 PNG 를 픽셀 단위로 실측해 옮긴 것이다(2026-08-15). 눈대중이 아니다.
+    · 마크 색   #FF8000 (Keego Ember)
+    · 획폭 비   바깥반지름의 31.09%  (실측 114.4 / 368.0)
+    · 빈 구간   292°~348° (12시=0°, 시계방향) → 아크 304°
+    · 끝 처리   둥근 캡
+
+  **크기가 iOS 와 다른 이유**: 어댑티브 아이콘은 108dp 레이어 중 **가운데 72dp 만
+  실제로 보이고** 바깥 18dp 는 잘린다(패럴랙스용). iOS 는 캔버스 폭의 71.9% 를 링이
+  차지하므로, 같은 인상을 주려면 72dp 의 71.9% ≈ 52dp 지름이어야 한다.
+  iOS 비율(77.6dp)을 그대로 쓰면 둥근 마스크에서 링이 잘린다.
+    바깥지름 52dp = 가시영역의 72.2%  (iOS 71.9% 와 일치)
+
+  ⚠️ 2026-07-18 에 아이콘이 확정(`78a8db6`)될 때 안드로이드가 스윕에서 빠져,
+     폐기된 K 모노그램 + 폐기된 색 #FF6500 이 2026-08-15 까지 남아 있었다.
+     아이콘을 바꿀 때는 **iOS·안드로이드·scripts/gen-icon.js 를 같이** 바꾼다.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- vertical stem -->
     <path
-        android:strokeColor="#FF6500"
-        android:strokeWidth="12"
+        android:strokeColor="#FF8000"
+        android:strokeWidth="8.083"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M44,33 L44,75" />
-    <!-- upper arm -->
-    <path
-        android:strokeColor="#FF6500"
-        android:strokeWidth="12"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M45,56 L73,34" />
-    <!-- lower arm -->
-    <path
-        android:strokeColor="#FF6500"
-        android:strokeWidth="12"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M45,54 L75,75" />
+        android:pathData="M49.435,32.521 A21.959,21.959 0 1 1 33.64,45.774" />
 </vector>
