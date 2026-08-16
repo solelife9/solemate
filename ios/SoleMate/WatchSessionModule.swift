@@ -136,6 +136,30 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
       if let splits = payload["splitsS"] as? [Any] {
         body["splitsS"] = splits.compactMap { ($0 as? NSNumber)?.doubleValue }
       }
+      // ── GPS 경로 — 워치 런 지도 (2026-08-17 근본수정) ──────────────────────
+      //
+      // **여기가 빠져 있었다.** 워치는 2026-07-24 부터 `route`(플랫 [lat,lon,…])와
+      // `routeAlt`(짝지은 고도)를 실어 보내고 있었는데, 이 함수가 그 두 키를 `body` 에
+      // 옮기지 않았다. 그래서 JS 는 `e.route` 가 늘 undefined 였고
+      // (lib/watchSession.ts → route: []), useWatchSync 의 `p.route.length >= 2` 가
+      // 언제나 거짓이라 **route_<id> 사이드카가 한 번도 쓰이지 않았다** — 워치 런은
+      // 지도가 영영 안 떴다. 워치도 폰도 각자 맞게 동작했고, 그 사이 다리만 없었다.
+      //
+      // 좌표는 항상 유한하다(CLLocationCoordinate2D). 그대로 넘긴다.
+      if let route = payload["route"] as? [Any] {
+        body["route"] = route.compactMap { ($0 as? NSNumber)?.doubleValue }
+      }
+      // 고도는 측정 불가 지점이 NaN 으로 온다. **NaN 을 그대로 브리지에 태우지 않는다** —
+      // JSON 에 NaN 표현이 없어 구현에 따라 0 이나 null 로 뭉개지는데, 0 이 되면 해수면으로
+      // 읽혀 **가짜 내리막**이 생긴다. `NSNull`(→ JS `null`)로 바꿔 보낸다 —
+      // lib/elevation.ts 의 elevationGainFrom 이 `number | null | undefined` 를
+      // '측정 불가'로 받도록 이미 설계돼 있다. 좌표와의 1:1 짝은 유지된다(개수 불변).
+      if let alts = payload["routeAlt"] as? [Any] {
+        body["routeAlt"] = alts.map { el -> Any in
+          guard let d = (el as? NSNumber)?.doubleValue, d.isFinite else { return NSNull() }
+          return d
+        }
+      }
       DispatchQueue.main.async {
         if self.hasListeners {
           self.sendEvent(withName: "onWatchRun", body: body)
