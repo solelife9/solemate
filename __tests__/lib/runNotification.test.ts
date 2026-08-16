@@ -94,6 +94,8 @@ describe('러닝 알림 발송', () => {
       setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
       scheduleNotificationAsync: jest.fn().mockResolvedValue('id'),
       dismissNotificationAsync: jest.fn().mockResolvedValue(undefined),
+      // 구 채널 제거(2026-08-17) — 3초마다 울리던 v1 채널을 지운다.
+      deleteNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
       // 알림 액션 버튼(2026-08-08) — 카테고리 등록 + 응답 구독.
       setNotificationCategoryAsync: jest.fn().mockResolvedValue(undefined),
       addNotificationResponseReceivedListener: jest.fn((cb: (r: {actionIdentifier?: string}) => void) => {
@@ -125,6 +127,36 @@ describe('러닝 알림 발송', () => {
     const content = api.scheduleNotificationAsync.mock.calls[0][0].content;
     // 핵심: 보낸 채널이 **방금 만든 그 채널**이어야 한다.
     expect(content.channelId).toBe(createdChannel);
+  });
+
+  // ── 3초마다 알림음이 울리던 것 (2026-08-17 실기기) ─────────────────────────
+  // 이 알림은 3초 스로틀로 **다시 게시**된다. 안드로이드 8+ 는 소리가 채널 속성이라,
+  // 채널이 소리를 갖고 있으면 재게시마다 다시 울린다. v1 은 importance 3(DEFAULT)이었고
+  // DEFAULT 는 정의상 소리를 낸다. `setOnlyAlertOnce` 는 expo 가 노출하지 않는다.
+  // → 유일하게 확실한 길이 **importance ≤ 2(LOW)** 다(LOW 이하는 소리·진동이 없다).
+  test('채널 중요도가 LOW 이하다 — 3초마다 재게시되므로 소리가 있으면 매번 울린다', async () => {
+    const {api} = bootAndroid();
+    const {showRunNotification} = require('../../lib/runNotification');
+
+    await showRunNotification({km: 1, elapsedSec: 60, avgPaceSecPerKm: null, paused: false});
+
+    const [, cfg] = api.setNotificationChannelAsync.mock.calls[0];
+    expect(cfg.importance).toBeLessThanOrEqual(2);
+    // 소리·진동도 함께 꺼 둔다(LOW 가 이미 막지만, 중요도를 올리는 순간 이게 마지막 방어선이다).
+    expect(cfg.sound).toBeNull();
+    expect(cfg.enableVibrate).toBe(false);
+  });
+
+  test('구 채널(keego-run-live)을 지운다 — 설정에 소리 켜진 유령이 남지 않게', async () => {
+    const {api} = bootAndroid();
+    const {showRunNotification} = require('../../lib/runNotification');
+
+    await showRunNotification({km: 1, elapsedSec: 60, avgPaceSecPerKm: null, paused: false});
+
+    const newId = api.setNotificationChannelAsync.mock.calls[0][0];
+    expect(api.deleteNotificationChannelAsync).toHaveBeenCalledWith('keego-run-live');
+    // 새 채널은 구 채널과 **다른 id** 여야 한다 — 같은 id 로는 중요도를 바꿀 수 없다.
+    expect(newId).not.toBe('keego-run-live');
   });
 
   test('안드로이드가 아니면 아무것도 하지 않는다', async () => {

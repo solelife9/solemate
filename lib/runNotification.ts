@@ -107,13 +107,21 @@ export function buildRunNotificationText(
 // 아래는 실기기에서만 동작한다. iOS 는 잠금화면 지표를 워치·라이브 액티비티가 담당하므로
 // 여기서는 아무것도 하지 않는다(중복 알림 금지).
 
-const CHANNEL_ID = 'keego-run-live';
+// ⚠️ **채널 id 에 버전을 붙인다.** 안드로이드는 채널이 한 번 만들어지면 이름·설명 말고는
+// 코드로 못 바꾼다(중요도·소리·진동 전부 불변). v1(`keego-run-live`)은 importance 3
+// (DEFAULT)으로 만들어졌고, DEFAULT 는 **정의상 소리를 낸다** — 아래 §무음 참조.
+// 설정을 고치려면 새 id 로 만드는 수밖에 없다. 다음에 또 고칠 일이 생기면 v3 를 만든다.
+const CHANNEL_ID = 'keego-run-live-v2';
+/** v1 — importance 3 이라 3초마다 알림음이 울렸다. 남겨 두면 설정 화면에 유령으로 남는다. */
+const LEGACY_CHANNEL_IDS = ['keego-run-live'];
 const NOTIFICATION_ID = 'keego-run-live';
 
 interface NotificationsModule {
   setNotificationChannelAsync(id: string, channel: Record<string, unknown>): Promise<unknown>;
   scheduleNotificationAsync(req: Record<string, unknown>): Promise<string>;
   dismissNotificationAsync(id: string): Promise<void>;
+  /** 구 채널 제거용(2026-08-17). 없는 버전도 있어 선택 속성으로 둔다. */
+  deleteNotificationChannelAsync?(id: string): Promise<void>;
   /** 알림 액션 버튼 묶음 등록(2026-08-08). 안드로이드에서 알림 하단 버튼으로 뜬다. */
   setNotificationCategoryAsync(
     id: string,
@@ -135,17 +143,55 @@ function mod(): NotificationsModule | null {
 
 let channelReady = false;
 
-/** 채널 1회 준비. 소리·진동 없음 — 러닝 중 매초 울리면 재앙이다. */
+/**
+ * 채널 1회 준비. **무음이어야 한다** — 이 알림은 3초마다 다시 게시되기 때문이다.
+ *
+ * ── 무음: 왜 importance 2(LOW) 인가 (2026-08-17 실기기 버그) ──────────────────
+ * 민우님 갤럭시에서 러닝 중 **몇 초에 한 번씩 알림음**이 났다(앱의 음성 안내를 꺼도 났다).
+ * 안드로이드 8+ 는 소리·진동이 **채널 속성**이고, 같은 id 로 다시 게시할 때마다 채널이
+ * 소리를 갖고 있으면 **매번 다시 울린다**. 3초 스로틀이 곧 3초마다 알림음이었다.
+ *
+ * 흔한 해법인 `setOnlyAlertOnce(true)` 는 **expo-notifications 가 노출하지 않는다**
+ * (56.0.22 확인 — 안드로이드 소스에 해당 호출이 없다). 그래서 채널로 풀어야 한다.
+ *
+ * v1 은 `importance: 3`(DEFAULT) 였다. **DEFAULT 는 정의상 소리를 낸다.**
+ * `sound: null` 을 같이 줬지만 그것만 믿을 수 없다 — expo 의 채널 구현은
+ * `args.containsKey("sound")` 가 거짓이면 **기본 알림음 URI 를 넣는다**
+ * (`AndroidXNotificationsChannelManager.createSoundUriFromArguments`:
+ *  *"The default is... the default sound."*). JS 의 `null` 이 직렬화에서 사라지면 그 길로 샌다.
+ *
+ * **importance 2(LOW) 는 그 모든 경우에서 안전하다** — 안드로이드는 LOW 이하 채널에
+ * 소리·진동을 아예 주지 않는다(소리 URI 가 붙어 있어도 무시된다). 진행 상태를 계속
+ * 갱신하는 알림에 LOW 를 쓰는 것이 안드로이드 권장이자 NRC·스트라바가 쓰는 방식이다.
+ * 잠금화면·알림함 노출은 LOW 에서도 그대로다(잃는 것은 헤드업 배너뿐인데, 애초에 원치 않았다).
+ *
+ * 콘텐츠 쪽 `sound`/`vibrate` 플래그로 막는 길은 **일부러 쓰지 않는다** — expo 의
+ * `shouldUseDefaultVibrationPattern` 이 `!getBoolean("vibrate", true)` 라서
+ * `vibrate: false` 를 주면 오히려 '기본 진동 사용'이 참이 된다(상류 버그).
+ * 그 위에 무음을 쌓는 건 모래 위에 짓는 것이다.
+ */
 async function ensureChannel(m: NotificationsModule): Promise<void> {
   if (channelReady) return;
   await m.setNotificationChannelAsync(CHANNEL_ID, {
     name: '러닝 중 기록',
-    importance: 3, // DEFAULT — 잠금화면에 보이되 헤드업으로 튀어나오지 않는다.
+    // LOW — 잠금화면·알림함에는 보이고, 소리·진동·헤드업은 없다. 위 주석 참조.
+    importance: 2,
     sound: null,
     vibrationPattern: null,
     enableVibrate: false,
     showBadge: false,
   });
+  // 구 채널을 지운다. 안 지우면 이용자 알림 설정에 '러닝 중 기록' 이 둘로 보이고,
+  // 그중 하나는 우리가 더 이상 쓰지 않는데 소리가 켜져 있다.
+  if (typeof m.deleteNotificationChannelAsync === 'function') {
+    for (const old of LEGACY_CHANNEL_IDS) {
+      try {
+        await m.deleteNotificationChannelAsync(old);
+      } catch {
+        /* 없으면 그만 */
+      }
+    }
+  }
   channelReady = true;
 }
 
@@ -218,8 +264,9 @@ export async function showRunNotification(
         // 여기에 안 넘기면 expo-notifications 가 그 채널을 못 찾아
         // `expo_notifications_fallback_notification_channel` 로 보낸다
         // (BaseNotificationBuilder). 그러면 위에서 정한 소리 없음·진동 없음·배지 없음·
-        // importance 3 이 **전부 무시되고**, 사용자 알림 설정에도 '러닝 중 기록' 이 아니라
-        // 정체불명 채널명으로 보인다. 3초마다 갱신되는 알림이라 영향이 크다.
+        // **importance 2(LOW)** 가 전부 무시되고, 사용자 알림 설정에도 '러닝 중 기록' 이 아니라
+        // 정체불명 채널명으로 보인다. 3초마다 갱신되는 알림이라 영향이 크다 —
+        // 폴백 채널은 소리가 켜져 있어 **그 자체로 3초마다 알림음**이 된다.
         channelId: CHANNEL_ID,
         // 상태에 맞는 버튼 묶음. 달리는 중엔 [일시정지][종료], 멈춘 중엔 [재개][종료].
         categoryIdentifier: state.paused ? CATEGORY_PAUSED : CATEGORY_RUNNING,
