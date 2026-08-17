@@ -111,9 +111,9 @@ export function buildRunNotificationText(
 // 코드로 못 바꾼다(중요도·소리·진동 전부 불변). v1(`keego-run-live`)은 importance 3
 // (DEFAULT)으로 만들어졌고, DEFAULT 는 **정의상 소리를 낸다** — 아래 §무음 참조.
 // 설정을 고치려면 새 id 로 만드는 수밖에 없다. 다음에 또 고칠 일이 생기면 v3 를 만든다.
-const CHANNEL_ID = 'keego-run-live-v2';
+const CHANNEL_ID = 'keego-run-live-v3';
 /** v1 — importance 3 이라 3초마다 알림음이 울렸다. 남겨 두면 설정 화면에 유령으로 남는다. */
-const LEGACY_CHANNEL_IDS = ['keego-run-live'];
+const LEGACY_CHANNEL_IDS = ['keego-run-live', 'keego-run-live-v2'];
 const NOTIFICATION_ID = 'keego-run-live';
 
 interface NotificationsModule {
@@ -180,6 +180,10 @@ async function ensureChannel(m: NotificationsModule): Promise<void> {
     vibrationPattern: null,
     enableVibrate: false,
     showBadge: false,
+    // 잠금을 풀지 않고 **잠금화면에서 지표를 그대로 읽을 수 있어야** 한다
+    // (민우님 2026-08-17: "잠금 버튼만 눌러 확인하고 다시 넣는다").
+    // PUBLIC 이 아니면 안드로이드가 잠금화면에서 내용을 가려 '알림 1개'만 보인다.
+    lockscreenVisibility: 1, // AndroidNotificationVisibility.PUBLIC
   });
   // 구 채널을 지운다. 안 지우면 이용자 알림 설정에 '러닝 중 기록' 이 둘로 보이고,
   // 그중 하나는 우리가 더 이상 쓰지 않는데 소리가 켜져 있다.
@@ -257,7 +261,14 @@ export async function showRunNotification(
         body,
         sticky: true, // 스와이프로 지워지지 않는다 — 러닝이 끝날 때만 사라진다.
         autoDismiss: false,
-        sound: null,
+        // **`null` 이 아니라 `false`** (2026-08-17). expo 의 안드로이드 구현은
+        //   `if (payload.get("sound") instanceof Boolean) return payload.getBoolean("sound");`
+        //   `return getSound(payload) == null;`   ← null 이면 **true = 기본 소리 재생**
+        // 이라, `sound: null` 은 '소리 없음'이 아니라 '기본 소리'로 읽힌다(정반대다).
+        // `false` 를 주면 shouldPlaySound=false 가 되고, vibrate 키를 아예 안 주면
+        // shouldVibrate 도 false 라 빌더가 `setSilent(true)` 를 건다 —
+        // 채널(importance LOW)에 이은 **두 번째 방어선**이다.
+        sound: false,
         priority: 'default',
         color: '#FF8000', // Keego Ember — 알림 아이콘 틴트(BRAND.md §4)
         // ⚠️ **채널 id 를 반드시 넘긴다**(2026-08-07 감사). 위에서 채널을 만들어 놓고

@@ -114,19 +114,22 @@ test('live run starts a location foreground service (background task) with the p
   act(() => renderer.unmount());
 });
 
-// 러닝 중 화면 자동잠금 방지(글랜서빌리티): 시작 시 keep-awake 활성, 종료(언마운트=stop) 시 해제.
-test('live run activates keep-awake on start and releases it on stop(unmount)', async () => {
+// 러닝 중 화면을 **켜 두지 않는다**(2026-08-17 뒤집힘).
+//
+// 종전엔 자동잠금을 막아 화면을 켜 뒀다('글랜서빌리티'). 그런데 러닝 중 폰은 주머니 안에
+// 있고, 켜진 화면은 땀·천에 그대로 눌린다. 실제로 2026-08-17 러닝에서 **주머니 안에서
+// 일시정지가 눌려 0.8km 에서 멈춰 있었다**(가민 기준 5.70km 완주) — 기록을 통째로 잃었다.
+//
+// 올바른 동선은 '잠금 버튼으로 끄고 달리다 → 잠금화면에서 지표 확인 → 다시 끄기' 이고,
+// 그 확인은 잠금화면 알림(안드로이드)·Live Activity(iOS)가 맡는다.
+// 이 테스트는 **되돌아가지 않게** 막는다.
+test('러닝이 화면을 켜 두지 않는다 — 주머니에서 눌리는 사고를 막는다', async () => {
   (KeepAwake.activateKeepAwakeAsync as jest.Mock).mockClear();
-  (KeepAwake.deactivateKeepAwake as jest.Mock).mockClear();
 
   const {renderer} = await startRun();
-  // 러닝 시작 → 화면이 OS 자동잠금으로 꺼지지 않게 활성.
-  expect((KeepAwake.activateKeepAwakeAsync as jest.Mock).mock.calls.length).toBeGreaterThan(0);
-  expect((KeepAwake.deactivateKeepAwake as jest.Mock)).not.toHaveBeenCalled();
+  expect(KeepAwake.activateKeepAwakeAsync as jest.Mock).not.toHaveBeenCalled();
 
-  // 종료(언마운트 → effect cleanup → stop()) → 해제(배터리/오작동 방지).
   act(() => renderer.unmount());
-  expect((KeepAwake.deactivateKeepAwake as jest.Mock).mock.calls.length).toBeGreaterThan(0);
 });
 
 // ── permission gate ──────────────────────────────────────────────────────────

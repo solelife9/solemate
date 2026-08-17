@@ -8,7 +8,7 @@
 // 하나에도 이 파일을 열어야 했고, 44개의 useEffect 는 서로의 실행 순서를 보장하지 않아
 // 변경마다 회귀 위험이 붙었다.
 // 이 블록은 자체 state 로 닫혀 있어(부모와는 props 로만 대화) 가장 안전하게 떼어낼 수
-// 있는 경계였다. 함께 옮긴 KEEP_AWAKE_TAG·openLocationSettingsAlert 도 러닝 전용이다.
+// 있는 경계였다. 함께 옮긴 openLocationSettingsAlert 도 러닝 전용이다.
 //
 // 이 파일이 소유하는 것: GPS 구독·센서·자동 일시정지·음성 코칭·랩/트랙·스냅샷 저장·
 // 완주 저장 흐름. 화면 표현은 RunActiveScreen(.rn) 이, 거리 계산은 lib/runTracker 가 한다.
@@ -47,7 +47,6 @@ import {vehicleVerdict} from '../lib/vehicleDetect';
 import {haversineM, calibrateLapM, lapsToTrack} from '../lib/laps';
 import {requestRunPermissions, startTracking, stopTracking, isPermissionError, hasForegroundPermission, RunPermissions} from '../lib/locationService';
 import {showRunNotification, clearRunNotification, onRunNotificationAction, RUN_ACTION} from '../lib/runNotification';
-import {activateKeepAwakeAsync, deactivateKeepAwake} from 'expo-keep-awake';
 import {initStepCadence, feedStepCount, averageSpm, accumulateSteps} from '../lib/stepCadence';
 // 안드로이드 하드웨어 걸음 카운터 — expo 는 백그라운드에서 구독을 떼어 주머니 러닝의
 // 걸음을 통째로 놓친다(2026-08-12 실측: 가민 168 spm vs keego 1 spm).
@@ -69,7 +68,6 @@ import {decidePaceCoach, initPaceCoachState} from '../lib/paceCoach';
 import {showToast} from '../lib/toast';
 import {trackRunStart, trackRunSave, trackRunDiscard, trackPermissionResult} from '../lib/productAnalytics';
 
-const KEEP_AWAKE_TAG = 'keego-run';
 
 function openLocationSettingsAlert(message:string){
   showDialog('위치 권한 필요',message,[
@@ -368,7 +366,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     if(resume&&!isContinue) return;
     // 언마운트 가드(2026-07-05): 권한 다이얼로그가 떠 있는 동안(await requestRunPermissions)
     // 화면을 벗어나면 cleanup 이 먼저 돌고, 그 뒤 늦게 resolve 된 beginRun 이 좀비 타이머·
-    // GPS watch·keep-awake 를 다시 켜고 3초마다 스냅샷을 덮어써 가짜 '미완료 런'을 남겼다.
+    // GPS watch 를 다시 켜고 3초마다 스냅샷을 덮어써 가짜 '미완료 런'을 남겼다.
     // cancelled 로 그 뒤늦은 beginRun 을 막는다.
     let cancelled=false;
     // 공유 GPS 엔진(runTracker) 구독: 거리/시간/일시정지/死구간/권한 회수 상태가
@@ -686,10 +684,19 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       setVoiceMuted(!voiceCfg.current.enabled); // 일시정지 화면 토글(심사 #10) 초기 동기화
       autoPauseOn=await loadAutoPause(); // 자동 일시정지 설정(#16) — 런당 1회 로드
     }catch{/* 설정 로드 실패 → 기본값(전부 on) 유지 */}
-    // 러닝 시작 — 화면 자동잠금 방지(글랜서빌리티). 실패해도 러닝엔 무관(best-effort).
-    // 화면 잠금 방지 실패는 무해하다(화면이 꺼져도 백그라운드 추적은 계속된다) — 다만
-    // '러닝 중 화면이 꺼진다'는 CS 의 유일한 단서라 흔적은 남긴다.
-    void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(e=>reportIssue('run: keep-awake activate',e));
+    // ⚠️ **러닝 중 화면을 켜 두지 않는다**(2026-08-17 민우님 지시, 실기기 사고).
+    //
+    // 종전엔 activateKeepAwakeAsync 로 자동잠금을 막았다('글랜서빌리티'). 그런데 러닝 중
+    // 폰은 대부분 **주머니 안**에 있고, 화면이 켜진 채 들어가면 땀·천이 그대로 터치가 된다.
+    // 실제로 2026-08-17 러닝에서 **주머니 안에서 일시정지가 눌려 0.8km 에서 멈춰 있었다**
+    // (가민 5.70km 완주). 러닝 기록을 통째로 잃는 사고다.
+    //
+    // 올바른 동선은 이렇다(민우님):
+    //   잠금 버튼으로 화면 끄고 달린다 → 궁금하면 잠금 버튼만 눌러 **잠금화면에서** 확인 →
+    //   다시 잠금 버튼 → 주머니. **잠금을 풀지 않는다.**
+    // 그 '확인'을 담당하는 것이 잠금화면 지표(안드로이드=상시 알림, iOS=Live Activity)다.
+    // 화면을 켜 두는 것은 그 설계와 정면으로 어긋나고, 배터리도 태운다.
+    // NRC·스트라바도 화면이 자연스럽게 꺼진다.
     // 페어링된 애플워치가 있으면 워크아웃을 자동 실행해 심박이 손목 조작 없이 흐르게 한다
     // (startWatchApp). 워치 없으면 조용히 no-op — 심박만 '--'. best-effort.
     // 워치 워크아웃 시작 실패 = 그 런의 심박·워치 미러링이 통째로 없다는 뜻이다. 앱을 깨서는
@@ -976,7 +983,6 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     void stopTracking();void clearRunNotification();
     runTracker.stop();
     // 화면 자동잠금 방지 해제 — 종료/완주/취소/언마운트(effect cleanup)가 모두 stop()을 경유.
-    try{deactivateKeepAwake(KEEP_AWAKE_TAG);}catch{/* 무해: 이미 해제됨 */}
   }
 
   function handlePause(){
