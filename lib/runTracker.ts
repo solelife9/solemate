@@ -22,7 +22,7 @@ import {Platform} from 'react-native';
 import {KalmanFilter} from './kalman';
 import {DistanceSmoother} from './distanceSmoother';
 import {calcDist, acceptSegment, segmentSpeedMps} from './geo';
-import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS, PACE_TRACK_MIN_STEP_KM, STEP_SIGNAL_FRESH_MS, STEP_STILL_GATE_MS, STEP_GATE_MAX_SPEED_MPS, AUTO_PAUSE_STEP_STALL_MS, AUTO_PAUSE_BACKDATE_CAP_MS, AUTO_PAUSE_STEP_MAX_KALMAN_MPS, AUTO_RESUME_SPEED_MPS} from './engineConstants';
+import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS, CURRENT_PACE_SPEED_SMOOTHING, PACE_TRACK_MIN_STEP_KM, STEP_SIGNAL_FRESH_MS, STEP_STILL_GATE_MS, STEP_GATE_MAX_SPEED_MPS, AUTO_PAUSE_STEP_STALL_MS, AUTO_PAUSE_BACKDATE_CAP_MS, AUTO_PAUSE_STEP_MAX_KALMAN_MPS, AUTO_RESUME_SPEED_MPS} from './engineConstants';
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
 
 /**
@@ -221,6 +221,12 @@ class RunTracker {
   // 페이스가 아직 없을 때(초반·재개 직후)만 '현재 페이스'를 보강하는 표시 전용 신호다.
   // 거리/Kalman 누적엔 절대 관여하지 않는다(코어 불변). 일시정지/재개·권한복구 시 비움.
   private lastSpeedMps: number | null = null;
+  /**
+   * 도플러 속도의 EMA(m/s) — **현재 페이스 표시 전용**. 0 이면 아직 표본 없음.
+   * 위치 미분 대신 이 값을 1순위로 쓴다(engineConstants CURRENT_PACE_SPEED_SMOOTHING 주석).
+   * 일시정지/재개·권한복구 시 lastSpeedMps 와 함께 비운다.
+   */
+  private smoothedSpeedMps = 0;
   // 곡선 전용 (누적거리 km, 경과시간 sec) 시계열 — 약 25m 마다 누적(비가지치기). 경로 단순화와
   // 무관하게 거리-시간 대응을 보존해 RunDetail 의 고운 페이스 곡선을 만든다. start/config 시 리셋.
   private paceTrack: {d: number; t: number}[] = [];
@@ -260,6 +266,18 @@ class RunTracker {
   // 그래서 실제 쓰는 값과 별개로 두 누적을 나란히 세어 둔다(계산에는 관여하지 않는다).
   private dopDistKm = 0;   // 도플러 적분으로만 센 거리
   private posDistKm = 0;   // 위치(평활 폴리라인)로만 센 거리
+  /**
+   * **평활하지 않은** 채택 좌표 그대로의 거리(km) — 진단 전용, 계산에 관여하지 않는다.
+   *
+   * 왜(2026-08-17): 가민 5.70 / 폰 엔진 5.58(−2.1%) 인데 **폰이 그린 경로 자체는 5.66**
+   * (−0.7%) 이었다. GPS 는 잘 받았는데 세는 과정에서 잃는다는 뜻이다. 잃는 자리는 둘 중
+   * 하나인데 지금 데이터로는 못 가른다:
+   *   ① 5점 평활기가 모서리를 깎는다  ② 신호 끊김(死구간)에서 통째로 빠진다
+   * 이 값(원거리)과 posDistKm(평활거리)의 차 = ①, stalledMs = ② 다.
+   * **한 번의 러닝으로 확정되면 이 필드와 사이드카를 지운다.**
+   */
+  private rawDistKm = 0;
+  private lastRawPt: {lat: number; lon: number} | null = null;
   private autoAnchor: {lat: number; lon: number} | null = null;
   private autoAnchorMs = 0;
   private autoPauseState: AutoPauseState = initAutoPauseState();
@@ -377,6 +395,12 @@ class RunTracker {
   // 그러면 나중에 "폰이 워치보다 3% 짧다" 같은 걸 알아내 보정할 근거 자체가 없어진다.
   // 워치는 폰 정확도를 가리는 뚜껑이 아니라, 대조할 기준선이어야 한다.
   private smoothPush(p: {lat: number; lon: number}) {
+    // 진단(2026-08-17) — 평활 **전** 좌표 그대로의 거리. 계산에는 쓰지 않는다.
+    if (this.lastRawPt) {
+      const g = calcDist(this.lastRawPt.lat, this.lastRawPt.lon, p.lat, p.lon);
+      if (g > 0 && Number.isFinite(g)) this.rawDistKm += g;
+    }
+    this.lastRawPt = {lat: p.lat, lon: p.lon};
     const before = this.smoother.distKm();
     this.smoother.push(p);
     // 도플러가 거리를 이끄는 동안에는 폴리라인 증분을 버린다(이중계산 금지).
@@ -472,6 +496,7 @@ class RunTracker {
     this.lastCadPushSec = -999;
     this.paceSamples = [];
     this.lastSpeedMps = null;
+    this.smoothedSpeedMps = 0;
     this.fixIndex = 0;
     this.lastGood = null;
     this.lastGoodMs = 0;
@@ -482,6 +507,8 @@ class RunTracker {
     this.dopLastMs = 0;
     this.dopplerLeading = false;
     this.dopDistKm = 0;
+    this.rawDistKm = 0;
+    this.lastRawPt = null;
     this.posDistKm = 0;
     this.autoAnchor = null;
     this.autoAnchorMs = 0;
@@ -670,6 +697,7 @@ class RunTracker {
     // 것을 막는다. 재개 후 새 샘플로 윈도우를 다시 채운다(그동안은 '--').
     this.paceSamples = [];
     this.lastSpeedMps = null;
+    this.smoothedSpeedMps = 0;
     this.lastDefiniteMoveMs = this.now(); // 재개 시점 = 새 이동 앵커(소급 하한)
     this.emit({type: 'resumed', auto});
     this.emitState();
@@ -722,6 +750,7 @@ class RunTracker {
     this.lastRecvMs = now; // 死구간 오판 방지(재개 직후 gap 을 stall 로 세지 않게)
     this.paceSamples = []; // 현재-페이스 윈도우 비움(설정 다녀온 공백 가로지르는 계산 방지)
     this.lastSpeedMps = null;
+    this.smoothedSpeedMps = 0;
     this.emit({type: 'resumed', auto: false});
     this.emitState();
     return true;
@@ -777,6 +806,12 @@ class RunTracker {
     // 매 fix 가 즉시 덮어쓰므로 항상 최신이다. 거리/세그먼트 게이트와 완전히 독립.
     const sp = fix.coords.speed;
     this.lastSpeedMps = typeof sp === 'number' && sp >= CURRENT_PACE_MIN_SPEED_MPS ? sp : null;
+    // 도플러 EMA 갱신 — 현재 페이스의 1순위 신호(표시 전용, 거리에는 관여하지 않는다).
+    if (this.lastSpeedMps != null) {
+      this.smoothedSpeedMps = this.smoothedSpeedMps > 0
+        ? this.smoothedSpeedMps + (this.lastSpeedMps - this.smoothedSpeedMps) * CURRENT_PACE_SPEED_SMOOTHING
+        : this.lastSpeedMps;
+    }
     const acc = accuracy == null ? Infinity : accuracy;
     const f = this.kf.process(lat, lon, acc, ts);
     this.accuracyM = Number.isFinite(acc) ? Math.round(acc) : null;
@@ -1076,7 +1111,12 @@ class RunTracker {
    *  최소 이동거리 미만이면 null(화면 '--'). 평균과 달리 '지금 얼마나 빠른지'를 즉각 반영한다. */
   private computeCurrentPace(): number | null {
     if (this.isPaused) return null;
-    // 1순위: 거리기반 롤링 페이스(스무딩됨, 정상 구간의 신뢰 신호). 가능하면 항상 이걸 쓴다.
+    // **1순위: 도플러 속도의 EMA**(2026-08-17). 위치 미분보다 훨씬 덜 튄다 —
+    // 왜 이 순서인지는 engineConstants.CURRENT_PACE_SPEED_SMOOTHING 주석에 적었다.
+    if (this.smoothedSpeedMps >= CURRENT_PACE_MIN_SPEED_MPS) {
+      return 1000 / this.smoothedSpeedMps;
+    }
+    // 2순위: 거리기반 롤링 페이스 — 도플러를 주지 않는 기기·구간(터널·실내)의 폴백.
     const n = this.paceSamples.length;
     if (n >= 2) {
       const oldest = this.paceSamples[0];
@@ -1368,11 +1408,18 @@ class RunTracker {
    * 진단용 — 두 방식이 각각 센 거리(km). 계산에는 관여하지 않는다.
    * 저장 시 사이드카로 남겨 다음 실기기 러닝에서 가민과 나란히 대조한다.
    */
-  getDistanceDiag(): {doppler: number; position: number; used: number} {
+  getDistanceDiag(): {
+    doppler: number; position: number; used: number;
+    raw: number; stalledS: number;
+  } {
     return {
       doppler: Math.round(this.dopDistKm * 1000) / 1000,
       position: Math.round(this.posDistKm * 1000) / 1000,
       used: Math.round(this.dist * 1000) / 1000,
+      // raw − position = 5점 평활기가 깎은 양
+      raw: Math.round(this.rawDistKm * 1000) / 1000,
+      // 死구간(무신호) 누적 초 — 그 동안은 어느 방식으로도 거리가 안 쌓인다
+      stalledS: Math.round(this.stalledMs / 100) / 10,
     };
   }
 

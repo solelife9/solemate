@@ -308,9 +308,11 @@ test('현재 페이스: 롤링(거리기반)이 생기면 OS 속도 보강보다
   const cpWarm = t.getState().currentPaceSecPerKm;
   expect(cpWarm).not.toBeNull();
   expect(cpWarm as number).toBeCloseTo(400, 0);
-  // 무효 속도(-1, doppler 미정)면 보강하지 않는다 → (아직 롤링 없음) null.
+  // 무효 속도(-1)가 한 번 와도 **직전 EMA 를 유지한다**(2026-08-17 뒤집힘).
+  // 종전엔 null 로 떨어뜨려 화면이 '--' 로 깜빡였다. 도플러 한 표본이 무효인 것은
+  // '멈췄다'가 아니라 '이번 fix 는 속도를 모른다'는 뜻이므로, 아는 값을 지울 이유가 없다.
   FS(-1, 0);
-  expect(t.getState().currentPaceSecPerKm).toBeNull();
+  expect(t.getState().currentPaceSecPerKm).toBeCloseTo(400, 0);
   // 40초를 2.5 m/s 로 달려 롤링 표본을 충분히 쌓는다.
   for (let i = 0; i < 40; i++) FS(2.5);
   const cpRoll = t.getState().currentPaceSecPerKm;

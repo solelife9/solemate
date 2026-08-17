@@ -567,7 +567,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
   // 탐색 뷰에서 아예 안 뜬다(없는 걸 지어내지 않는다).
   // 거리 진단(2026-08-12) — 두 방식이 각각 센 거리. 08-10 거리 계산 변경이 옳은지
   // 다음 실기기 러닝에서 가민과 대조해 판가름내려고 남긴다. 없으면(옛 러닝) 안 보인다.
-  const [distDiag, setDistDiag] = useState<{doppler: number; position: number; used: number} | null>(null);
+  const [distDiag, setDistDiag] = useState<{doppler: number; position: number; used: number; raw?: number; stalledS?: number} | null>(null);
   useEffect(() => {
     let alive = true;
     if (!run.id) { setDistDiag(null); return; }
@@ -932,6 +932,8 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
         {distDiag && (distDiag.doppler > 0 || distDiag.position > 0) && (
           <Text style={[s.capT3w5, { marginTop: rv(14), marginHorizontal: rs(4) }]}>
             거리 진단 · 사용 {distDiag.used.toFixed(2)} / 속도적분 {distDiag.doppler.toFixed(2)} / 위치 {distDiag.position.toFixed(2)} km
+            {typeof distDiag.raw === 'number' ? `\n원거리(평활 전) ${distDiag.raw.toFixed(2)} km · 평활 손실 ${(distDiag.raw - distDiag.position).toFixed(3)} km` : ''}
+            {typeof distDiag.stalledS === 'number' ? ` · 무신호 ${distDiag.stalledS.toFixed(0)}초` : ''}
           </Text>
         )}
         {/* 데이터 내보내기 — 조용한 하단 진입점. 경로가 있는(GPS) 런에서만. 감정적 공유(위

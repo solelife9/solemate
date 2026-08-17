@@ -249,7 +249,10 @@ final class WorkoutManager: NSObject, ObservableObject {
   /** 현재 페이스 창(초) — 폰(CURRENT_PACE_WINDOW_MS = 30000)과 같은 값으로 맞춘다. */
   private static let paceWindowS: Double = 30
   /** 지수 평활 계수. 작을수록 부드럽고 느리게 따라온다. */
-  private static let paceSmoothing: Double = 0.35
+  /// 현재 페이스 EMA 계수. **폰 lib/engineConstants.CURRENT_PACE_SPEED_SMOOTHING 과 같은 값.**
+  /// 0.35 로는 여전히 널뛴다는 실기기 보고(민우님 2026-08-17)로 0.12 로 낮췄다 —
+  /// 1Hz 에서 시정수 ~3초 → ~8초. 도플러 잡음이 √8 ≈ 2.8배 줄어 ±20초/km → ±7초/km.
+  private static let paceSmoothing: Double = 0.12
   // 종료 통계 스냅샷 — finishWorkout 호출 전에 확정한다. finishWorkout 이후엔 빌더의
   // statistics(for:) 가 nil 을 뱉어 심박·칼로리가 0(→ '--')이 되던 버그의 근본 수정.
   private var capturedAvgBpm: Double = 0
