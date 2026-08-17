@@ -31,11 +31,20 @@ import {
 } from './lib/shareCard';
 import type {RunShareInput} from './lib/share';
 
-const PREFS_KEY = 'sharecard_prefs_v3';
+// v4 — 지도 크기(mapScale)가 스키마에 추가됐다(2026-08-17).
+const PREFS_KEY = 'sharecard_prefs_v4';
 const PREVIEW_W = 250;
 
-interface Prefs {layout: RunCardLayout; background: RunCardBackground}
-const DEFAULT_PREFS: Prefs = {layout: 'vertical', background: 'transparent'};
+interface Prefs {layout: RunCardLayout; background: RunCardBackground; mapScale: number}
+// 기본 스타일 = '지도'(hero). 경로가 주인공인 구성이 러닝 공유의 기본값이라는 판단
+// (민우님 2026-08-17). 지도 크기는 hero 에선 의미가 없고 나머지 스타일에서만 쓰인다.
+const DEFAULT_PREFS: Prefs = {layout: 'hero', background: 'transparent', mapScale: 1};
+/** 지도 크기 3단 — layoutShareCard 의 허용 범위(0.75~1.35) 양 끝과 가운데. */
+const MAP_SIZES: {key: string; label: string; v: number}[] = [
+  {key: 'sm', label: '작게', v: 0.75},
+  {key: 'md', label: '보통', v: 1},
+  {key: 'lg', label: '크게', v: 1.35},
+];
 
 export interface ShareCardPickerProps {
   visible: boolean;
@@ -62,6 +71,7 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
         setPrefs({
           layout: RUN_CARD_LAYOUTS.includes(p.layout as RunCardLayout) ? (p.layout as RunCardLayout) : 'vertical',
           background: p.background === 'dark' ? 'dark' : p.background === 'photo' ? 'photo' : 'transparent',
+          mapScale: Number.isFinite(p.mapScale) ? Number(p.mapScale) : 1,
         });
       } catch {/* 손상 → 기본 */}
     }).catch(() => {});
@@ -81,7 +91,12 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
   const cardPhoto = effBg === 'photo' ? photoUri : null;
   // '기록' 레이아웃은 성취(moment)가 있을 때만 맨 앞에 노출.
   const layoutKeys: RunCardLayout[] = model.moment ? ['moment', ...RUN_CARD_LAYOUTS] : RUN_CARD_LAYOUTS;
-  const effLayout: RunCardLayout = layoutKeys.includes(prefs.layout) ? prefs.layout : 'vertical';
+  const effLayout: RunCardLayout = layoutKeys.includes(prefs.layout) ? prefs.layout : 'hero';
+  // 'hero' 는 지도를 폭 가득 채우므로 크기 조절이 무의미하다 — 그 스타일에선 감춘다
+  // (있으나 마나 한 컨트롤을 띄우지 않는다).
+  const showMapSize = effLayout !== 'hero';
+  const effMapKey = MAP_SIZES.reduce((best, o) =>
+    Math.abs(o.v - prefs.mapScale) < Math.abs(best.v - prefs.mapScale) ? o : best, MAP_SIZES[1]).key;
   const previewW = useMemo(() => rs(PREVIEW_W), []);
   // 프리뷰 영역 높이 고정 — 카드 캔버스는 내용 높이라 레이아웃(세로/가로/6지표)마다 다르다.
   // 그대로 두면 탭을 바꿀 때마다 시트 전체가 점프하므로, 선택 가능한 레이아웃 중 가장 큰
@@ -89,7 +104,7 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
   const previewH = useMemo(() => {
     const maxRatio = Math.max(
       ...layoutKeys.map(l => {
-        const L = layoutShareCard(model, {layout: l, showMap: true, showStats: true});
+        const L = layoutShareCard(model, {layout: l, showMap: true, showStats: true, mapScale: 1.35});
         return L.h / L.w;
       }),
     );
@@ -120,7 +135,7 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
     finally { setBusy(null); }
   };
 
-  const cardProps = {model, route, photoUri: cardPhoto, layout: effLayout, background: effBg};
+  const cardProps = {model, route, photoUri: cardPhoto, layout: effLayout, background: effBg, mapScale: prefs.mapScale};
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
@@ -132,6 +147,11 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
 
         <Seg label="스타일" options={layoutKeys.map(l => ({key: l, label: RUN_CARD_LAYOUT_LABEL[l]}))}
           value={effLayout} onChange={l => update({layout: l as RunCardLayout})} />
+        {showMapSize && (
+          <Seg label="지도 크기" options={MAP_SIZES.map(o => ({key: o.key, label: o.label}))}
+            value={effMapKey}
+            onChange={k => update({mapScale: MAP_SIZES.find(o => o.key === k)?.v ?? 1})} />
+        )}
         <Seg label="배경" options={bgKeys.map(b => ({key: b, label: RUN_CARD_BACKGROUND_LABEL[b]}))}
           value={effBg} onChange={b => update({background: b as RunCardBackground})} />
 

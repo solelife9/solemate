@@ -21,8 +21,11 @@ const MODEL = buildShareCardModel({
 const labelsOf = (cfg: any) => layoutShareCard(MODEL, cfg).texts.map(t => t.value);
 
 describe('RUN_CARD_LAYOUTS (순서·라벨)', () => {
-  test('세로가 맨 앞(기본), 3종', () => {
-    expect(RUN_CARD_LAYOUTS).toEqual(['vertical', 'classic', 'grid']);
+  test('지도(hero)가 맨 앞(기본), 4종', () => {
+    // 2026-08-17: 지도가 주인공인 'hero' 를 신설하고 기본으로 올렸다(민우님 확정).
+    // 종전 기본은 'vertical' 이었고, 지도가 카드의 23% 라 작다는 지적이 계기였다.
+    expect(RUN_CARD_LAYOUTS).toEqual(['hero', 'vertical', 'classic', 'grid']);
+    expect(RUN_CARD_LAYOUT_LABEL.hero).toBe('지도');
     expect(RUN_CARD_LAYOUT_LABEL.vertical).toBe('세로');
     expect(RUN_CARD_LAYOUT_LABEL.classic).toBe('가로');
     expect(RUN_CARD_LAYOUT_LABEL.grid).toBe('6지표');

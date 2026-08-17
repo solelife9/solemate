@@ -104,12 +104,15 @@ const HASHTAG = '#Keego #keepgoing';
 // 사진 일부에 얹어 크기 조절하므로 캔버스를 내용 높이에 맞춰 자른다(빈 공간 최소). 지도·로고는
 // 항상 파파야, 흰 지표엔 그림자(사진 위 가독성). background=dark/photo 는 완성본용.
 //  · moment  — 성취(신기록·특별한 순간) 리본 + 세로 지표. 기록이 있을 때만 picker 에 노출.
-export type RunCardLayout = 'vertical' | 'classic' | 'grid' | 'moment';
+//  · hero    — 지도를 폭 가득(좌우 여백만) 깔고 지표는 그 아래 한 줄. 스트라바·나이키가
+//              쓰는 구성으로, 경로 자체가 주인공이 된다(민우님 2026-08-17 확정).
+export type RunCardLayout = 'hero' | 'vertical' | 'classic' | 'grid' | 'moment';
 
-/** picker 기본 노출 순서 — 세로(스트라바 느낌)가 기본. 'moment' 는 기록이 있을 때만 추가. */
-export const RUN_CARD_LAYOUTS: RunCardLayout[] = ['vertical', 'classic', 'grid'];
+/** picker 기본 노출 순서 — 지도가 큰 'hero' 가 기본. 'moment' 는 기록이 있을 때만 앞에 추가. */
+export const RUN_CARD_LAYOUTS: RunCardLayout[] = ['hero', 'vertical', 'classic', 'grid'];
 
 export const RUN_CARD_LAYOUT_LABEL: Record<RunCardLayout, string> = {
+  hero: '지도',
   vertical: '세로',
   classic: '가로',
   grid: '6지표',
@@ -162,6 +165,11 @@ export interface CardLayout {
 
 const CARD_W = 1080, CARD_PAD = 72, CARD_MAP_GAP = 84, CARD_WM_GAP = 92;
 
+/** 지도 기본 한 변(px). 폭 1080 대비 44%. 2026-08-17 에 250(23%)에서 올렸다 — 위 §지도 주석. */
+const MAP_BASE = 480;
+/** 'hero' 는 지도를 좌우 여백만 남기고 꽉 채운다(스트라바·나이키 구성). */
+const MAP_HERO = CARD_W - CARD_PAD * 2;
+
 /**
  * 컴팩트 스티커 배치(순수) — 지도(있으면) + 지표 + keego 를 위에서부터 딱 붙여 쌓고,
  * 캔버스 높이를 내용에 맞춰 자른다. 사진 일부에 얹는 스티커라 빈 공간을 최소화한다.
@@ -185,10 +193,17 @@ export function layoutShareCard(model: ShareCardModel, cfg: RunCardConfig): Card
     y += h + CARD_MAP_GAP;
   }
 
-  // 지도(작게, 가운데)
+  // 지도(가운데)
+  //
+  // 크기 250 → 480 (2026-08-17, 민우님 *"지도가 너무 작게 나오는 것 같아"*).
+  // 카드 폭이 1080 이라 250 은 **23%** 였다 — 거리 숫자(64px)의 4배도 안 되는 크기라
+  // '지도가 있는 카드'가 아니라 '작은 아이콘이 붙은 카드'로 읽혔다.
+  // 480 = 폭의 44%. 지도가 카드의 주인공이 되면서도 지표 세 줄이 그대로 살아 있다.
+  // 카드 높이는 684 + 지도크기 이므로 934 → 1164 로 늘어난다(스티커로 얹기엔 아직 무난).
   let map: CardLayout['map'] = null;
   if (cfg.showMap) {
-    const size = R(250 * m);
+    // 'hero' 는 폭을 꽉 채운다(배율 무시 — 이미 최대다).
+    const size = cfg.layout === 'hero' ? MAP_HERO : R(MAP_BASE * m);
     map = {x: R(cx - size / 2), y: R(y), size};
     y += size + CARD_MAP_GAP;
   }
@@ -207,6 +222,17 @@ export function layoutShareCard(model: ShareCardModel, cfg: RunCardConfig): Card
       texts.push({x: cx, y: vy, size: val, weight: '800', anchor: 'middle', ls: -0.5, opacity: 1, value: c.value});
     });
     y += (cells.length - 1) * group + val;
+  } else if (cfg.layout === 'hero') {
+    // 지도가 주인공 — 지표는 그 아래 한 줄로 낮게 깔아 지도를 방해하지 않는다.
+    // 값이 라벨보다 먼저 읽히도록 값을 크게, 라벨은 값 위에 작게(스트라바 구성).
+    const val = R(62 * t), lab = R(26 * t), gap = R(66 * t);
+    const span = CARD_W * 0.9, x0 = (CARD_W - span) / 2, slot = span / cells.length;
+    cells.forEach((c, i) => {
+      const ccx = x0 + slot * i + slot / 2;
+      texts.push({x: ccx, y, size: lab, weight: '700', anchor: 'middle', ls: 2, opacity: 0.8, value: c.label.toUpperCase()});
+      texts.push({x: ccx, y: y + gap, size: val, weight: '800', anchor: 'middle', ls: -0.5, opacity: 1, value: c.value});
+    });
+    y += gap;
   } else if (cfg.layout === 'classic') {
     const val = R(58 * t), lab = R(29 * t), gap = R(62 * t);
     const span = CARD_W * 0.92, x0 = (CARD_W - span) / 2, slot = span / cells.length;
