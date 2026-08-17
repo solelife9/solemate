@@ -377,11 +377,22 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       if(ev.type==='state'){
         const s=ev.state;
         // 잠금화면 지표 알림(안드로이드 전용) — 주머니에 넣고 달릴 때 잠금을 풀지 않고도
-        // 거리·시간을 본다(민우님 2026-08-05). 3초 스로틀: 1Hz fix 마다 알림을 다시 그리면
-        // 배터리를 먹고 시스템이 알림을 눌러 버린다. showRunNotification 은 iOS·모듈 결측·
-        // 실패를 전부 조용히 삼키므로 여기서 방어할 것이 없다(절대 throw 하지 않는다).
+        // 거리·시간을 본다(민우님 2026-08-05). showRunNotification 은 iOS·모듈 결측·실패를
+        // 전부 조용히 삼키므로 여기서 방어할 것이 없다(절대 throw 하지 않는다).
+        //
+        // ⚠️ **스로틀 3초 → 15초 (2026-08-17, 실기기 사고).**
+        // 3초 스로틀은 35분 러닝에서 **467번**의 notify() 가 됐고(민우님 알림 설정에서 확인),
+        // 삼성 One UI 가 그 채널을 **과다 알림으로 자동 차단**해 버렸다. 채널이 막히자
+        // expo-notifications 는 알림을 **폴백 채널(Miscellaneous)** 로 흘려보냈는데,
+        // 그 채널은 소리·진동·팝업이 전부 켜져 있다 — 우리가 채널에 무음을 아무리 걸어도
+        // 소용이 없던 이유가 이것이다. 원인은 채널 설정이 아니라 **게시 빈도**였다.
+        //
+        // 15초면 35분 러닝에 140회. 잠금화면은 '흘끗 보는' 용도라 초 단위 정확도가 필요 없고,
+        // 어차피 사용자가 화면을 켠 순간의 값만 보인다.
+        // 더해서, **표시 문구가 그대로면 아예 다시 게시하지 않는다**(아래 lastNotifTextRef) —
+        // 멈춰 서 있거나 일시정지 중에는 게시가 0 이 된다.
         const nowMs=Date.now();
-        if(nowMs-notifAtRef.current>=3000){
+        if(nowMs-notifAtRef.current>=15000){
           notifAtRef.current=nowMs;
           void showRunNotification({
             km:s.dist,

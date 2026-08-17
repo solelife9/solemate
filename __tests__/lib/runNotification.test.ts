@@ -159,6 +159,25 @@ describe('러닝 알림 발송', () => {
     expect(newId).not.toBe('keego-run-live');
   });
 
+  // ── 게시 횟수 자체가 위험이다 (2026-08-17 실기기) ───────────────────────────
+  // 35분 러닝에서 467회를 게시했더니 삼성이 채널을 '과다 알림'으로 자동 차단했고,
+  // 차단된 채널로 간 알림을 expo 가 폴백 채널(Miscellaneous)로 흘려보내
+  // 소리·진동·팝업이 되살아났다. 채널 무음을 아무리 걸어도 소용없던 진짜 이유다.
+  test('문구가 같으면 다시 게시하지 않는다 — 게시 횟수가 곧 차단 위험이다', async () => {
+    const {api} = bootAndroid();
+    const {showRunNotification} = require('../../lib/runNotification');
+    const state = {km: 1.23, elapsedSec: 400, avgPaceSecPerKm: 325, paused: false};
+
+    await showRunNotification(state);
+    await showRunNotification(state); // 같은 상태 — 건너뛰어야 한다
+    await showRunNotification(state);
+    expect(api.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+
+    // 값이 바뀌면 다시 게시한다(멈춰 있지 않다는 뜻이므로).
+    await showRunNotification({...state, km: 1.29});
+    expect(api.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+  });
+
   test('안드로이드가 아니면 아무것도 하지 않는다', async () => {
     const {api, rn} = bootAndroid();
     rn.Platform.OS = 'ios';

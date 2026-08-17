@@ -142,6 +142,15 @@ function mod(): NotificationsModule | null {
 }
 
 let channelReady = false;
+/**
+ * 마지막으로 게시한 문구. **같으면 다시 게시하지 않는다**(2026-08-17).
+ *
+ * 게시 횟수 자체가 위험이라서다 — 35분 러닝에서 467회를 게시했더니 삼성이 채널을
+ * 과다 알림으로 자동 차단했고, 차단된 채널로 간 알림은 expo 가 **폴백 채널**로 흘려
+ * 보내 소리·진동·팝업이 되살아났다. 멈춰 서 있거나 일시정지 중이면 문구가 그대로이므로
+ * 이 한 줄로 그 구간의 게시가 0 이 된다.
+ */
+let lastPostedText = '';
 
 /**
  * 채널 1회 준비. **무음이어야 한다** — 이 알림은 3초마다 다시 게시되기 때문이다.
@@ -254,6 +263,10 @@ export async function showRunNotification(
     await ensureChannel(m);
     await ensureCategories(m);
     const {title, body} = buildRunNotificationText(state, unit);
+    // 문구가 그대로면 게시를 건너뛴다 — 위 lastPostedText 주석 참조.
+    const text = `${title}\n${body}`;
+    if (text === lastPostedText) return;
+    lastPostedText = text;
     await m.scheduleNotificationAsync({
       identifier: NOTIFICATION_ID,
       content: {
@@ -294,6 +307,7 @@ export async function clearRunNotification(): Promise<void> {
   if (Platform.OS !== 'android') return;
   const m = mod();
   if (!m) return;
+  lastPostedText = ''; // 다음 러닝은 처음부터 다시 — 같은 문구여도 새로 띄워야 한다
   try {
     await m.dismissNotificationAsync(NOTIFICATION_ID);
   } catch {
@@ -337,5 +351,6 @@ export function onRunNotificationAction(cb: (action: RunAction) => void): () => 
 /** 테스트 전용 — 채널 준비 플래그 초기화. */
 export function __resetRunNotificationChannel(): void {
   channelReady = false;
+  lastPostedText = '';
   categoriesReady = false;
 }
